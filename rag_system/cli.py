@@ -640,3 +640,132 @@ def reset(keep_cache: bool = False):
         click.echo("Cache cleared.")
 
     click.echo("Ready for fresh ingest.")
+
+
+# ═══════════════════════════════════════════
+# COMPETITIVE ANALYSIS COMMANDS
+# ═══════════════════════════════════════════
+
+@cli.group()
+def competitive():
+    """Learn from top-performing competitor videos."""
+    pass
+
+
+@competitive.command("search")
+@click.option("--category", "-c", required=True, help="Product category (keyboard/mouse/monitor/...)")
+@click.option("--top", "-n", default=3, help="Number of top videos to analyze")
+@click.option("--source", "-s", default="bilibili", help="Platform: bilibili")
+@click.option("--skip-download", is_flag=True, help="Skip video download (use cached audio)")
+def competitive_search(category: str, top: int = 3, source: str = "bilibili", skip_download: bool = False):
+    """Search and analyze top videos for a product category."""
+    from rag_system.competitive.pipeline import run_pipeline
+
+    click.echo(f"Searching {source} for {category} (top {top})...")
+    results = run_pipeline(category, top_n=top, skip_download=skip_download)
+
+    if not results:
+        click.echo("No results found or analysis failed.")
+        return
+
+    click.echo(f"\n{'='*60}")
+    click.echo(f"竞品分析结果 — {category} (Top {len(results)})")
+    click.echo(f"{'='*60}")
+    for i, r in enumerate(results, 1):
+        click.echo(f"\n[{i}] {r['title'][:60]}")
+        click.echo(f"    创作者: {r['creator']}  |  播放: {r['views']:,}")
+        click.echo(f"    钩子类型: {r['hook_type']}  |  口语密度: {r['spoken_density']:.1f}")
+        if r['patterns']:
+            click.echo(f"    亮点: {', '.join(r['patterns'][:3])}")
+
+
+@competitive.command("analyze")
+@click.option("--url", "-u", required=True, help="Bilibili video URL to analyze")
+def competitive_analyze(url: str):
+    """Analyze a single competitor video by URL."""
+    from rag_system.competitive.downloader import download_video
+    from rag_system.competitive.transcriber import transcribe
+    from rag_system.competitive.script_analyzer import analyze_transcript
+    from rag_system.competitive.store import save_analysis
+    from rag_system.competitive.models import VideoProfile
+    import re
+
+    # Parse video ID from URL
+    match = re.search(r'(?:bilibili\.com/video/|BV)([A-Za-z0-9]+)', url)
+    if not match:
+        click.echo(f"Invalid Bilibili URL: {url}")
+        return
+    video_id = f"BV{match.group(1)}" if not match.group(0).startswith("BV") else match.group(0)
+
+    video = VideoProfile(
+        video_id=video_id, title="", url=url,
+        source="bilibili", creator_name="",
+    )
+
+    click.echo(f"Downloading {url}...")
+    audio = download_video(video)
+    if not audio:
+        click.echo("Download failed.")
+        return
+
+    click.echo("Transcribing...")
+    text = transcribe(audio)
+    if not text:
+        click.echo("Transcription failed.")
+        return
+
+    click.echo(f"Transcribed: {len(text)} chars. Analyzing...")
+    result = analyze_transcript(video, text)
+    save_analysis(result)
+
+    click.echo(f"\n钩子: {result.hook_type}")
+    click.echo(f"口语密度: {result.spoken_density:.1f}/百字")
+    click.echo(f"态度密度: {result.attitude_density:.1f}/200字")
+    click.echo(f"短句: {result.short_sentence_pct:.0f}%  长句: {result.long_sentence_pct:.0f}%")
+    if result.standout_patterns:
+        click.echo(f"亮点: {', '.join(result.standout_patterns)}")
+
+
+@competitive.command("report")
+@click.option("--period", "-p", default="weekly", help="Report period: weekly, monthly")
+def competitive_report(period: str = "weekly"):
+    """Generate a competitive analysis report."""
+    from rag_system.competitive.reporter import generate_weekly_report
+
+    click.echo(f"Generating {period} report...")
+    report = generate_weekly_report()
+
+    click.echo(f"\n{'='*60}")
+    click.echo(f"竞品分析报告 — {report.period_start} ~ {report.period_end}")
+    click.echo(f"{'='*60}")
+    click.echo(f"分析视频数: {report.videos_analyzed}")
+    if report.top_creators:
+        click.echo(f"热门创作者: {', '.join(report.top_creators)}")
+    if report.trending_hook_types:
+        click.echo(f"热门钩子: {report.trending_hook_types}")
+    if report.new_patterns_discovered:
+        click.echo(f"新发现模式: {', '.join(report.new_patterns_discovered)}")
+    click.echo(f"\n建议:")
+    for r in report.recommendations:
+        click.echo(f"  • {r}")
+
+
+@competitive.command("stats")
+def competitive_stats():
+    """Show competitive analysis statistics."""
+    from rag_system.competitive.store import get_analyzed_videos
+    from collections import Counter
+
+    videos = get_analyzed_videos()
+    if not videos:
+        click.echo("No analyzed videos yet. Run 'competitive search' first.")
+        return
+
+    cats = Counter(v.get("category", "other") for v in videos)
+    hooks = Counter(v.get("hook_type", "unknown") for v in videos)
+    creators = Counter(v.get("creator", "unknown") for v in videos)
+
+    click.echo(f"\n竞品知识库: {len(videos)} 个视频")
+    click.echo(f"\n品类分布: {dict(cats)}")
+    click.echo(f"\n钩子分布: {dict(hooks)}")
+    click.echo(f"\nTop创作者: {dict(creators.most_common(5))}")

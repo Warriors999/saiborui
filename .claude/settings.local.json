@@ -113,7 +113,20 @@
       "Bash(git config *)",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(\"C:/Program Files/Microsoft Office/root/Office16/EXCEL.EXE\" \"C:\\\\Users\\\\qianjiusui\\\\Desktop\\\\赛博涛\\\\output\\\\storyboards\\\\ROG NUC 2026-折腾到吐-分镜表_65420.xlsx\")",
+      "Bash(\"C:/Program Files \\(x86\\)/Microsoft Office/Office16/EXCEL.EXE\" \"C:\\\\Users\\\\qianjiusui\\\\Desktop\\\\赛博涛\\\\output\\\\storyboards\\\\ROG NUC 2026-折腾到吐-分镜表_65420.xlsx\")",
+      "Bash(taskkill //f //im EXCEL.EXE)",
+      "Bash(agent-browser open *)",
+      "Bash(agent-browser screenshot *)",
+      "Bash(agent-browser console *)",
+      "Bash(agent-browser close *)",
+      "WebFetch(domain:zhuanlan.zhihu.com)",
+      "Bash(awk '{print $NF}')",
+      "Bash(git rm *)",
+      "Bash(rm -f \"output/storyboards/~$\"* \"output/storyboards/ROG_NUC_\"*.xlsx)",
+      "Bash(git reset *)",
+      "Bash(\"C:/Users/qianjiusui/AppData/Local/Programs/Python/Python312/python.exe\" -m pip install yt-dlp openai-whisper opencv-python --quiet)"
     ]
   }
 }
