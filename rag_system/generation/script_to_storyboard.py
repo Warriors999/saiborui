@@ -17,7 +17,7 @@ from pathlib import Path
 from openai import OpenAI
 
 from rag_system.config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, DEEPSEEK_MODEL
-from rag_system.generation.xlsx_formatter import format_storyboard_to_xlsx
+from rag_system.generation.xlsx_formatter import format_storyboard_to_xlsx, _get_lighting_setup
 from rag_system.generation.auditor import audit_storyboard, audit_shootability, _auto_fix_shots
 from rag_system.utils import logger
 
@@ -26,33 +26,13 @@ SYSTEM_PROMPT = """你是专业短视频拍摄分镜师，擅长将口播脚本�
 
 ## 核心铁律
 
-### 铁律A：产品是绝对主体，手只在该出现时出现
-- **产品永远是画面绝对主体**，任何元素不能抢产品的视觉焦点
-- **人脸、面部表情、主播出镜绝对禁止**——任何情况下都不出现
-- 手部出现场景（仅1-2镜，低频使用）：
-  - 键盘打字、鼠标握持操作——手部必须出现，无法避免
-  - 产品手持展示——1-2次即可，非主力镜头
-- 越肩拍摄（仅显示器/游戏画面场景）：只出现后脑勺+肩膀轮廓，不露脸
-- 纯产品空镜：主力画面形式，约占70%（产品亮相、细节特写、360°展示、接口展示、B-roll）
-- 手部+产品：约占20%（仅必要的操作演示）
-- 越肩/POV：约占10%（仅显示器和游戏画面场景）
+### 铁律A：产品绝对主体 — 商业产品视频标准 (Mercado 2022, 北电张会军2021)
+- 景别分布：1宽:2中:3-4特写 (远景10-15% 中景25-30% 特写40-50% 微距5-10%)
+- **人脸绝对禁止**。手部仅键盘/鼠标/手持场景(1-2镜)。越肩仅显示器场景
 
-### 铁律B：拍摄角度 — 仰拍为主，俯拍为辅，无人脸
-- 产品拍摄：仰拍为主约45%（低机位，凸显产品气场和体积感）
-- 桌面摆拍/手部操作/接口：俯拍约30%（顶部垂直或45°俯瞰）
-- POV主观视角/越肩：约25%（第一人称，只见手不见脸）
-- 没有人脸口播镜头，没有平视人物镜头
-
-### 铁律C：运镜多样化 — 固定镜头不超过40%
-- 推镜头：产品亮相、重点强调、结尾聚焦
-- 拉镜头：从细节扩展至全貌、揭示环境
-- 摇镜头：产品从一端扫至另一端
-- 移镜头：跟随手部动作、产品滑入画面
-- 跟镜头：跟踪拿起/放下/插拔动作
-- 升/降镜头：产品揭晓、包装开箱
-- 环绕：360°产品展示，1-2处即可
-- 固定镜头：人物口播、数据展示——但不超过40%
-- 推/拉/摇/移/跟/升/降/环绕 各至少出现1次
+### 铁律B：运镜必须有动机 — 商业广告标准 (Apple/Manfrotto, 北电巩如梅2023)
+- 固定30-40% / 滑轨推拉25-35% / 跟拍15-25% / 摇摄5-10%
+- 运动动机：reveal→滑轨推 / 细节→摇摄扫表面 / 手部→跟拍 / 材质→微距静态
 
 ### 铁律D：一句话 = 一个画面（绝对铁律）
 - 口播的每个句号/问号/感叹号 = 一个独立的镜头画面
@@ -340,12 +320,15 @@ def _auto_trim_overuse(shots: list[dict]):
                 if short_count >= 2:
                     break
 
-    # 4. Ensure lighting AND camera_setup on ALL shots
+    # 4. Ensure context-aware lighting AND camera_setup on ALL shots
     for s in shots:
+        setup = _get_lighting_setup(s)
         if not s.get("lighting", "").strip():
-            s["lighting"] = "主灯:右前45°+柔光箱 | 辅灯:左侧补光 | 色温:5600K"
+            s["lighting"] = setup["key"]
+            if setup.get("fill"):
+                s["lighting"] += " | " + setup["fill"]
         if not s.get("camera_setup", "").strip():
-            s["camera_setup"] = "机位:仰拍30° | 焦段:35mm | 光圈:F2.8"
+            s["camera_setup"] = setup["camera"]
 
 
 def _parse_dur(dur_str: str) -> int:
