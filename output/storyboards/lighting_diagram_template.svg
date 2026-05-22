@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 520">
+  <defs>
+    <marker id="arrowBlue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrowBlack" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#1e293b"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
+    </marker>
+    <style>
+      text { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    </style>
+  </defs>
+
+  <rect width="600" height="520" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+  <!-- Title -->
+  <text x="300" y="26" fill="#1e293b" font-size="13" font-weight="bold" text-anchor="middle">灯光机位顶视图</text>
+  <line x1="30" y1="36" x2="570" y2="36" stroke="#e2e8f0" stroke-width="1"/>
+
+  <!-- === Product (center) with front direction === -->
+  <rect x="240" y="170" width="120" height="90" rx="6" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
+  <text x="300" y="208" fill="#1e293b" font-size="12" font-weight="bold" text-anchor="middle">产品</text>
+  <text x="300" y="226" fill="#94a3b8" font-size="9" text-anchor="middle">(桌面摆放)</text>
+  <!-- Product front indicator - arrow pointing DOWN (facing camera) -->
+  <line x1="300" y1="260" x2="300" y2="295" stroke="#dc2626" stroke-width="2.5" marker-end="url(#arrowRed)"/>
+  <text x="318" y="278" fill="#dc2626" font-size="10" font-weight="bold">正面朝向</text>
+
+  <!-- === Camera at bottom with FOV lines === -->
+  <circle cx="300" cy="400" r="20" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="300" y="396" fill="#15803d" font-size="10" font-weight="bold" text-anchor="middle">机位</text>
+  <text x="300" y="428" fill="#64748b" font-size="8" text-anchor="middle">50mm F2.8</text>
+  <!-- Lens direction arrow - pointing UP toward product -->
+  <line x1="300" y1="380" x2="300" y2="310" stroke="#16a34a" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <text x="318" y="348" fill="#16a34a" font-size="9" font-weight="bold">镜头朝向</text>
+  <!-- FOV lines from camera to product -->
+  <line x1="300" y1="380" x2="240" y2="260" stroke="#16a34a" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/>
+  <line x1="300" y1="380" x2="360" y2="260" stroke="#16a34a" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/>
+  <text x="320" y="320" fill="#16a34a" font-size="8" opacity="0.6">FOV</text>
+
+  <!-- === Key Light (camera-right, 45° right-front of product) === -->
+  <circle cx="480" cy="120" r="22" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="480" y="115" fill="#1e40af" font-size="11" font-weight="bold" text-anchor="middle">主灯</text>
+  <text x="480" y="132" fill="#64748b" font-size="8" text-anchor="middle">柔光箱</text>
+  <text x="480" y="146" fill="#64748b" font-size="8" text-anchor="middle">5600K</text>
+  <!-- Arrow from key light to product -->
+  <line x1="460" y1="135" x2="348" y2="195" stroke="#2563eb" stroke-width="2" marker-end="url(#arrowBlue)"/>
+  <text x="430" y="155" fill="#2563eb" font-size="8">45° 右前</text>
+
+  <!-- === Fill Light (camera-left) === -->
+  <circle cx="90" cy="200" r="20" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+  <text x="90" y="196" fill="#475569" font-size="11" font-weight="bold" text-anchor="middle">辅灯</text>
+  <text x="90" y="214" fill="#94a3b8" font-size="8" text-anchor="middle">左侧补光</text>
+  <!-- Arrow from fill light to product -->
+  <line x1="110" y1="205" x2="240" y2="205" stroke="#64748b" stroke-width="2" marker-end="url(#arrowGray)"/>
+
+  <!-- === Camera-subject axis dashed line === -->
+  <line x1="300" y1="260" x2="300" y2="380" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,4"/>
+
+  <!-- === Light Ratio Box === -->
+  <rect x="30" y="460" width="210" height="40" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="135" y="478" fill="#1e293b" font-size="11" font-weight="bold" text-anchor="middle">光比</text>
+  <text x="135" y="494" fill="#2563eb" font-size="10" text-anchor="middle">主灯 : 辅灯 = 2 : 1</text>
+
+  <!-- === Technique Note === -->
+  <rect x="260" y="460" width="310" height="40" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="415" y="478" fill="#64748b" font-size="9" text-anchor="middle">拍摄: 三脚架云台 | 滑轨缓推 | 长焦压缩景深</text>
+
+  <!-- === Distance scale === -->
+  <line x1="30" y1="440" x2="160" y2="440" stroke="#cbd5e1" stroke-width="1"/>
+  <line x1="30" y1="437" x2="30" y2="443" stroke="#cbd5e1" stroke-width="1"/>
+  <line x1="160" y1="437" x2="160" y2="443" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="95" y="435" fill="#94a3b8" font-size="8" text-anchor="middle">≈ 1.5m</text>
+</svg>

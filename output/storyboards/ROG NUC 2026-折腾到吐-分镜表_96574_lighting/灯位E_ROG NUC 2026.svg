@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 520">
+  <defs>
+    <marker id="arrowBlue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2563eb"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#16a34a"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#dc2626"/>
+    </marker>
+    <style>
+      text { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    </style>
+  </defs>
+
+  <rect width="600" height="520" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+
+  <text x="300" y="24" fill="#1e293b" font-size="12" font-weight="bold" text-anchor="middle">灯位E — ROG NUC 2026  (镜号: 5)</text>
+  <line x1="30" y1="34" x2="570" y2="34" stroke="#e2e8f0" stroke-width="1"/>
+
+  <!-- Product -->
+  <rect x="240" y="165" width="120" height="90" rx="6" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
+  <text x="300" y="203" fill="#1e293b" font-size="12" font-weight="bold" text-anchor="middle">产品</text>
+  <text x="300" y="221" fill="#94a3b8" font-size="9" text-anchor="middle">(桌面摆放)</text>
+  <!-- Front direction -->
+  <line x1="300" y1="255" x2="300" y2="290" stroke="#dc2626" stroke-width="2.5" marker-end="url(#arrowRed)"/>
+  <text x="318" y="275" fill="#dc2626" font-size="10" font-weight="bold">正面朝向</text>
+
+  <!-- Camera -->
+  <circle cx="300" cy="400" r="20" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="300" y="396" fill="#15803d" font-size="10" font-weight="bold" text-anchor="middle">机位</text>
+  <text x="300" y="428" fill="#64748b" font-size="8" text-anchor="middle">仰拍20° | 焦段:50mm | 光圈:F2.8</text>
+  <!-- Lens direction -->
+  <line x1="300" y1="380" x2="300" y2="305" stroke="#16a34a" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <text x="318" y="345" fill="#16a34a" font-size="9" font-weight="bold">镜头朝向</text>
+  <!-- FOV -->
+  <line x1="300" y1="380" x2="240" y2="255" stroke="#16a34a" stroke-width="1" stroke-dasharray="4,3" opacity="0.4"/>
+  <line x1="300" y1="380" x2="360" y2="255" stroke="#16a34a" stroke-width="1" stroke-dasharray="4,3" opacity="0.4"/>
+
+  <!-- Key Light -->
+  <circle cx="480" cy="120" r="22" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="480" y="115" fill="#1e40af" font-size="11" font-weight="bold" text-anchor="middle">主灯</text>
+  <text x="480" y="132" fill="#64748b" font-size="8" text-anchor="middle">柔光箱</text>
+  <text x="480" y="146" fill="#64748b" font-size="8" text-anchor="middle">5600K</text>
+  <line x1="460" y1="135" x2="348" y2="190" stroke="#2563eb" stroke-width="2" marker-end="url(#arrowBlue)"/>
+  <text x="425" y="152" fill="#2563eb" font-size="8">45°右前</text>
+
+  <!-- Fill Light -->
+  <circle cx="90" cy="200" r="20" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+  <text x="90" y="196" fill="#475569" font-size="11" font-weight="bold" text-anchor="middle">辅灯</text>
+  <text x="90" y="214" fill="#94a3b8" font-size="8" text-anchor="middle">左侧补光</text>
+  <line x1="110" y1="205" x2="240" y2="205" stroke="#64748b" stroke-width="2" marker-end="url(#arrowGray)"/>
+
+  <!-- Camera-subject axis -->
+  <line x1="300" y1="255" x2="300" y2="380" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,4"/>
+
+  <!-- Light Ratio Box -->
+  <rect x="30" y="460" width="210" height="40" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="135" y="478" fill="#1e293b" font-size="11" font-weight="bold" text-anchor="middle">光比</text>
+  <text x="135" y="494" fill="#2563eb" font-size="10" text-anchor="middle">主灯 : 辅灯 = 3:1~4:1</text>
+
+  <!-- Technique -->
+  <rect x="260" y="460" width="310" height="40" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="415" y="478" fill="#64748b" font-size="9" text-anchor="middle">滑轨缓推 | 低机位仰角</text>
+
+  <!-- Distance scale -->
+  <line x1="30" y1="440" x2="160" y2="440" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="95" y="435" fill="#94a3b8" font-size="8" text-anchor="middle">≈ 1.5m</text>
+</svg>

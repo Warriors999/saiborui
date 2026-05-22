@@ -1,0 +1,24 @@
+# Environment
+.env
+
+# Data directories (ChromaDB + cache = large, regeneratable)
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Output archives and temp
+output/temp/
+output/*/archive/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
