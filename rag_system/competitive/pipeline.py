@@ -12,6 +12,48 @@ from rag_system.competitive.store import save_analysis
 from rag_system.utils import logger
 
 
+def _index_to_knowledge_base(result, video: VideoProfile):
+    """Index competitive analysis into ChromaDB for RAG retrieval.
+
+    Creates a structured text chunk with analysis metadata so the
+    generation pipeline can retrieve competitor insights when writing
+    scripts for the same category.
+    """
+    try:
+        from rag_system.embedding.embedder import Embedder
+        from rag_system.storage.vector_store import VectorStore
+        from rag_system.chunking.splitter import split_text
+
+        chunk_text = f"""【竞品标杆】{video.title}
+创作者: {video.creator_name} | 播放量: {video.views:,}
+品类: {video.category} | 钩子类型: {result.hook_type}
+口语密度: {result.spoken_density:.1f}/百字 | 态度密度: {result.attitude_density:.1f}/200字
+叙事弧线: {result.narrative_arc}
+亮点模式: {', '.join(result.standout_patterns) if result.standout_patterns else '无'}
+口播脚本摘要: {result.transcript[:800]}"""
+
+        chunks = split_text(chunk_text, chunk_size=600, chunk_overlap=60)
+        embedder = Embedder()
+        store = VectorStore()
+
+        store.upsert_chunks([{
+            "id": f"competitive_{video.video_id}_{ci}",
+            "embedding": embedder.embed_documents([chunk])[0],
+            "document": chunk,
+            "metadata": {
+                "source_file": video.title[:50],
+                "persona": "competitive",
+                "category": video.category,
+                "is_competitive": "true",
+                "views": video.views,
+                "hook_type": result.hook_type,
+            },
+        } for ci, chunk in enumerate(chunks)])
+        logger.info(f"Indexed {len(chunks)} chunks for {video.title[:30]}...")
+    except Exception as e:
+        logger.warning(f"KB indexing failed (non-fatal): {e}")
+
+
 def run_pipeline(category: str, top_n: int = 3, skip_download: bool = False) -> list[dict]:
     """Run the full pipeline: search top videos → analyze → return results.
 
@@ -57,8 +99,11 @@ def run_pipeline(category: str, top_n: int = 3, skip_download: bool = False) -> 
         logger.info(f"分析脚本 ({len(transcript)} 字)...")
         result = analyze_transcript(video, transcript)
 
-        # Step 5: Store
+        # Step 5: Store to JSON
         save_analysis(result)
+
+        # Step 6: Index into knowledge base for RAG retrieval
+        _index_to_knowledge_base(result, video)
         results.append({
             "title": video.title,
             "creator": video.creator_name,

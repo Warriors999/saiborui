@@ -126,7 +126,8 @@
       "Bash(git rm *)",
       "Bash(rm -f \"output/storyboards/~$\"* \"output/storyboards/ROG_NUC_\"*.xlsx)",
       "Bash(git reset *)",
-      "Bash(\"C:/Users/qianjiusui/AppData/Local/Programs/Python/Python312/python.exe\" -m pip install yt-dlp openai-whisper opencv-python --quiet)"
+      "Bash(\"C:/Users/qianjiusui/AppData/Local/Programs/Python/Python312/python.exe\" -m pip install yt-dlp openai-whisper opencv-python --quiet)",
+      "Bash(\"C:/Users/qianjiusui/AppData/Local/Programs/Python/Python312/python.exe\" -m rag_system competitive search --category keyboard --top 2 --skip-download)"
     ]
   }
 }
