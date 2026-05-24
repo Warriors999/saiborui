@@ -58,15 +58,57 @@ def transcribe_deepseek(audio_path: Path) -> str | None:
 
 
 def transcribe(audio_path: Path) -> str | None:
-    """Transcribe audio to text. Tries Whisper first, falls back to DeepSeek."""
+    """Transcribe audio to text. Tries Whisper first, then restores punctuation."""
     if not audio_path.exists():
         logger.error(f"Audio file not found: {audio_path}")
         return None
 
-    # Try Whisper first
     text = transcribe_whisper_local(audio_path)
     if text:
+        # Restore punctuation for better sentence analysis
+        text = restore_punctuation(text)
         return text
 
-    # Fallback to DeepSeek
     return transcribe_deepseek(audio_path)
+
+
+def restore_punctuation(text: str) -> str:
+    """Use LLM to restore Chinese punctuation to Whisper output.
+
+    Whisper produces continuous text without punctuation marks.
+    This makes sentence-level analysis impossible. LLM restoration
+    adds appropriate 。，！？ at natural boundaries.
+    """
+    if not text or len(text) < 50:
+        return text
+
+    try:
+        from openai import OpenAI
+        from rag_system.config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL
+
+        client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
+
+        # Only process first 800 chars for efficiency
+        chunk = text[:800]
+
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[{
+                "role": "user",
+                "content": f"给以下中文文本添加标点符号（。，！？），不要修改任何文字，只加标点，直接输出：\n\n{chunk}"
+            }],
+            temperature=0.1,
+            max_tokens=1200,
+        )
+        restored = response.choices[0].message.content.strip()
+
+        # If the full text was longer, append the rest
+        if len(text) > 800:
+            restored += text[800:]
+
+        logger.info(f"Punctuation restored: {len(text)} → {len(restored)} chars")
+        return restored
+
+    except Exception as e:
+        logger.warning(f"Punctuation restoration skipped: {e}")
+        return text

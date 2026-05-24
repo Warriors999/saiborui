@@ -1,0 +1,13 @@
+{
+  "tasks": [
+    {
+      "id": "48858796",
+      "cron": "0 9 * * 1",
+      "prompt": "执行竞品学习管线：逐一搜索8个品类(keyboard/mouse/monitor/laptop/phone/gpu/headphone/desk_chair)的B站Top3视频，下载→转录→分析→入库Wiki。完成后生成竞品学习周报docx。",
+      "createdAt": 1779615154790,
+      "recurring": true,
+      "createdBySessionId": "17ad6e85-a3bf-4401-8800-f2f49b30fcb3",
+      "createdByPid": 61200
+    }
+  ]
+}
