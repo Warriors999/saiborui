@@ -1,15 +1,22 @@
 """Orchestrate the full competitive analysis pipeline.
 
-Flow: Search → Download → Transcribe → Analyze → Store → Report
+Flow: Search → Download → Transcribe → Visual Analyze → Deep Analyze → Store → Report
+All files saved to: output/competitive/sessions/{date}_{category}_{creator}/
 """
+
+from datetime import datetime
+from pathlib import Path
 
 from rag_system.competitive.models import VideoProfile
 from rag_system.competitive.searcher import search_by_category
-from rag_system.competitive.downloader import download_video
+from rag_system.competitive.downloader import download_video, download_video_full
+from rag_system.competitive.visual_analyzer import analyze_visual
 from rag_system.competitive.transcriber import transcribe
-from rag_system.competitive.script_analyzer import analyze_transcript
+from rag_system.competitive.script_analyzer import analyze_transcript, deep_analyze
 from rag_system.competitive.store import save_analysis
 from rag_system.utils import logger
+
+SESSIONS_DIR = Path("output/competitive/sessions")
 
 
 def _index_to_knowledge_base(result, video: VideoProfile):
@@ -76,28 +83,50 @@ def run_pipeline(category: str, top_n: int = 3, skip_download: bool = False) -> 
     for i, video in enumerate(videos):
         logger.info(f"[{i+1}/{len(videos)}] {video.title[:50]}... ({video.views} 播放)")
 
+        # Create session folder
+        date_str = datetime.now().strftime("%Y%m%d")
+        safe_creator = "".join(c for c in video.creator_name if c.isalnum() or c in ('_', '-'))[:20]
+        session_dir = SESSIONS_DIR / f"{date_str}_{category}_{safe_creator}"
+        session_dir.mkdir(parents=True, exist_ok=True)
+
         # Step 2: Download (if not skipped)
         if not skip_download:
-            audio_path = download_video(video)
+            audio_path = download_video(video, output_dir=session_dir)
             if not audio_path:
                 logger.warning(f"下载失败，跳过: {video.title}")
                 continue
         else:
-            from pathlib import Path
-            audio_path = Path(f"output/competitive/videos/{video.video_id}.mp3")
+            audio_path = session_dir / "audio.mp3"
             if not audio_path.exists():
                 logger.warning(f"无缓存音频，跳过: {video.title}")
                 continue
 
-        # Step 3: Transcribe
+        # Step 3: Transcribe → save to session
         transcript = transcribe(audio_path)
         if not transcript:
             logger.warning(f"转录失败，跳过: {video.title}")
             continue
+        (session_dir / "transcript.txt").write_text(transcript, encoding="utf-8")
 
-        # Step 4: Analyze
+        # Step 4: Visual analysis → save to session
+        visual = {}
+        if not skip_download:
+            video_path = download_video_full(video, output_dir=session_dir)
+            if video_path:
+                visual = analyze_visual(video_path)
+                import json
+                (session_dir / "visual.json").write_text(json.dumps(visual, ensure_ascii=False, indent=2), encoding="utf-8")
+                logger.info(f"视觉分析: {visual.get('shot_count', 'N/A')} 镜, {visual.get('avg_shot_sec', 'N/A')}s/镜")
+
+        # Step 5: Analyze (statistical + LLM deep analysis)
         logger.info(f"分析脚本 ({len(transcript)} 字)...")
         result = analyze_transcript(video, transcript)
+        logger.info(f"LLM深度解读...")
+        deep = deep_analyze(transcript, category, video.title, result.hook_type, visual)
+        if deep.get("deep_analysis"):
+            result.standout_patterns.append("LLM深度解读已完成")
+            result._deep_analysis = deep["deep_analysis"]
+            (session_dir / "deep_analysis.txt").write_text(deep["deep_analysis"], encoding="utf-8")
 
         # Step 5: Store to JSON
         save_analysis(result)

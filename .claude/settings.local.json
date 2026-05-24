@@ -127,7 +127,13 @@
       "Bash(rm -f \"output/storyboards/~$\"* \"output/storyboards/ROG_NUC_\"*.xlsx)",
       "Bash(git reset *)",
       "Bash(\"C:/Users/qianjiusui/AppData/Local/Programs/Python/Python312/python.exe\" -m pip install yt-dlp openai-whisper opencv-python --quiet)",
-      "Bash(\"C:/Users/qianjiusui/AppData/Local/Programs/Python/Python312/python.exe\" -m rag_system competitive search --category keyboard --top 2 --skip-download)"
+      "Bash(\"C:/Users/qianjiusui/AppData/Local/Programs/Python/Python312/python.exe\" -m rag_system competitive search --category keyboard --top 2 --skip-download)",
+      "Bash(mkdir -p output/competitive/sessions/20260523_keyboard_RGB老巫师)",
+      "Bash(mv output/competitive/videos/113853744613865.mp3 output/competitive/sessions/20260523_keyboard_RGB老巫师/audio.mp3)",
+      "Bash(mv output/competitive/videos/113853744613865.mp4 output/competitive/sessions/20260523_keyboard_RGB老巫师/video.mp4)",
+      "Bash(mv output/competitive/transcript_medium.txt output/competitive/sessions/20260523_keyboard_RGB老巫师/transcript.txt)",
+      "Bash(mv output/competitive/visual_analysis.json output/competitive/sessions/20260523_keyboard_RGB老巫师/visual.json)",
+      "Bash(npm list *)"
     ]
   }
 }

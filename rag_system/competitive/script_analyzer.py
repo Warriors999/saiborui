@@ -1,5 +1,8 @@
 """Analyze competitor video scripts using our existing auditor + prompt patterns."""
 
+from openai import OpenAI
+
+from rag_system.config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, DEEPSEEK_MODEL
 from rag_system.generation.auditor import (
     audit_script, SPOKEN_MARKERS, FORBIDDEN_WORDS,
     ECOMMERCE_SMELL, _count_attitudes,
@@ -116,3 +119,76 @@ def _find_patterns(transcript: str, category: str) -> list[str]:
             patterns.append(f"{category}专业术语: {', '.join(found[:3])}")
 
     return patterns
+
+
+def deep_analyze(transcript: str, category: str, video_title: str, hook_type: str, visual: dict = None) -> dict:
+    """Use LLM to extract actionable creative learnings from a competitor script.
+
+    Returns structured insights a content creator can directly apply.
+    """
+    if not DEEPSEEK_API_KEY:
+        return {"error": "DeepSeek API key not configured"}
+
+    client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
+
+    visual_context = ""
+    if visual and not visual.get("error"):
+        visual_context = f"""
+视频视觉/剪辑数据:
+- 检测到镜头数: {visual.get('shot_count', 'N/A')}
+- 视频时长: {visual.get('duration_sec', 'N/A')}秒
+- 平均镜头时长: {visual.get('avg_shot_sec', 'N/A')}秒
+- 剪辑频率: {visual.get('cuts_per_minute', 'N/A')}次/分钟
+- 短镜头(≤2s)占比: {visual.get('short_shots_pct', 'N/A')}%
+- 中镜头(2-5s)占比: {visual.get('medium_shots_pct', 'N/A')}%
+- 长镜头(>5s)占比: {visual.get('long_shots_pct', 'N/A')}%
+"""
+
+    prompt = f"""你是一位顶级短视频创作分析师，精通文案和视觉两方面的拆解。请深度分析以下竞品视频，提取可操作的创作学习点。
+
+视频: {video_title} | 品类: {category} | 检测到的钩子类型: {hook_type}
+
+口播脚本:
+{transcript[:3000]}
+
+{visual_context}
+请从以下7个维度输出结构化的学习要点（每点1-3句话，直接可用）:
+
+1. 脚本结构拆解
+   - 这个脚本分几段？每段讲什么？时间占比大概多少？
+
+2. 开场钩子分析
+   - 为什么这个开头能让观众不划走？（具体的心理机制）
+   - D先生如果写同品类开头，可以怎么借鉴？
+
+3. 值得学习的句式/技巧（带原文摘录）
+   - 找出3-5个具体的句子或过渡手法，解释为什么有效
+   - 标注是哪种技巧（数字锚定/类比简化/痛点共鸣/权威背书/等等）
+
+4. 改编建议
+   - 如果D先生（硬核技术流数码博主，口语化极强，常用"兄弟们""我滴妈""有一说一"）
+   - 来写同品类产品脚本，应该怎么改编这个脚本的结构和风格？
+
+5. 可复制模式
+   - 这个创作者有什么可以被系统化复制的创作模式？
+6. 视觉与剪辑节奏分析
+   - 根据剪辑数据（如果提供了），分析这个视频的视觉节奏
+   - 快慢切是如何配合口播内容的？哪个段落节奏最快/最慢？
+   - 如果D先生做同品类分镜，应该用什么样的镜头节奏？
+7. 拍摄手法推断
+   - 从口播内容推断可能的拍摄手法（比如念到材质时可能是微距特写，念到尺寸对比时可能是俯拍桌面对比）
+   - 推测画面与口播的对应关系
+
+请直接输出中文，每条前用数字+标题标注。不要写"分析结论"之类的套话。"""
+
+    try:
+        response = client.chat.completions.create(
+            model=DEEPSEEK_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=2000,
+        )
+        text = response.choices[0].message.content.strip()
+        return {"deep_analysis": text, "status": "ok"}
+    except Exception as e:
+        return {"error": str(e)}

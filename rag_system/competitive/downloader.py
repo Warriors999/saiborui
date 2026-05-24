@@ -9,6 +9,47 @@ from rag_system.utils import logger
 OUTPUT_DIR = Path("output/competitive/videos")
 
 
+def download_video_full(video: VideoProfile, output_dir: Path = OUTPUT_DIR) -> Path | None:
+    """Download full video (not just audio) for visual analysis."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+    video_path = output_dir / f"{video.video_id}.mp4"
+
+    if video_path.exists():
+        return video_path
+
+    try:
+        cmd = [
+            "yt-dlp",
+            "-f", "bestvideo[height<=1080]+bestaudio/best[height<=1080]",
+            "--merge-output-format", "mp4",
+            "-o", str(output_dir / f"{video.video_id}.%(ext)s"),
+            "--no-playlist",
+            "--socket-timeout", "30",
+            video.url,
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        if result.returncode != 0:
+            # Fallback: download best single format
+            cmd_fallback = [
+                "yt-dlp", "-f", "best", "--merge-output-format", "mp4",
+                "-o", str(output_dir / f"{video.video_id}.%(ext)s"),
+                "--no-playlist", video.url,
+            ]
+            subprocess.run(cmd_fallback, capture_output=True, text=True, timeout=300)
+
+        if video_path.exists():
+            return video_path
+        # Check alt extensions
+        for ext in [".mkv", ".webm", ".flv"]:
+            alt = output_dir / f"{video.video_id}{ext}"
+            if alt.exists():
+                return alt
+        return None
+    except Exception as e:
+        logger.error(f"Video download failed: {e}")
+        return None
+
+
 def download_video(video: VideoProfile, output_dir: Path = OUTPUT_DIR) -> Path | None:
     """Download a video and extract audio. Returns path to audio file."""
     output_dir.mkdir(parents=True, exist_ok=True)

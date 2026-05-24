@@ -1,0 +1,25 @@
+{
+  "period": "2026-05-17 ~ 2026-05-24",
+  "videos_analyzed": 1,
+  "top_creators": [
+    "RGB老巫师"
+  ],
+  "trending_hook_types": {
+    "情绪爆发": 1
+  },
+  "category_insights": {
+    "keyboard": {
+      "count": 1,
+      "avg_spoken_density": 0.1,
+      "dominant_hook": "情绪爆发"
+    }
+  },
+  "new_patterns": [
+    "keyboard专业术语: 轴体"
+  ],
+  "recommendations": [
+    "本周最热门钩子类型是「情绪爆发」，建议下期脚本优先尝试该开篇方式",
+    "以下品类本周无竞品数据: phone, headphone, desk_chair, monitor, mouse, gpu, laptop，建议补充搜索",
+    "值得关注的创作者: RGB老巫师"
+  ]
+}
