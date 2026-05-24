@@ -11,6 +11,7 @@ from rag_system.competitive.models import VideoProfile
 from rag_system.competitive.searcher import search_by_category
 from rag_system.competitive.downloader import download_video, download_video_full
 from rag_system.competitive.visual_analyzer import analyze_visual
+from rag_system.competitive.audio_analyzer import analyze_audio
 from rag_system.competitive.transcriber import transcribe
 from rag_system.competitive.script_analyzer import analyze_transcript, deep_analyze
 from rag_system.competitive.store import save_analysis

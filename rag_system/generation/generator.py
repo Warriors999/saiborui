@@ -43,6 +43,13 @@ class Generator:
         profile = PERSONA_PROFILES.get(persona, {})
         context = _format_context(retrieved_chunks or [])
         category_context = CATEGORY_CONTEXT.get(category, "通用数码产品——重点讲性价比和实际体验。")
+        # Load compiled wiki knowledge for this category
+        wiki_context = ""
+        try:
+            from rag_system.competitive.wiki_compiler import load_wiki_context
+            wiki_context = load_wiki_context(category)
+        except Exception:
+            pass
         # ~290 chars/min for Douyin short video pacing
         target_chars = int(duration_minutes * 290)
 
@@ -54,7 +61,12 @@ class Generator:
         else:
             opening_instruction = no_meme_opening_prompt(persona)
 
-        system = SYSTEM_PROMPT.format(
+        # Inject wiki knowledge into system prompt
+        system_base = SYSTEM_PROMPT
+        if wiki_context:
+            system_base += "\n\n## 竞品学习知识库（Wiki编译结果，可直接参考）\n" + wiki_context
+
+        system = system_base.format(
             persona=persona,
             persona_description=profile.get("description", "数码科技博主"),
             tone=profile.get("tone", "口语化表达"),
