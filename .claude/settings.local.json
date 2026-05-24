@@ -134,7 +134,11 @@
       "Bash(mv output/competitive/transcript_medium.txt output/competitive/sessions/20260523_keyboard_RGB老巫师/transcript.txt)",
       "Bash(mv output/competitive/visual_analysis.json output/competitive/sessions/20260523_keyboard_RGB老巫师/visual.json)",
       "Bash(npm list *)",
-      "Bash(\"C:/Users/qianjiusui/AppData/Local/Programs/Python/Python312/python.exe\" -m pip install librosa --quiet)"
+      "Bash(\"C:/Users/qianjiusui/AppData/Local/Programs/Python/Python312/python.exe\" -m pip install librosa --quiet)",
+      "Bash(agent-browser connect *)",
+      "Bash(agent-browser snapshot *)",
+      "Bash(agent-browser get *)",
+      "Bash(agent-browser skills *)"
     ]
   }
 }
