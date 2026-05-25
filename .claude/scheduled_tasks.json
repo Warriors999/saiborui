@@ -7,7 +7,8 @@
       "createdAt": 1779615154790,
       "recurring": true,
       "createdBySessionId": "17ad6e85-a3bf-4401-8800-f2f49b30fcb3",
-      "createdByPid": 61200
+      "createdByPid": 61200,
+      "lastFiredAt": 1779714146765
     }
   ]
 }

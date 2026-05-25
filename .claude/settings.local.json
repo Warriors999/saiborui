@@ -138,7 +138,11 @@
       "Bash(agent-browser connect *)",
       "Bash(agent-browser snapshot *)",
       "Bash(agent-browser get *)",
-      "Bash(agent-browser skills *)"
+      "Bash(agent-browser skills *)",
+      "Bash(cp \"c:/Users/qianjiusui/Desktop/各外设品牌值得入手的单品-ROG\\(1\\).docx\" \"C:/Users/qianjiusui/Desktop/赛博涛/output/scripts/ROG外设排行_定稿.docx\")",
+      "Bash(\"C:/Users/qianjiusui/AppData/Local/Programs/Python/Python312/python.exe\" -c \"import os; os.startfile\\(r'C:\\\\Users\\\\qianjiusui\\\\Desktop\\\\赛博涛\\\\output\\\\storyboards\\\\ROG外设排行-折腾到吐-分镜表_14543_lighting\\\\灯位A.svg'\\)\")",
+      "Bash(\"C:/Program Files/Git/cmd/git.exe\" -C \"C:/Users/qianjiusui/Desktop/赛博涛\" add -A)",
+      "Bash(\"C:/Program Files/Git/cmd/git.exe\" -C \"C:/Users/qianjiusui/Desktop/赛博涛\" commit -m \"修复Wiki注入bug: format后注入+验证日志\")"
     ]
   }
 }

@@ -61,12 +61,8 @@ class Generator:
         else:
             opening_instruction = no_meme_opening_prompt(persona)
 
-        # Inject wiki knowledge into system prompt
-        system_base = SYSTEM_PROMPT
-        if wiki_context:
-            system_base += "\n\n## 竞品学习知识库（Wiki编译结果，可直接参考）\n" + wiki_context
-
-        system = system_base.format(
+        # Inject wiki knowledge AFTER format() to avoid placeholder conflicts
+        system = SYSTEM_PROMPT.format(
             persona=persona,
             persona_description=profile.get("description", "数码科技博主"),
             tone=profile.get("tone", "口语化表达"),
@@ -76,6 +72,11 @@ class Generator:
             target_chars=target_chars,
             opening_instruction=opening_instruction,
         )
+        # Inject wiki context after format (avoids {} conflicts)
+        if wiki_context:
+            system += "\n\n## 竞品学习知识库（Wiki编译结果，可直接参考）\n" + wiki_context
+            logger.info("Wiki injected: %d chars for category=%s", len(wiki_context), category)
+
         user = USER_PROMPT.format(
             product_name=product_name,
             category=category,
