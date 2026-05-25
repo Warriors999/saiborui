@@ -27,7 +27,7 @@ from rag_system.config import (
 )
 from rag_system.embedding.embedder import Embedder
 from rag_system.storage.vector_store import VectorStore, make_chunk_id
-from rag_system.utils import logger, setup_logging
+from rag_system.utils import logger, setup_logging, sanitize_filename
 
 
 @click.group()
@@ -320,7 +320,7 @@ def generate(
     if output:
         docx_path = Path(output).with_suffix(".docx")
     else:
-        safe_name = product.replace("/", "-").replace("\\", "-").replace(":", "-")
+        safe_name = sanitize_filename(product)
         docx_path = output_dir / f"{safe_name}-{persona}.docx"
 
     # Step 5: Format and save as .docx
@@ -444,7 +444,7 @@ def storyboard(
     if output:
         xlsx_path = Path(output).with_suffix(".xlsx")
     else:
-        safe_name = product.replace("/", "-").replace("\\", "-").replace(":", "-")
+        safe_name = sanitize_filename(product)
         xlsx_path = output_dir / f"{safe_name}-{persona}-分镜表.xlsx"
 
     # Step 4: Format and save as .xlsx

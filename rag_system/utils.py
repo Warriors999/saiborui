@@ -46,3 +46,17 @@ def write_cache(filepath: Path, cache_dir: Path, text: str) -> None:
     """Write parsed plaintext to cache."""
     cache_dir.mkdir(parents=True, exist_ok=True)
     cache_path(filepath, cache_dir).write_text(text, encoding="utf-8")
+
+def sanitize_filename(name: str) -> str:
+    """Sanitize a string for use as a filename."""
+    return name.replace("/", "-").replace("\\", "-").replace(":", "-")
+
+def parse_duration_str(d: str) -> int:
+    """Parse duration string like '3s' or '1-2s' to integer seconds."""
+    try:
+        d = d.replace("s", "").strip()
+        if "-" in d:
+            d = d.split("-")[1]
+        return int(d)
+    except (ValueError, AttributeError):
+        return 0

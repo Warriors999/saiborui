@@ -467,7 +467,8 @@ def storyboard_pipeline(docx_path: Path, product_name: str, persona: str = "折�
     """Full pipeline: script → storyboard → audit → fix → save."""
     output_dir = Path("output/storyboards")
     output_dir.mkdir(parents=True, exist_ok=True)
-    safe_name = product_name.replace("/", "-").replace(":", "-")
+    from rag_system.utils import sanitize_filename
+    safe_name = sanitize_filename(product_name)
     xlsx_path = output_dir / f"{safe_name}-{persona}-分镜表.xlsx"
 
     # Step 1: Parse script
