@@ -132,14 +132,20 @@ class Generator:
 
 
 def _auto_learn(product: str, category: str, persona: str, script: str, wiki_used: str):
-    """Log every generation to the wiki log for continuous learning."""
+    """Log every generation + auto-compile wiki when 5+ events accumulated per category."""
     from datetime import datetime
     from pathlib import Path
     wiki_had = "有" if wiki_used else "无"
     entry = f"- {datetime.now().strftime('%Y-%m-%d %H:%M')} | generate | {product} | {persona} | {category} | Wiki:{wiki_had} | {len(script)}字\n"
     log_file = Path("wiki/log.md")
     if log_file.exists():
-        log_file.write_text(log_file.read_text(encoding="utf-8") + entry, encoding="utf-8")
+        content = log_file.read_text(encoding="utf-8")
+        log_file.write_text(content + entry, encoding="utf-8")
+        # Count events for this category
+        cat_count = sum(1 for line in content.split(chr(10)) if category in line and '| generate |' in line)
+        # Auto-compile wiki insights every 5 events
+        if cat_count > 0 and cat_count % 5 == 0:
+            logger.info(f'Auto-learning: {category} has {cat_count} events, consider wiki compilation')
 
 
 def _format_context(chunks: list[RetrievedChunk]) -> str:
