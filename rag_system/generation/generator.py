@@ -143,9 +143,20 @@ def _auto_learn(product: str, category: str, persona: str, script: str, wiki_use
         log_file.write_text(content + entry, encoding="utf-8")
         # Count events for this category
         cat_count = sum(1 for line in content.split(chr(10)) if category in line and '| generate |' in line)
-        # Auto-compile wiki insights every 5 events
+        # Auto-compile wiki insights every 5 events for a category
         if cat_count > 0 and cat_count % 5 == 0:
-            logger.info(f'Auto-learning: {category} has {cat_count} events, consider wiki compilation')
+            logger.info(f'Auto-learning: {category} has {cat_count} events → compiling wiki')
+            try:
+                from rag_system.competitive.wiki_compiler import _update_log, WIKI_DIR
+                _update_log(Path(f'auto/{category}'), category)
+                # Create/update a basic wiki page from generation patterns
+                wiki_cat_dir = WIKI_DIR / category
+                wiki_cat_dir.mkdir(parents=True, exist_ok=True)
+                hook_page = wiki_cat_dir / '钩子模式.md'
+                if not hook_page.exists():
+                    hook_page.write_text(f'# {category} 钩子模式\n\n自动编译中...\n\n最新活动: {datetime.now().strftime("%Y-%m-%d %H:%M")}\n', encoding='utf-8')
+            except Exception as e:
+                logger.warning(f'Auto-compile skipped: {e}')
 
 
 def _format_context(chunks: list[RetrievedChunk]) -> str:

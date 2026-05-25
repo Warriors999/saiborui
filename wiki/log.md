@@ -2,3 +2,4 @@
 
 - 2026-05-24 16:08 | keyboard | 分析完成 → 更新wiki | 20260523_keyboard_RGB老巫师
 - 2026-05-24 16:20 | keyboard | 分析完成 → 更新wiki | 20260523_keyboard_RGB老巫师
+- 2026-05-25 23:34 | storyboard | ROG NUC 2026 运镜测试 | 折腾到吐 | 45镜 782字

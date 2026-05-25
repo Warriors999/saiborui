@@ -554,12 +554,13 @@ def storyboard_pipeline(docx_path: Path, product_name: str, persona: str = "折�
     print(f"  文件: {xlsx_path}")
     print(f"{'='*60}")
 
-    # Auto-learn: log storyboard generation to wiki for continuous improvement
+    # Auto-learn: log + compile wiki every 5 storyboard events
     from datetime import datetime
     log_file = Path("wiki/log.md")
-    entry = f"- {datetime.now().strftime('%Y-%m-%d %H:%M')} | storyboard | {product_name} | {persona} | {shot_count}镜 {total_vo}字\n"
+    entry = f"- {datetime.now().strftime('%Y-%m-%d %H:%M')} | storyboard | {product_name} | {persona} | {shot_count}镜 {total_vo}字 | 运镜{len(set(s.get('yunjing','') for s in shots))}种\n"
     if log_file.exists():
-        log_file.write_text(log_file.read_text(encoding="utf-8") + entry, encoding="utf-8")
+        content = log_file.read_text(encoding="utf-8") + entry
+        log_file.write_text(content, encoding="utf-8")
 
     return xlsx_path
 
