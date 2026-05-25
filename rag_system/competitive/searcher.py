@@ -35,23 +35,26 @@ MIXIN_KEY_ENC_TAB = [
     22, 25, 54, 21, 56, 59, 6, 63, 57, 62, 11, 36, 20, 34, 44, 52
 ]
 
-# Cache for WBI keys (valid for ~1 day)
+# Cache for WBI keys + buvid3 (valid for ~1 day)
 _wbi_cache = {"img_key": "", "sub_key": "", "mixin_key": "", "fetched_at": 0}
+_buvid3_cache = {"buvid3": "", "fetched_at": 0}
 
 
 def _get_buvid3() -> str:
-    """Get buvid3 cookie by visiting B站 homepage."""
+    """Get buvid3 cookie, cached for 12 hours."""
+    now = time.time()
+    if _buvid3_cache["buvid3"] and (now - _buvid3_cache["fetched_at"]) < 43200:
+        return _buvid3_cache["buvid3"]
     try:
-        req = urllib.request.Request("https://www.bilibili.com/", headers={
-            "User-Agent": USER_AGENT,
-        })
+        req = urllib.request.Request("https://www.bilibili.com/", headers={"User-Agent": USER_AGENT})
         opener = urllib.request.build_opener()
         resp = opener.open(req, timeout=10)
-        # Extract buvid3 from Set-Cookie
         for header in resp.headers.get_all("Set-Cookie") or []:
             for part in header.split(";"):
                 if "buvid3" in part:
-                    return part.split("=")[1].strip()
+                    _buvid3_cache["buvid3"] = part.split("=")[1].strip()
+                    _buvid3_cache["fetched_at"] = now
+                    return _buvid3_cache["buvid3"]
     except Exception as e:
         logger.warning(f"Failed to get buvid3: {e}")
     return ""
@@ -114,13 +117,12 @@ def _wbi_sign(params: dict, buvid3: str = "") -> dict:
 
 def search_bilibili(query: str, top_n: int = 10) -> list[VideoProfile]:
     """Search Bilibili with WBI signature."""
-    buvid3 = _get_buvid3()
+    # Only fetch buvid3 if WBI cache expired (avoids redundant HTTP request)
+    buvid3 = _buvid3_cache.get("buvid3", "")
+    if not buvid3 or (time.time() - _buvid3_cache.get("fetched_at", 0)) > 43200:
+        buvid3 = _get_buvid3()
 
-    params = {
-        "keyword": query,
-        "search_type": "video",
-        "order": "click",
-    }
+    params = {"keyword": query, "search_type": "video", "order": "click"}
     params = _wbi_sign(params, buvid3)
 
     url = f"{WBI_SEARCH_URL}?{urllib.parse.urlencode(params, quote_via=urllib.parse.quote)}"

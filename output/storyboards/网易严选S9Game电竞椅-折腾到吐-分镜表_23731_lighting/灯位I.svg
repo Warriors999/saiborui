@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 500">
+  <defs>
+    <marker id="aK" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2563eb"/></marker>
+    <marker id="aF" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#64748b"/></marker>
+    <marker id="aC" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#16a34a"/></marker>
+    <marker id="aR" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#dc2626"/></marker>
+    <style>text{font-family:'PingFang SC','Microsoft YaHei',sans-serif}</style>
+  </defs>
+  <rect width="540" height="500" fill="#ffffff"/>
+  <text x="270" y="26" fill="#1e293b" font-size="13" font-weight="bold" text-anchor="middle">灯位I — 网易严选S9Game电竞椅</text>
+  <text x="270" y="44" fill="#64748b" font-size="9" text-anchor="middle">镜号: 30</text>
+  <line x1="30" y1="54" x2="510" y2="54" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="220" y="165" width="100" height="80" rx="6" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+  <text x="270" y="200" fill="#1e293b" font-size="12" font-weight="bold" text-anchor="middle">产 品</text>
+  <text x="270" y="220" fill="#94a3b8" font-size="9" text-anchor="middle">桌面摆放</text>
+  <line x1="270" y1="245" x2="270" y2="290" stroke="#dc2626" stroke-width="2" marker-end="url(#aR)"/>
+  <text x="290" y="272" fill="#dc2626" font-size="11" font-weight="bold">正面朝向</text>
+  <circle cx="270" cy="400" r="18" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="270" y="396" fill="#15803d" font-size="10" font-weight="bold" text-anchor="middle">机位</text>
+  <text x="270" y="426" fill="#64748b" font-size="8" text-anchor="middle">平视 | 焦段:35mm | 光圈:F2.8</text>
+  <line x1="270" y1="382" x2="270" y2="300" stroke="#16a34a" stroke-width="2" marker-end="url(#aC)"/>
+  <text x="290" y="345" fill="#16a34a" font-size="10" font-weight="bold">镜头朝向</text>
+  <line x1="270" y1="382" x2="210" y2="245" stroke="#16a34a" stroke-width="1" stroke-dasharray="4,3" opacity="0.3"/>
+  <line x1="270" y1="382" x2="330" y2="245" stroke="#16a34a" stroke-width="1" stroke-dasharray="4,3" opacity="0.3"/>
+  <line x1="270" y1="245" x2="270" y2="382" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,4"/>
+  <circle cx="460" cy="120" r="20" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="460" y="116" fill="#1e40af" font-size="11" font-weight="bold" text-anchor="middle">主 灯</text>
+  <text x="460" y="134" fill="#64748b" font-size="8" text-anchor="middle">右前45°</text>
+  <text x="460" y="146" fill="#64748b" font-size="8" text-anchor="middle">5600K</text>
+  <line x1="442" y1="130" x2="318" y2="188" stroke="#2563eb" stroke-width="2" marker-end="url(#aK)"/>
+  <text x="400" y="150" fill="#2563eb" font-size="9">右前45°</text>
+  <circle cx="80" cy="210" r="18" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+  <text x="80" y="206" fill="#475569" font-size="10" font-weight="bold" text-anchor="middle">辅 灯</text>
+  <text x="80" y="226" fill="#94a3b8" font-size="8" text-anchor="middle">左侧补光</text>
+  <line x1="98" y1="210" x2="220" y2="210" stroke="#64748b" stroke-width="2" marker-end="url(#aF)"/>
+  <rect x="200" y="458" width="140" height="30" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="270" y="477" fill="#1e40af" font-size="11" font-weight="bold" text-anchor="middle">光比 主:辅 ≈ 2:1~3:1</text>
+  <line x1="350" y1="443" x2="470" y2="443" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="410" y="438" fill="#94a3b8" font-size="8" text-anchor="middle">≈ 1.5m</text>
+  <text x="420" y="477" fill="#64748b" font-size="8" text-anchor="middle">标准机位</text>
+</svg>

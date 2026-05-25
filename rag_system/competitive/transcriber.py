@@ -84,7 +84,7 @@ def restore_punctuation(text: str) -> str:
 
     try:
         from openai import OpenAI
-        from rag_system.config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL
+        from rag_system.config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, DEEPSEEK_MODEL
 
         client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
 
@@ -92,7 +92,7 @@ def restore_punctuation(text: str) -> str:
         chunk = text[:800]
 
         response = client.chat.completions.create(
-            model="deepseek-chat",
+            model=DEEPSEEK_MODEL,
             messages=[{
                 "role": "user",
                 "content": f"给以下中文文本添加标点符号（。，！？），不要修改任何文字，只加标点，直接输出：\n\n{chunk}"

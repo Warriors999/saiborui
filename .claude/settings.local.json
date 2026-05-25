@@ -147,7 +147,8 @@
       "Bash(\"C:/Program Files/Git/cmd/git.exe\" -C \"C:/Users/qianjiusui/Desktop/赛博涛\" commit -m \"全维度优化: 运镜强制分配\\(固定80%→40%\\) + 格式选择\\(--format tierlist/review\\) + 句式韵律强化\")",
       "Bash(C:/Program Files/Git/cmd/git.exe *)",
       "Bash(\"C:/Program Files/Git/cmd/git.exe\" -C \"C:/Users/qianjiusui/Desktop/赛博涛\" commit -m \"知识库扩展: 8品类24个热门视频入库 + 自动学习升级为主动编译计数\")",
-      "Bash(\"C:/Program Files/Git/cmd/git.exe\" -C \"C:/Users/qianjiusui/Desktop/赛博涛\" commit -m \"完成: 自动学习编译+运镜修复验证\\(固定40%/8种运镜\\)+文件清理\")"
+      "Bash(\"C:/Program Files/Git/cmd/git.exe\" -C \"C:/Users/qianjiusui/Desktop/赛博涛\" commit -m \"完成: 自动学习编译+运镜修复验证\\(固定40%/8种运镜\\)+文件清理\")",
+      "Bash(\"C:/Program Files/Git/cmd/git.exe\" -C \"C:/Users/qianjiusui/Desktop/赛博涛\" commit -m \"代码审查优化: 删除220行死代码+缓存buvid3+修硬编码模型名\")"
     ]
   }
 }
