@@ -227,6 +227,7 @@ def search(
 @click.option("--price", default="", help="Product price (e.g., '299元起')")
 @click.option("--competitors", default="", help="Competitor products for comparison")
 @click.option("--duration", "-d", default=2.0, help="Target video duration in minutes (e.g., 1.5 for 90s)")
+@click.option("--format", "-f", default="review", help="Script format: review(评测) / tierlist(榜单) / comparison(对比)")
 @click.option("--top-k", default=DEFAULT_TOP_K, help="Number of reference chunks to retrieve")
 @click.option("--output", "-o", default=None, help="Output file path (optional, auto-generated if omitted)")
 @click.option("--temperature", default=0.8, help="Generation temperature")
@@ -240,6 +241,7 @@ def generate(
     price: str = "",
     competitors: str = "",
     duration: float = 2.0,
+    format: str = "review",
     top_k: int = DEFAULT_TOP_K,
     output: str | None = None,
     temperature: float = 0.8,
@@ -291,6 +293,7 @@ def generate(
             price=price,
             competitors=competitors,
             duration_minutes=duration,
+            script_format=format,
             retrieved_chunks=results,
             temperature=temperature,
         )

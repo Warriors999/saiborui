@@ -36,6 +36,7 @@ class Generator:
         price: str = "",
         competitors: str = "",
         duration_minutes: float = 2.0,
+        script_format: str = "review",
         retrieved_chunks: list[RetrievedChunk] | None = None,
         temperature: float = 0.8,
         max_tokens: int = 4096,
@@ -50,6 +51,23 @@ class Generator:
             wiki_context = load_wiki_context(category)
         except Exception:
             pass
+
+        # Format-specific instructions
+        format_instruction = ""
+        if script_format == "tierlist":
+            format_instruction = """
+## 格式要求：评级榜单体
+- 用评级词：夯 > T0 > 人上人 > NPC > 拉完了
+- 每款产品1-2句话，不超过40字
+- 按品类分段（键盘/耳机/鼠标）
+- 保留榜单的短平快节奏"""
+        elif script_format == "comparison":
+            format_instruction = """
+## 格式要求：对比评测体
+- 全程左右对比：A产品 vs B产品
+- 每个维度（性能/手感/价格）各一段
+- 结尾给出明确选择建议"""
+
         # ~290 chars/min for Douyin short video pacing
         target_chars = int(duration_minutes * 290)
 
@@ -72,10 +90,13 @@ class Generator:
             target_chars=target_chars,
             opening_instruction=opening_instruction,
         )
-        # Inject wiki context after format (avoids {} conflicts)
+        # Inject wiki context + format instructions after format (avoids {} conflicts)
         if wiki_context:
             system += "\n\n## 竞品学习知识库（Wiki编译结果，可直接参考）\n" + wiki_context
             logger.info("Wiki injected: %d chars for category=%s", len(wiki_context), category)
+        if format_instruction:
+            system += format_instruction
+            logger.info("Format: %s", script_format)
 
         user = USER_PROMPT.format(
             product_name=product_name,
@@ -102,7 +123,23 @@ class Generator:
             temperature=temperature,
             max_tokens=max_tokens,
         )
-        return response.choices[0].message.content
+        raw = response.choices[0].message.content
+
+        # Auto-learn: log generation event to wiki for continuous improvement
+        _auto_learn(product_name, category, persona, raw, wiki_context)
+
+        return raw
+
+
+def _auto_learn(product: str, category: str, persona: str, script: str, wiki_used: str):
+    """Log every generation to the wiki log for continuous learning."""
+    from datetime import datetime
+    from pathlib import Path
+    wiki_had = "有" if wiki_used else "无"
+    entry = f"- {datetime.now().strftime('%Y-%m-%d %H:%M')} | generate | {product} | {persona} | {category} | Wiki:{wiki_had} | {len(script)}字\n"
+    log_file = Path("wiki/log.md")
+    if log_file.exists():
+        log_file.write_text(log_file.read_text(encoding="utf-8") + entry, encoding="utf-8")
 
 
 def _format_context(chunks: list[RetrievedChunk]) -> str:

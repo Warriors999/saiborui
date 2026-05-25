@@ -338,6 +338,44 @@ def _parse_dur(dur_str: str) -> int:
         return 0
 
 
+def _diversify_camera_moves(shots: list[dict]):
+    """Force camera movement diversity: 固定≤40%, ensure variety."""
+    n = len(shots)
+    moves = ["推", "拉", "摇", "移", "跟", "升", "降", "环绕", "微距", "POV", "产品360"]
+    static_count = sum(1 for s in shots if s.get("yunjing", "") == "固定")
+    max_static = int(n * 0.40)
+
+    if static_count <= max_static:
+        return  # already diverse enough
+
+    # Replace excess 固定 shots with diverse moves
+    excess = static_count - max_static
+    replaced = 0
+    for i, s in enumerate(shots):
+        if replaced >= excess:
+            break
+        if s.get("yunjing", "") != "固定":
+            continue
+        act = s.get("act", "")
+        jingbie = s.get("jingbie", "")
+
+        # Context-aware replacement
+        if act == "reveal":
+            s["yunjing"] = "环绕" if replaced % 3 == 0 else "升"
+        elif act == "hook":
+            s["yunjing"] = "推"
+        elif act == "deep_dive" and jingbie in ("特写", "大特写"):
+            s["yunjing"] = "微距"
+        elif act == "proof":
+            s["yunjing"] = "移"
+        elif jingbie in ("全景", "远景"):
+            s["yunjing"] = "摇"
+        else:
+            s["yunjing"] = moves[(i + replaced) % len(moves)]
+        replaced += 1
+    logger.info(f"运镜多样化: {excess}个固定→{replaced}个已替换")
+
+
 def _split_long_vo_shots(shots: list[dict]) -> list[dict]:
     """Apply the iron rule: one sentence = one shot.
 
@@ -450,6 +488,7 @@ def storyboard_pipeline(docx_path: Path, product_name: str, persona: str = "折�
     shots = _split_long_vo_shots(shots)
     # Auto-trim overuse (huazi, audio, duration distribution)
     _auto_trim_overuse(shots)
+    _diversify_camera_moves(shots)
     storyboard["shots"] = shots
 
     # Step 3: Audit — content quality
@@ -514,6 +553,13 @@ def storyboard_pipeline(docx_path: Path, product_name: str, persona: str = "折�
     print(f"  运镜: {dict(yunjings.most_common(8))}")
     print(f"  文件: {xlsx_path}")
     print(f"{'='*60}")
+
+    # Auto-learn: log storyboard generation to wiki for continuous improvement
+    from datetime import datetime
+    log_file = Path("wiki/log.md")
+    entry = f"- {datetime.now().strftime('%Y-%m-%d %H:%M')} | storyboard | {product_name} | {persona} | {shot_count}镜 {total_vo}字\n"
+    if log_file.exists():
+        log_file.write_text(log_file.read_text(encoding="utf-8") + entry, encoding="utf-8")
 
     return xlsx_path
 
