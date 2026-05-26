@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>赛博涛 · 控制台</title>
+<style>
+:root {
+  --bg: #0a0a0f; --card: #131318; --border: #1e1e28; --input-bg: #0d0d14;
+  --text: #e4e4ec; --dim: #6b6b78; --blue: #3b82f6; --green: #22c55e;
+  --amber: #f59e0b; --red: #ef4444; --purple: #8b5cf6; --cyan: #06b6d4;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:system-ui,'PingFang SC','Microsoft YaHei',sans-serif;padding:24px;line-height:1.5}
+h1{font-size:22px;font-weight:700;margin-bottom:4px}
+.sub{font-size:12px;color:var(--dim);margin-bottom:24px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px}
+.card h2{font-size:14px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px}
+.row{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.col{flex:1;min-width:200px}
+label{display:block;font-size:11px;color:var(--dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px}
+input,select,textarea{width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--text);font-size:13px;font-family:inherit}
+textarea{resize:vertical;min-height:80px}
+select{appearance:none;cursor:pointer}
+.cmd-box{background:#000;border:1px solid var(--green);border-radius:8px;padding:14px;font-family:Consolas,monospace;font-size:12px;color:var(--green);word-break:break-all;margin-top:8px;position:relative}
+.cmd-box .copy{position:absolute;top:8px;right:8px;background:var(--green);color:#000;border:none;border-radius:4px;padding:4px 10px;font-size:10px;cursor:pointer;font-weight:700}
+.btn{background:var(--blue);color:#fff;border:none;border-radius:6px;padding:10px 24px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px}
+.btn:hover{opacity:0.9}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;margin:2px}
+.tag.ok{background:rgba(34,197,94,0.12);color:var(--green)}
+.tag.warn{background:rgba(245,158,11,0.12);color:var(--amber)}
+.output-preview{background:var(--input-bg);border-radius:8px;padding:16px;max-height:300px;overflow-y:auto;font-size:12px;white-space:pre-wrap;margin-top:12px}
+.step-indicator{display:flex;gap:4px;margin-bottom:20px}
+.step-dot{width:8px;height:8px;border-radius:50%;background:var(--border)}
+.step-dot.active{background:var(--green)}
+.nav{display:flex;gap:16px;margin-bottom:24px}
+.nav a{color:var(--dim);text-decoration:none;font-size:13px;padding:6px 0;border-bottom:2px solid transparent}
+.nav a.active,.nav a:hover{color:var(--text);border-bottom-color:var(--blue)}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <a href="dashboard.html">Dashboard</a>
+  <a href="console.html" class="active">控制台</a>
+</div>
+
+<h1>赛博涛 · 控制台</h1>
+<div class="sub">在线构建命令 · 一键复制到终端执行</div>
+
+<div class="grid2">
+  <!-- GENERATE SCRIPT -->
+  <div class="card">
+    <h2>生成文案</h2>
+    <div class="row">
+      <div class="col"><label>产品名称</label><input id="g-prod" value="网易严选S9Game电竞椅" placeholder="例: 迈从K99键盘"></div>
+      <div class="col"><label>品类</label><select id="g-cat"><option>keyboard</option><option>mouse</option><option>monitor</option><option>laptop</option><option>phone</option><option>gpu</option><option>headphone</option><option selected>desk_chair</option></select></div>
+    </div>
+    <div class="row">
+      <div class="col"><label>人设</label><select id="g-persona"><option selected>折腾到吐</option><option>好设牛啊</option><option>朋克</option><option>超机懂</option></select></div>
+      <div class="col"><label>格式</label><select id="g-format"><option selected>review (评测体)</option><option>tierlist (榜单体)</option><option>comparison (对比体)</option></select></div>
+    </div>
+    <div class="row">
+      <div class="col"><label>时长(分钟)</label><input id="g-dur" value="2.5" type="number" step="0.5"></div>
+      <div class="col"><label>价格</label><input id="g-price" placeholder="例: 1499-1599元"></div>
+    </div>
+    <label>关键卖点</label><textarea id="g-kp">腰骶联动腰靠满级支撑,8D百变扶手丝滑调节,轿跑级环抱坐感一秒入魂</textarea>
+    <button class="btn" onclick="buildGenerate()">构建命令</button>
+    <div id="gen-cmd"></div>
+  </div>
+
+  <!-- GENERATE STORYBOARD -->
+  <div class="card">
+    <h2>定稿→分镜</h2>
+    <label>脚本文件路径</label><input id="s-path" value="output/scripts/网易严选S9Game电竞椅-折腾到吐.docx">
+    <label>产品名称</label><input id="s-prod" value="网易严选S9Game电竞椅">
+    <label>人设</label><select id="s-persona"><option selected>折腾到吐</option><option>好设牛啊</option><option>朋克</option><option>超机懂</option></select>
+    <button class="btn" onclick="buildStoryboard()" style="margin-top:12px">构建命令</button>
+    <div id="sb-cmd"></div>
+  </div>
+
+  <!-- COMPETITIVE -->
+  <div class="card">
+    <h2>竞品学习</h2>
+    <div class="row">
+      <div class="col"><label>品类</label><select id="c-cat"><option>keyboard</option><option>mouse</option><option>monitor</option><option>laptop</option><option>phone</option><option>gpu</option><option>headphone</option><option>desk_chair</option></select></div>
+      <div class="col"><label>数量</label><select id="c-top"><option>1</option><option selected>3</option><option>5</option></select></div>
+    </div>
+    <button class="btn" onclick="buildCompetitive()">构建命令</button>
+    <div id="comp-cmd"></div>
+  </div>
+
+  <!-- AUDIT -->
+  <div class="card">
+    <h2>审核脚本/分镜</h2>
+    <label>文件路径</label><input id="a-path" value="output/scripts/网易严选S9Game电竞椅-折腾到吐.docx">
+    <div class="row" style="margin-top:8px">
+      <div class="col"><label>时长(分钟)</label><input id="a-dur" value="3.0" type="number" step="0.5"></div>
+    </div>
+    <button class="btn" onclick="buildAudit()">构建命令</button>
+    <div id="audit-cmd"></div>
+  </div>
+</div>
+
+<script>
+function cmdBox(cmd) {
+  return `<div class="cmd-box"><button class="copy" onclick="copy(this,'${cmd.replace(/'/g,"\\'")}')">复制</button><code>${cmd}</code></div>`
+}
+function copy(btn,text){
+  navigator.clipboard.writeText(text);
+  btn.textContent='已复制!';setTimeout(()=>btn.textContent='复制',1500)
+}
+
+function buildGenerate(){
+  const p=document.getElementById('g-prod').value;
+  const c=document.getElementById('g-cat').value;
+  const pp=document.getElementById('g-persona').value;
+  const f=document.getElementById('g-format').value.split(' ')[0];
+  const d=document.getElementById('g-dur').value;
+  const pr=document.getElementById('g-price').value;
+  const kp=document.getElementById('g-kp').value.replace(/\n/g,'');
+  const cmd=`python -m rag_system generate --product "${p}" --category ${c} --persona "${pp}" --key-points "${kp}" --duration ${d}${pr?` --price "${pr}"`:''} --format ${f}`;
+  document.getElementById('gen-cmd').innerHTML=cmdBox(cmd);
+}
+
+function buildStoryboard(){
+  const p=document.getElementById('s-path').value;
+  const n=document.getElementById('s-prod').value;
+  const pp=document.getElementById('s-persona').value;
+  const cmd=`python -m rag_system generate-storyboard "${p}" "${n}" "${pp}"`;
+  document.getElementById('sb-cmd').innerHTML=cmdBox(cmd);
+}
+
+function buildCompetitive(){
+  const c=document.getElementById('c-cat').value;
+  const t=document.getElementById('c-top').value;
+  const cmd=`python -m rag_system competitive search --category ${c} --top ${t}`;
+  document.getElementById('comp-cmd').innerHTML=cmdBox(cmd);
+}
+
+function buildAudit(){
+  const p=document.getElementById('a-path').value;
+  const d=document.getElementById('a-dur').value;
+  const cmd=`python -m rag_system audit --file "${p}" --duration ${d}`;
+  document.getElementById('audit-cmd').innerHTML=cmdBox(cmd);
+}
+</script>
+
+</body>
+</html>
