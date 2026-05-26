@@ -19,6 +19,9 @@ output/*/archive/
 .vscode/
 .idea/
 
+# Node
+node_modules/
+
 # Claude Code local settings
 .claude/settings.local.json
 
