@@ -509,7 +509,9 @@ def storyboard(product, category, key_points, persona, price, competitors,
 @click.argument("input_file", type=click.Path(exists=True))
 @click.option("--key-points", "-k", default="", help="核心卖点(逗号分隔)，用于检查卖点覆盖")
 @click.option("--duration", "-d", default=2.0, type=float, help="目标时长，分钟 (默认: 2.0)")
-def audit(input_file, key_points, duration):
+@click.option("--audience", is_flag=True, default=False,
+              help="AI点映团 — 模拟3种观众审稿，出无趣时间表")
+def audit(input_file, key_points, duration, audience):
     """Audit script or storyboard for quality issues.
 
     Auto-detects format:
@@ -520,6 +522,8 @@ def audit(input_file, key_points, duration):
     Checks include: forbidden words, e-commerce smell, spoken language
     density, attitude density, sentence rhythm, selling-point coverage,
     and (for storyboards) shot variety, transitions, and shootability.
+
+    Add --audience for AI preview audience review (影视飓风 AI点映团).
 
     Examples:
 
@@ -532,6 +536,9 @@ def audit(input_file, key_points, duration):
 
     input_path = Path(input_file)
 
+    # For audience review, capture the script text
+    audience_script = ""
+
     if input_path.suffix == ".json":
         # Audit as storyboard
         from rag_system.generation.auditor import audit_storyboard
@@ -542,18 +549,21 @@ def audit(input_file, key_points, duration):
             raise SystemExit(1)
         result = audit_storyboard(storyboard_data, key_points=key_points, duration_minutes=duration)
         click.echo(f"\nAuditing storyboard: {input_path.name}")
+        # Extract VO for audience review
+        audience_script = "\n".join(s.get("voiceover", "") for s in storyboard_data.get("shots", []))
     elif input_path.suffix == ".docx":
         # Parse docx body and audit as script
         from rag_system.generation.script_to_storyboard import parse_docx_script
         from rag_system.generation.auditor import audit_script
         script_data = parse_docx_script(input_path)
-        result = audit_script(script_data["full_script"], key_points=key_points, duration_minutes=duration)
+        audience_script = script_data["full_script"]
+        result = audit_script(audience_script, key_points=key_points, duration_minutes=duration)
         click.echo(f"\nAuditing script (docx): {input_path.name}")
     else:
         # Audit as plain text script
         from rag_system.generation.auditor import audit_script
-        text = input_path.read_text(encoding="utf-8")
-        result = audit_script(text, key_points=key_points, duration_minutes=duration)
+        audience_script = input_path.read_text(encoding="utf-8")
+        result = audit_script(audience_script, key_points=key_points, duration_minutes=duration)
         click.echo(f"\nAuditing script: {input_path.name}")
 
     click.echo(result.summarize())
@@ -562,6 +572,26 @@ def audit(input_file, key_points, duration):
         click.echo("\n✓ Audit passed")
     else:
         click.echo("\n✗ Audit found issues — review warnings and suggestions above")
+
+    # AI点映团 — 多视角审稿
+    if audience:
+        from rag_system.generation.preview_audience import (
+            run_audience_review, format_audience_review,
+        )
+        product_name = input_path.stem.split("-")[0][:30]
+        click.echo(f"\n{'='*50}")
+        click.echo(f"  AI点映团审稿 — {product_name}")
+        click.echo(f"{'='*50}")
+        try:
+            review = run_audience_review(
+                script=audience_script,
+                product_name=product_name,
+                category="",
+                persona="",
+            )
+            click.echo(format_audience_review(review))
+        except Exception as e:
+            click.echo(f"AI点映团审稿失败: {e}")
 
 
 # ============================================================
@@ -777,7 +807,9 @@ def competitive_report(period, category, output):
 @click.option("--persona", "-p", default=None, help="按人设过滤")
 @click.option("--output", "-o", default=None, type=click.Path(dir_okay=False),
               help="输出JSON路径 (默认: 只打印)")
-def analytics(days, persona, output):
+@click.option("--matrix", is_flag=True, default=False,
+              help="人设×品类交叉效能矩阵 — 数据驱动人设选择")
+def analytics(days, persona, output, matrix):
     """Show pipeline analytics report — 管线产量与效率分析.
 
     Tracks every 'generate' and 'storyboard' run with structured metrics.
@@ -791,12 +823,29 @@ def analytics(days, persona, output):
 
         python -m rag_system analytics --persona "折腾到吐"
 
+        python -m rag_system analytics --matrix
+
         python -m rag_system analytics -o output/analytics_report.json
     """
     import json
     from pathlib import Path
 
-    from rag_system.generation.analytics import generate_report, format_report, read_events
+    from rag_system.generation.analytics import (
+        generate_report, format_report, read_events,
+        persona_category_matrix, format_matrix_report,
+    )
+
+    if matrix:
+        click.echo(f"Building persona x category matrix (last {days} days)...")
+        m = persona_category_matrix(days=days)
+        click.echo(format_matrix_report(m))
+        if output:
+            Path(output).write_text(
+                json.dumps(m, ensure_ascii=False, indent=2, default=str),
+                encoding="utf-8",
+            )
+            click.echo(f"JSON matrix saved: {output}")
+        return
 
     click.echo(f"Analyzing pipeline activity over the last {days} days...")
     report = generate_report(days=days)

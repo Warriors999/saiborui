@@ -6,6 +6,7 @@ and provides analytics reports for pipeline monitoring and throughput analysis.
 
 import json
 import threading
+from collections import Counter
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -105,6 +106,10 @@ def generate_report(days: int = 30) -> dict:
 
     recent_events = events[-20:] if len(events) > 20 else events
 
+    # Persona x Category cross-effectiveness recommendations
+    matrix_data = persona_category_matrix(days=days)
+    recommendations = matrix_data.get("best_persona_per_category", {})
+
     return {
         "total_generations": total_generations,
         "total_storyboards": total_storyboards,
@@ -117,6 +122,7 @@ def generate_report(days: int = 30) -> dict:
         "recent_events": recent_events,
         "period_start": period_start,
         "period_end": period_end,
+        "recommendations": recommendations,
     }
 
 
@@ -176,5 +182,169 @@ def format_report(report: dict) -> str:
             bar = "█" * bar_len
             lines.append(f"    {fmt:<20} {count:>5}  {bar}")
 
+    # Recommendations: best persona per category
+    recommendations = report.get("recommendations", {})
+    if recommendations:
+        lines.append("")
+        lines.append("  Recommendations (best persona per category):")
+        for cat, persona in sorted(recommendations.items()):
+            lines.append(f"    {cat:<20} -> {persona}")
+
     lines.append("=" * 55)
+    return "\n".join(lines)
+
+
+def persona_category_matrix(days: int = 90) -> dict:
+    """Build a persona x category cross-effectiveness matrix from analytics events.
+
+    Queries both "generate" and "audit" events to compute composite effectiveness
+    scores for every persona-category pairing, implementing the "含潘量"
+    methodology — data-driven persona selection for each product category.
+
+    Parameters
+    ----------
+    days : int
+        Lookback window in days (default 90).
+
+    Returns
+    -------
+    dict
+        {
+            "matrix": [ {persona, category, total_generations, avg_chars,
+                         audit_pass_rate, top_failed_checks, effectiveness_score}, ... ],
+            "best_persona_per_category": { "keyboard": "折腾到吐", ... }
+        }
+    """
+    events = read_events(days=days)
+
+    # Aggregate by (persona, category)
+    agg: dict[tuple[str, str], dict] = {}
+
+    for e in events:
+        persona = e.get("persona", "unknown")
+        category = e.get("category", "unknown")
+        key = (persona, category)
+
+        if key not in agg:
+            agg[key] = {
+                "persona": persona,
+                "category": category,
+                "total_generations": 0,
+                "total_chars": 0,
+                "audit_count": 0,
+                "audit_passed": 0,
+                "total_failed_checks": 0,
+                "failed_check_counter": Counter(),
+            }
+
+        entry = agg[key]
+        etype = e.get("type", "")
+
+        if etype == "generate":
+            entry["total_generations"] += 1
+            entry["total_chars"] += e.get("char_count", 0)
+        elif etype == "audit":
+            entry["audit_count"] += 1
+            if e.get("passed"):
+                entry["audit_passed"] += 1
+            failed = e.get("failed_checks", [])
+            entry["total_failed_checks"] += len(failed)
+            for check_name in failed:
+                entry["failed_check_counter"][check_name] += 1
+
+    # Build output matrix
+    matrix = []
+    best_per_category: dict[str, tuple[str, float]] = {}
+
+    for entry in agg.values():
+        persona = entry["persona"]
+        category = entry["category"]
+        total_gens = entry["total_generations"]
+
+        avg_chars = round(entry["total_chars"] / total_gens) if total_gens > 0 else 0
+
+        # Audit pass rate
+        if entry["audit_count"] > 0:
+            audit_pass_rate = round(entry["audit_passed"] / entry["audit_count"], 2)
+            avg_failures = entry["total_failed_checks"] / entry["audit_count"]
+        else:
+            audit_pass_rate = 0.0
+            avg_failures = 0.0
+
+        # Top failed checks (most frequent across all audits for this combo)
+        top_failed = [name for name, _ in entry["failed_check_counter"].most_common(3)]
+
+        # Composite effectiveness score (0-10)
+        # base 5.0 + audit_pass_rate*3 + (1 - avg_failures/5)*2
+        score = 5.0
+        score += audit_pass_rate * 3.0
+        score += (1.0 - min(avg_failures, 5.0) / 5.0) * 2.0
+        score = max(0.0, min(10.0, score))
+        score = round(score, 1)
+
+        row = {
+            "persona": persona,
+            "category": category,
+            "total_generations": total_gens,
+            "avg_chars": avg_chars,
+            "audit_pass_rate": audit_pass_rate,
+            "top_failed_checks": top_failed,
+            "effectiveness_score": score,
+        }
+        matrix.append(row)
+
+        # Track best persona per category by effectiveness score
+        if category not in best_per_category or score > best_per_category[category][1]:
+            best_per_category[category] = (persona, score)
+
+    # Sort matrix by effectiveness_score descending
+    matrix.sort(key=lambda x: x["effectiveness_score"], reverse=True)
+
+    return {
+        "matrix": matrix,
+        "best_persona_per_category": {
+            cat: persona for cat, (persona, _) in best_per_category.items()
+        },
+    }
+
+
+def format_matrix_report(matrix: dict) -> str:
+    """Pretty-print the persona x category cross-effectiveness matrix.
+
+    Parameters
+    ----------
+    matrix : dict
+        Output of persona_category_matrix().
+
+    Returns
+    -------
+    str
+        Formatted table string.
+    """
+    rows = matrix.get("matrix", [])
+    if not rows:
+        return "  (no data)"
+
+    lines = []
+    lines.append("  人设×品类交叉效能矩阵")
+    lines.append("=" * 60)
+    lines.append(
+        f"  {'人设':<12} {'品类':<12} {'生成数':>6} {'均字数':>6} {'通过率':>6} {'效能分':>6}  高频失败"
+    )
+    lines.append("-" * 60)
+
+    for row in rows:
+        persona = row["persona"]
+        category = row["category"]
+        gens = row["total_generations"]
+        avg_chars = row["avg_chars"]
+        pass_rate = f"{int(row['audit_pass_rate'] * 100)}%"
+        score = row["effectiveness_score"]
+        failed = ",".join(row["top_failed_checks"]) if row["top_failed_checks"] else "-"
+
+        lines.append(
+            f"  {persona:<12} {category:<12} {gens:>6} {avg_chars:>6} {pass_rate:>6} {score:>6.1f}  {failed}"
+        )
+
+    lines.append("=" * 60)
     return "\n".join(lines)
