@@ -167,7 +167,10 @@ def generate(product, category, key_points, brief, persona, price, competitors,
 @click.argument("persona", default="折腾到吐")
 @click.option("--format-ref", default=None, type=click.Path(exists=True),
               help="甲方参考xlsx文件，自动匹配列格式输出")
-def generate_storyboard(script: str, product: str, persona: str, format_ref: str | None = None):
+@click.option("--columns", default=None,
+              help="逗号分隔的列名，如：镜头,时间,画面描述,口播,备注")
+def generate_storyboard(script: str, product: str, persona: str,
+                        format_ref: str | None = None, columns: str | None = None):
     """Convert finalized .docx script into a shot-by-shot storyboard .xlsx.
 
     Pipeline: parse .docx → LLM shot breakdown → audit → auto-fix → save.
@@ -176,16 +179,24 @@ def generate_storyboard(script: str, product: str, persona: str, format_ref: str
     PRODUCT: Product name for the storyboard title.
     PERSONA: Persona name (default: 折腾到吐).
 
-    Example:
+    Examples:
 
         python -m rag_system generate-storyboard output/scripts/ROG.docx "ROG龙鳞ACE MINI"
+
+        python -m rag_system generate-storyboard output/scripts/ROG.docx "ROG" \\
+            --columns "镜头,时间,画面描述,口播,备注"
+
+        python -m rag_system generate-storyboard output/scripts/ROG.docx "ROG" \\
+            --format-ref 甲方参考.xlsx
     """
     from pathlib import Path
     from rag_system.generation.script_to_storyboard import storyboard_pipeline
 
     click.echo(f"Generating storyboard for: {product}")
     ref_path = Path(format_ref) if format_ref else None
-    result = storyboard_pipeline(Path(script), product, persona, reference_path=ref_path)
+    col_list = [c.strip() for c in columns.split(",") if c.strip()] if columns else None
+    result = storyboard_pipeline(Path(script), product, persona,
+                                 reference_path=ref_path, columns=col_list)
     click.echo(f"Done: {result}")
 
 
@@ -208,8 +219,10 @@ def generate_storyboard(script: str, product: str, persona: str, format_ref: str
 @click.option("--no-audit", is_flag=True, default=False, help="跳过自审步骤")
 @click.option("--format-ref", default=None, type=click.Path(exists=True),
               help="甲方参考xlsx文件，自动匹配列格式输出")
+@click.option("--columns", default=None,
+              help="逗号分隔的列名，如：镜头,时间,画面描述,口播,备注")
 def storyboard(product, category, key_points, persona, price, competitors,
-               extra_notes, temperature, output, no_audit, format_ref):
+               extra_notes, temperature, output, no_audit, format_ref, columns):
     """Generate storyboard directly from product brief (RAG-enhanced).
 
     Skips the script step — goes straight from brief to camera-ready
@@ -279,12 +292,14 @@ def storyboard(product, category, key_points, persona, price, competitors,
     safe_name = sanitize_filename(product)
     import time as _time
     safe_path = output_dir / f"{safe_name}-{persona}-分镜表_{int(_time.time()) % 100000}.xlsx"
+    col_list = [c.strip() for c in columns.split(",") if c.strip()] if columns else None
     format_storyboard_to_xlsx(
         storyboard=result,
         product_name=product,
         persona=persona,
         output_path=safe_path,
         reference_path=Path(format_ref) if format_ref else None,
+        columns=col_list,
     )
 
     # Summary

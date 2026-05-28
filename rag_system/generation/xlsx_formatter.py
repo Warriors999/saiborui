@@ -40,16 +40,23 @@ def format_storyboard_to_xlsx(
     persona: str,
     output_path: Path,
     reference_path: Path | None = None,
+    columns: list[str] | None = None,
 ) -> Path:
     """Convert storyboard JSON to a professionally formatted .xlsx file.
 
     Args:
         reference_path: If provided, delegate to template-based formatting
             using the reference file's column structure.
+        columns: If provided (and no reference_path), use these column names
+            directly (e.g., ["镜头", "时间", "画面描述", "口播", "备注"]).
     """
     if reference_path:
         return format_storyboard_to_template(
             storyboard, product_name, persona, output_path, reference_path
+        )
+    if columns:
+        return format_storyboard_with_columns(
+            storyboard, product_name, persona, output_path, columns
         )
     wb = Workbook()
     ws = wb.active
@@ -368,6 +375,76 @@ def format_storyboard_to_template(
         ws.row_dimensions[row_num].height = max(28, min(140, int(max_lines * 18 + 6)))
 
     # ── 6. Final touches ──
+    ws.freeze_panes = "A2"
+    ws.sheet_properties.pageSetUpPr = None
+    ws.page_setup.orientation = "landscape"
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 0
+    ws.page_setup.paperSize = ws.PAPERSIZE_A4
+
+    last_col = get_column_letter(num_cols) if num_cols else "A"
+    ws.auto_filter.ref = f"A1:{last_col}{1 + len(shots)}"
+
+    wb.save(str(output_path))
+    return output_path
+
+
+def format_storyboard_with_columns(
+    storyboard: dict,
+    product_name: str,
+    persona: str,
+    output_path: Path,
+    columns: list[str],
+) -> Path:
+    """Format storyboard using user-specified column names (no reference file).
+
+    Lightweight variant of format_storyboard_to_template — the user describes
+    columns verbally via --columns instead of providing a reference xlsx.
+    """
+    from .template_adapter import columns_to_config, build_column_mapping, resolve_field_value
+
+    shots = storyboard.get("shots", [])
+    configs = columns_to_config(columns)
+    headers = [c["header"] for c in configs]
+    mapping = build_column_mapping(headers)
+    num_cols = len(configs)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "分镜脚本"
+
+    # Column widths
+    for cfg in configs:
+        ws.column_dimensions[cfg["letter"]].width = cfg["width"]
+
+    # Header row
+    for ci, cfg in enumerate(configs, 1):
+        cell = ws.cell(row=1, column=ci, value=cfg["header"])
+        cell.font = font_col_header
+        cell.fill = fill_header
+        cell.alignment = align_center
+        cell.border = border_all_thin
+    ws.row_dimensions[1].height = 28
+
+    # Data rows
+    for ri, shot in enumerate(shots):
+        row = ri + 2
+        is_alt = ri % 2 == 1
+        for ci in range(num_cols):
+            field = mapping.get(ci)
+            value = resolve_field_value(shot, field)
+            cell = ws.cell(row=row, column=ci + 1, value=value)
+            cell.font = font_body
+            cell.alignment = align_left_wrap if ci >= 2 else align_center_wrap
+            cell.border = border_all_thin
+            if is_alt:
+                cell.fill = fill_alt_row
+        # Row height
+        max_chars = max(
+            len(str(resolve_field_value(shot, mapping.get(ci)))) for ci in range(num_cols)
+        )
+        ws.row_dimensions[row].height = max(28, min(140, int(max_chars / 40 * 18 + 6)))
+
     ws.freeze_panes = "A2"
     ws.sheet_properties.pageSetUpPr = None
     ws.page_setup.orientation = "landscape"

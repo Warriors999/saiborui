@@ -97,6 +97,32 @@ def extract_column_config(ws, header_row: int) -> list[dict]:
     return configs
 
 
+def columns_to_config(columns: list[str], default_width: float = 18) -> list[dict]:
+    """Convert a list of column names into column configs.
+
+    Lightweight path when no reference file is available — the user
+    describes columns verbally (e.g., --columns "镜头,时间,画面,口播,备注").
+    Each column gets a default width; the mapping is resolved later via
+    build_column_mapping().
+    """
+    configs = []
+    for i, name in enumerate(columns):
+        name = name.strip()
+        if not name:
+            continue
+        letter = _col_letter(i + 1)
+        configs.append({
+            "letter": letter,
+            "col_index": i + 1,
+            "header": name,
+            "width": default_width,
+            "font": None,
+            "fill": None,
+            "alignment": None,
+        })
+    return configs
+
+
 def resolve_field_value(shot: dict, field: str | None) -> str:
     """Convert a shot dict entry to a cell value based on the mapped field."""
     if field is None:

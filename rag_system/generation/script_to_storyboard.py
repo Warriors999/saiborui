@@ -463,7 +463,7 @@ def _split_long_vo_shots(shots: list[dict]) -> list[dict]:
     return new_shots
 
 
-def storyboard_pipeline(docx_path: Path, product_name: str, persona: str = "折腾到吐", reference_path: Path = None) -> Path:
+def storyboard_pipeline(docx_path: Path, product_name: str, persona: str = "折腾到吐", reference_path: Path = None, columns: list[str] = None) -> Path:
     """Full pipeline: script → storyboard → audit → fix → save."""
     output_dir = Path("output/storyboards")
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -530,6 +530,7 @@ def storyboard_pipeline(docx_path: Path, product_name: str, persona: str = "折�
         persona=persona,
         output_path=safe_path,
         reference_path=reference_path,
+        columns=columns,
     )
     logger.info(f"分镜表已保存: {xlsx_path}")
 
