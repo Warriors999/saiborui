@@ -781,6 +781,27 @@ def stats():
 
 
 # ============================================================
+# init — First-run setup wizard
+# ============================================================
+
+@cli.command("init")
+def init():
+    """First-run setup wizard — check environment, configure API, initialize.
+
+    Guides new users through Python version check, dependency verification,
+    API key setup, directory creation, and vector store initialization.
+
+    Example:
+
+        python -m rag_system init
+    """
+    from rag_system.init_wizard import run_init
+    success = run_init()
+    if not success:
+        raise SystemExit(1)
+
+
+# ============================================================
 # competitive — Competitive analysis commands
 # ============================================================
 
