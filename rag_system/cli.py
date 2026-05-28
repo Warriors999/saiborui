@@ -73,10 +73,14 @@ def _edit_distance(a: str, b: str) -> int:
 
 @click.group()
 def cli():
-    """赛博瑞 RAG System — 数据驱动内容工厂.
+    """赛博瑞 · 数据驱动内容工厂
 
-    AI-powered video script generation, storyboarding, and competitive
-    analysis pipeline for Douyin (TikTok) tech review content.
+    "AI时代，信息不值钱，观点值钱。AI一分钟能搜出230条相关信息，
+     你只是搬运信息——人家凭什么看你？真正值钱的是你的观点、
+     你的经验、你的个人视角。这才是差异化。"
+                                                     —— 柱子哥
+
+    AI负责信息，你负责态度。赛博瑞帮你把观点变成脚本。
     """
     from rag_system.utils import setup_logging
     setup_logging()
