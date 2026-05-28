@@ -46,6 +46,7 @@ class Generator:
         cover_direction: str = "",
         analytics_context: str = "",
         mode: str = "normal",
+        perspective_context: str = "",
     ) -> str:
         profile = PERSONA_PROFILES.get(persona, {})
         context = _format_context(retrieved_chunks or [])
@@ -114,6 +115,9 @@ class Generator:
         if cover_direction:
             system += "\n\n## 封面方向（封面前置 — 文案必须围绕封面展开）\n" + cover_direction
             logger.info("Cover direction injected: %d chars", len(cover_direction))
+        if perspective_context:
+            system += "\n\n" + perspective_context
+            logger.info("Perspective injected: %d chars", len(perspective_context))
         if brief_context:
             system += "\n\n## Brief卖点分析（结构化编辑指南）\n" + brief_context
             logger.info("Brief analysis injected: %d chars", len(brief_context))

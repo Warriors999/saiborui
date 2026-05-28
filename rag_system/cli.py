@@ -101,10 +101,12 @@ def cli():
               help="脚本格式：review / tierlist / comparison / hkrr / hamd (默认: review)")
 @click.option("--mode", default="normal",
               help="生成模式：normal / experimental（更大token、更激进风格）")
+@click.option("--perspective", default="",
+              help="个人观点注入 — 你对产品的真实体验，如：这个传感器暗光下提升明显")
 @click.option("--temperature", default=0.8, type=float, help="LLM 温度 (默认: 0.8)")
 @click.option("--output", "-o", default=None, type=click.Path(dir_okay=False), help="输出文件路径 (.txt)")
 def generate(product, category, key_points, brief, persona, price, competitors,
-             duration, script_format, mode, temperature, output):
+             duration, script_format, mode, perspective, temperature, output):
     """Generate video script from product brief using RAG-enhanced LLM.
 
     Retrieves relevant past scripts from the knowledge base as style
@@ -133,6 +135,9 @@ def generate(product, category, key_points, brief, persona, price, competitors,
     _validate_persona(persona)
     _validate_format(script_format)
     _validate_mode(mode)
+
+    if perspective:
+        from rag_system.generation.prompts import PERSPECTIVE_INJECTION
 
     click.echo(f"Generating script for: {product} [{category}]")
 
@@ -269,6 +274,10 @@ def generate(product, category, key_points, brief, persona, price, competitors,
         cover_direction=cover_direction,
         analytics_context=analytics_context,
         mode=mode,
+        perspective_context=(
+            PERSPECTIVE_INJECTION.format(perspectives=perspective)
+            if perspective else ""
+        ),
     )
 
     if output:
@@ -1083,6 +1092,37 @@ def dashboard(output):
     out_path = Path(output) if output else None
     saved = generate_dashboard(data, output_path=out_path)
     click.echo(f"Dashboard saved: {saved}")
+
+
+# ============================================================
+# topic-daily — AI每日选题日报 (柱子哥选题策略)
+# ============================================================
+
+@cli.command("topic-daily")
+@click.option("--persona", "-p", default="折腾到吐", help="人设名称 (默认: 折腾到吐)")
+@click.option("--focus", "-f", default="tech",
+              help="关注领域: tech / finance / ai / auto / all (默认: tech)")
+@click.option("--top-n", "-n", default=5, type=int, help="返回选题数量 (默认: 5)")
+@click.option("--output", "-o", default=None, type=click.Path(dir_okay=False),
+              help="保存到文件")
+def topic_daily(persona, focus, top_n, output):
+    """Generate daily topic brief — AI自动选题日报。
+
+    Scrapes hot topics, scores on 6 dimensions, outputs ranked brief.
+    柱子哥方法论: 信息不值钱，观点值钱。
+
+    Example:
+        python -m rag_system topic-daily
+        python -m rag_system topic-daily --persona "朋克" --focus ai -n 10
+    """
+    from rag_system.generation.topic_daily import run_topic_daily
+
+    click.echo(f"Generating daily topic brief... (persona={persona}, focus={focus})")
+    text = run_topic_daily(persona=persona, category_focus=focus, top_n=top_n, output=output)
+    click.echo(text)
+
+    if output:
+        click.echo(f"Saved: {output}")
 
 
 # ============================================================

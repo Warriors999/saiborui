@@ -85,6 +85,12 @@ ATTITUDE_PATTERNS = {
 CHARS_PER_SEC = 290 / 60  # ≈ 4.83
 
 
+def _split_sentences(text: str) -> list[str]:
+    """Split text into sentences by Chinese/English punctuation."""
+    import re
+    return [s.strip() for s in re.split(r"[。！？\!\?；;，,\n]", text) if s.strip()]
+
+
 @dataclass
 class AuditResult:
     """Structured audit report."""
@@ -418,6 +424,35 @@ def audit_script(text: str, key_points: str = "", duration_minutes: float = 2.0)
         scores["卖点覆盖"] = int(coverage * 100)
     else:
         checks.append({"name": "卖点覆盖", "passed": True, "detail": "未提供卖点列表，跳过"})
+
+    # ── 信息搬运检测（柱子哥方法论：信息不值钱，观点值钱）──
+    perspective_markers = [
+        "有一说一", "说实话", "我个人", "我觉得", "我感觉", "我用下来",
+        "实测", "亲测", "上手", "体验下来", "对比下来", "坦白说",
+        "不吹不黑", "真的", "确实", "明显", "出乎意料", "没想到",
+    ]
+    total_sentences = len(_split_sentences(text))
+    opinion_sentences = sum(
+        1 for s in _split_sentences(text)
+        if any(m in s for m in perspective_markers)
+    )
+    opinion_ratio = opinion_sentences / max(total_sentences, 1)
+    info_dump_ok = opinion_ratio >= 0.15  # at least 15% of sentences have perspective markers
+
+    checks.append({
+        "name": "信息搬运检测",
+        "passed": info_dump_ok,
+        "detail": (
+            f"{opinion_sentences}/{total_sentences}句有个人观点({opinion_ratio:.0%})"
+            + ("" if info_dump_ok else " — 像产品说明书，缺少个人视角")
+        ),
+    })
+    if not info_dump_ok:
+        warnings.append("脚本缺乏个人观点，读起来像百度百科。增加'有一说一''我用下来'等个人视角表述")
+        suggestions.append(
+            "柱子哥方法论：AI时代信息不值钱，观点值钱。"
+            "每个产品段落至少1处个人态度，参数翻译成体验判断。"
+        )
 
     # ── Final assessment ──
     all_passed = all(c.get("passed", True) for c in checks)
