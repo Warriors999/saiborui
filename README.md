@@ -38,8 +38,8 @@
 ### 安装
 
 ```bash
-git clone https://github.com/Warriors999/saibotao.git
-cd saibotao
+git clone https://github.com/Warriors999/saiborui.git
+cd saiborui
 cp .env.example .env
 # 编辑 .env，填入你的 DEEPSEEK_API_KEY
 pip install -r requirements.txt
