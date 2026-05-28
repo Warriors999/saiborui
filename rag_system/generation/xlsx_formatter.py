@@ -33,6 +33,24 @@ TEXT_PRIMARY = "1E293B"
 TEXT_SECONDARY = "64748B"
 TEXT_HEADER = "FFFFFF"
 
+# ── Shared Styles (module-level, used by all formatters) ──
+thin_side = Side(style="thin", color=BORDER_COLOR)
+border_all_thin = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+border_bottom_thick = Border(left=thin_side, right=thin_side, top=thin_side,
+                             bottom=Side(style="medium", color=PRIMARY))
+font_body = Font(name="微软雅黑", size=10, color=TEXT_PRIMARY)
+font_small = Font(name="微软雅黑", size=9, color=TEXT_SECONDARY)
+font_col_header = Font(name="微软雅黑", size=10, bold=True, color=TEXT_HEADER)
+font_title_header = Font(name="微软雅黑", size=12, bold=True, color=TEXT_HEADER)
+font_shot_number = Font(name="微软雅黑", size=10, bold=True, color=PRIMARY)
+fill_header = PatternFill("solid", fgColor=PRIMARY)
+fill_alt_row = PatternFill("solid", fgColor=PRIMARY_LIGHT)
+fill_white = PatternFill("solid", fgColor=BACKGROUND)
+align_center = Alignment(horizontal="center", vertical="center")
+align_center_wrap = Alignment(horizontal="center", vertical="top", wrap_text=True)
+align_left_wrap = Alignment(horizontal="left", vertical="top", wrap_text=True)
+align_left_center = Alignment(horizontal="left", vertical="center")
+
 
 def format_storyboard_to_xlsx(
     storyboard: dict,

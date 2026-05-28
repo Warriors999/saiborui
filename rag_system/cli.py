@@ -308,20 +308,65 @@ def generate(product, category, key_points, brief, persona, price, competitors,
     except Exception as e:
         logger.warning("Non-critical error: %s", e)
 
-    # Audit + log results for learning feedback loop
+    # Audit + auto-fix loop (max 3 retries)
     try:
         from rag_system.generation.auditor import audit_script
-        audit_result = audit_script(script, key_points=key_points, duration_minutes=duration)
-        failed = [c["name"] for c in audit_result.checks if not c.get("passed")]
-        passed_n = sum(1 for c in audit_result.checks if c.get("passed"))
-        total_n = len(audit_result.checks)
-        click.echo(f"Audit: {passed_n}/{total_n} passed" + (f" | Failed: {', '.join(failed)}" if failed else ""))
-        log_event("audit", product=product, persona=persona, category=category,
-                  passed=audit_result.passed, total_checks=total_n,
-                  passed_count=passed_n, failed_checks=failed,
-                  warnings=len(audit_result.warnings))
+        FIX_TIPS = {
+            "口播时长": "精简口播，删掉冗余修饰词，每镜VO不超过铁律D上限",
+            "口语化程度": "多用短句和语气词（吧、啊、呢），每句不超过25字，像在跟朋友聊天",
+            "电商味": "避免'限时抢购''手慢无''全网最低'等电商促使用语，用体验描述代替",
+            "态度密度": "每段至少1处明确态度——'有一说一''说实话''我个人觉得'",
+            "禁用词": "检查禁用词清单，替换为口语化表达",
+            "流水账检测": "避免'首先/然后/接着/最后'的流水账结构，每段用钩子开场",
+            "长短句节奏": "长短句交替——长句讲道理(≤25字)，短句给结论(≤10字)，比例约2:1",
+            "卖点覆盖": "确保每个核心卖点都有对应口播段落，不遗漏",
+            "信息搬运检测": "每个产品段至少1处个人观点（有一说一/我用下来/说实话），参数翻译成体验",
+        }
+
+        for retry in range(3):
+            audit_result = audit_script(script, key_points=key_points, duration_minutes=duration)
+            failed = [c["name"] for c in audit_result.checks if not c.get("passed")]
+            passed_n = sum(1 for c in audit_result.checks if c.get("passed"))
+            total_n = len(audit_result.checks)
+            click.echo(f"Audit (pass {retry+1}): {passed_n}/{total_n} passed" +
+                       (f" | Failed: {', '.join(failed)}" if failed else " [ALL PASS]"))
+
+            if not failed or retry >= 2:
+                log_event("audit", product=product, persona=persona, category=category,
+                          passed=audit_result.passed, total_checks=total_n,
+                          passed_count=passed_n, failed_checks=failed,
+                          warnings=len(audit_result.warnings))
+                break
+
+            # Build revision prompt from failed checks
+            fix_instructions = "\n".join(
+                f"- {f}: {FIX_TIPS.get(f, '请改进')}" for f in failed
+            )
+            revision_prompt = (
+                f"请根据以下审核反馈修改脚本，保持总字数在{len(script)*0.9:.0f}-{len(script)*1.1:.0f}字范围内：\n"
+                f"{fix_instructions}\n\n"
+                f"直接返回修改后的完整脚本，不要解释。"
+            )
+            click.echo(f"Auto-fixing {len(failed)} issues...")
+
+            # Call LLM for revision
+            revision_response = gen.client.chat.completions.create(
+                model=gen.model,
+                messages=[
+                    {"role": "system", "content": "你是专业短视频脚本修改师。根据审核反馈修改脚本，保持风格和字数。"},
+                    {"role": "user", "content": f"原脚本:\n{script}\n\n修改要求:\n{revision_prompt}"},
+                ],
+                temperature=0.6,
+                max_tokens=4096,
+            )
+            script = revision_response.choices[0].message.content.strip()
+            click.echo(f"Revised: {len(script)} chars")
+
+            # Save revised script
+            if output:
+                Path(output).write_text(script, encoding="utf-8")
     except Exception as e:
-        logger.warning("Non-critical error: %s", e)
+        logger.warning("Audit/auto-fix error: %s", e)
 
 
 # ============================================================
