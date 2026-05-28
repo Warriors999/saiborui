@@ -121,24 +121,61 @@ def generate(product, category, key_points, brief, persona, price, competitors,
         )
         click.echo(f"Cover-first: 封面方向已注入prompt")
 
-    # --- Analytics反哺: 查历史表现 → 指导本次生成 ---
+    # --- Analytics反哺: 查历史表现 + 审计失败项 → 指导本次生成 ---
     analytics_context = ""
     try:
         from rag_system.generation.analytics import read_events
+        from collections import Counter
         events = read_events(days=90)
+
+        # 1. 基础统计
         relevant = [e for e in events
                     if e.get("type") == "generate"
                     and e.get("persona") == persona
                     and e.get("category") == category]
+        parts = []
         if relevant:
             avg_chars = sum(e.get("char_count", 0) for e in relevant) // len(relevant)
             formats_used = list(set(e.get("format", "review") for e in relevant))
-            analytics_context = (
-                f"历史数据参考：'{persona}'人设在'{category}'品类已生成{len(relevant)}次，"
-                f"平均{avg_chars}字/篇，常用格式：{', '.join(formats_used[:3])}。"
-                f"请保持风格一致。"
+            parts.append(
+                f"历史：'{persona}'在'{category}'已生成{len(relevant)}次，"
+                f"平均{avg_chars}字/篇，常用{', '.join(formats_used[:3])}格式"
             )
-            click.echo(f"Analytics: {len(relevant)} historical refs, avg {avg_chars} chars")
+
+        # 2. 审计失败项挖掘 — 这才是真正的"学习"
+        audit_events = [e for e in events
+                        if e.get("type") == "audit"
+                        and e.get("persona") == persona
+                        and e.get("category") == category]
+        if audit_events:
+            failed_counter = Counter()
+            for ae in audit_events:
+                for fname in ae.get("failed_checks", []):
+                    failed_counter[fname] += 1
+
+            if failed_counter:
+                # Map audit check names to actionable writing tips
+                FIX_TIPS = {
+                    "口语化程度": "多用短句和语气词（吧、啊、呢），每句不超过25字，像在跟朋友聊天",
+                    "电商味": "避免'限时抢购''手慢无''全网最低'等电商促使用语，用体验描述代替",
+                    "态度密度": "每段至少1处明确态度——'有一说一''说实话''我个人觉得'",
+                    "禁用词": "检查禁用词清单，替换为口语化表达",
+                    "流水账检测": "避免'首先/然后/接着/最后'的流水账结构，每段用钩子开场",
+                    "长短句节奏": "长短句交替——长句讲道理(≤25字)，短句给结论(≤10字)，比例约2:1",
+                    "价格检测": "价格信息自然融入体验描述中，不要单独报价",
+                    "卖点覆盖": "确保每个核心卖点都有对应口播段落，不遗漏",
+                }
+                top_fails = failed_counter.most_common(3)
+                tips = []
+                for fname, count in top_fails:
+                    tip = FIX_TIPS.get(fname, f"注意'{fname}'问题")
+                    tips.append(f"· {tip}（历史失败{count}次）")
+                if tips:
+                    parts.append("历史高频失败项，务必注意：\n" + "\n".join(tips))
+
+        if parts:
+            analytics_context = "\n".join(parts)
+            click.echo(f"Analytics: {len(relevant)} refs, {len(audit_events)} audit records")
     except Exception:
         pass
 
@@ -186,6 +223,21 @@ def generate(product, category, key_points, brief, persona, price, competitors,
         from rag_system.generation.analytics import log_event
         log_event("generate", product=product, persona=persona, category=category,
                   char_count=len(script), format=script_format, wiki_used=bool(chunks))
+    except Exception:
+        pass
+
+    # Audit + log results for learning feedback loop
+    try:
+        from rag_system.generation.auditor import audit_script
+        audit_result = audit_script(script, key_points=key_points, duration_minutes=duration)
+        failed = [c["name"] for c in audit_result.checks if not c.get("passed")]
+        passed_n = sum(1 for c in audit_result.checks if c.get("passed"))
+        total_n = len(audit_result.checks)
+        click.echo(f"Audit: {passed_n}/{total_n} passed" + (f" | Failed: {', '.join(failed)}" if failed else ""))
+        log_event("audit", product=product, persona=persona, category=category,
+                  passed=audit_result.passed, total_checks=total_n,
+                  passed_count=passed_n, failed_checks=failed,
+                  warnings=len(audit_result.warnings))
     except Exception:
         pass
 
