@@ -97,6 +97,35 @@ def extract_column_config(ws, header_row: int) -> list[dict]:
     return configs
 
 
+def preview_column_mapping(columns: list[str], sample_shot: dict | None = None) -> str:
+    """Return a human-readable preview of the column mapping + sample row.
+
+    Used by --preview to verify format before running the full LLM pipeline.
+    """
+    mapping = build_column_mapping(columns)
+    lines = []
+    lines.append("")
+    lines.append("  列映射预览:")
+    lines.append(f"  {'Col':<6} {'列名':<20} {'-> 数据字段':<20}")
+    lines.append(f"  {'-'*4:<6} {'-'*18:<20} {'-'*18:<20}")
+    for idx, field in mapping.items():
+        name = columns[idx] if idx < len(columns) else "?"
+        field_display = field or "(留空)"
+        lines.append(f"  {idx+1:<6} {name:<20} -> {field_display:<20}")
+    lines.append("")
+
+    if sample_shot:
+        lines.append("  样例行 (第1镜):")
+        for idx, field in mapping.items():
+            val = resolve_field_value(sample_shot, field)
+            name = columns[idx] if idx < len(columns) else "?"
+            display = val[:60] + "..." if len(val) > 60 else val
+            lines.append(f"  [{name}] {display}")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
 def columns_to_config(columns: list[str], default_width: float = 18) -> list[dict]:
     """Convert a list of column names into column configs.
 

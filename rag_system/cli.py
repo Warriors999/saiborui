@@ -169,8 +169,11 @@ def generate(product, category, key_points, brief, persona, price, competitors,
               help="甲方参考xlsx文件，自动匹配列格式输出")
 @click.option("--columns", default=None,
               help="逗号分隔的列名，如：镜头,时间,画面描述,口播,备注")
+@click.option("--preview", is_flag=True, default=False,
+              help="仅预览列映射和样例行，不调LLM生成")
 def generate_storyboard(script: str, product: str, persona: str,
-                        format_ref: str | None = None, columns: str | None = None):
+                        format_ref: str | None = None, columns: str | None = None,
+                        preview: bool = False):
     """Convert finalized .docx script into a shot-by-shot storyboard .xlsx.
 
     Pipeline: parse .docx → LLM shot breakdown → audit → auto-fix → save.
@@ -187,14 +190,58 @@ def generate_storyboard(script: str, product: str, persona: str,
             --columns "镜头,时间,画面描述,口播,备注"
 
         python -m rag_system generate-storyboard output/scripts/ROG.docx "ROG" \\
-            --format-ref 甲方参考.xlsx
+            --columns "镜头,时间,画面描述,口播,备注" --preview
+
+        python -m rag_system generate-storyboard output/scripts/ROG.docx "ROG" \\
+            --format-ref 甲方参考.xlsx --preview
     """
     from pathlib import Path
-    from rag_system.generation.script_to_storyboard import storyboard_pipeline
+    from rag_system.generation.script_to_storyboard import storyboard_pipeline, parse_docx_script
 
-    click.echo(f"Generating storyboard for: {product}")
     ref_path = Path(format_ref) if format_ref else None
     col_list = [c.strip() for c in columns.split(",") if c.strip()] if columns else None
+
+    # --- Preview mode: show mapping + sample, skip LLM ---
+    if preview:
+        from rag_system.generation.template_adapter import (
+            preview_column_mapping, build_column_mapping,
+        )
+        from openpyxl import load_workbook
+
+        # Resolve columns from reference file or explicit list or default
+        if ref_path:
+            if ref_path.suffix in ('.xlsx', '.xlsm'):
+                wb = load_workbook(str(ref_path))
+                ws = wb.active
+                from rag_system.generation.template_adapter import detect_header_row
+                hr = detect_header_row(ws)
+                col_list = [str(ws.cell(row=hr, column=c).value or "").strip().replace("\n", " ")
+                           for c in range(1, (ws.max_column or 20) + 1)]
+                col_list = [c for c in col_list if c]
+                wb.close()
+                click.echo(f"从参考文件读取 {len(col_list)} 列")
+            else:
+                click.echo("参考文件不是xlsx格式，无法预览列映射", err=True)
+                return
+        elif not col_list:
+            col_list = ["镜号", "景别·运镜", "画面描述", "口播文案", "时长",
+                       "花字/特效", "音效/声画", "灯光/机位", "备注"]
+            click.echo("使用默认9列格式")
+
+        # Parse script for sample VO
+        script_data = parse_docx_script(Path(script))
+        sample_vo = (script_data.get("body", [""]) or [""])[0][:80] if script_data.get("body") else ""
+        sample_shot = {
+            "shot_number": 1, "duration": "3", "visual": "产品主图+外观特写",
+            "voiceover": sample_vo, "jingbie": "中景", "yunjing": "推",
+            "huazi": "开场钩子", "audio": "", "lighting": "", "camera_setup": "", "notes": ""
+        }
+
+        click.echo(preview_column_mapping(col_list, sample_shot))
+        click.echo("[OK] 确认格式无误？去掉 --preview 即可全量生成。")
+        return
+
+    click.echo(f"Generating storyboard for: {product}")
     result = storyboard_pipeline(Path(script), product, persona,
                                  reference_path=ref_path, columns=col_list)
     click.echo(f"Done: {result}")
@@ -221,8 +268,11 @@ def generate_storyboard(script: str, product: str, persona: str,
               help="甲方参考xlsx文件，自动匹配列格式输出")
 @click.option("--columns", default=None,
               help="逗号分隔的列名，如：镜头,时间,画面描述,口播,备注")
+@click.option("--preview", is_flag=True, default=False,
+              help="仅预览列映射，不调LLM生成")
 def storyboard(product, category, key_points, persona, price, competitors,
-               extra_notes, temperature, output, no_audit, format_ref, columns):
+               extra_notes, temperature, output, no_audit, format_ref, columns,
+               preview=False):
     """Generate storyboard directly from product brief (RAG-enhanced).
 
     Skips the script step — goes straight from brief to camera-ready
@@ -246,6 +296,43 @@ def storyboard(product, category, key_points, persona, price, competitors,
     from rag_system.embedding.embedder import Embedder
     from rag_system.storage.vector_store import VectorStore
     from rag_system.utils import sanitize_filename
+
+    # --- Preview mode ---
+    if preview:
+        from rag_system.generation.template_adapter import preview_column_mapping
+        from openpyxl import load_workbook
+
+        ref_path = Path(format_ref) if format_ref else None
+        col_list = [c.strip() for c in columns.split(",") if c.strip()] if columns else None
+
+        if ref_path:
+            if ref_path.suffix in ('.xlsx', '.xlsm'):
+                wb = load_workbook(str(ref_path))
+                ws = wb.active
+                from rag_system.generation.template_adapter import detect_header_row
+                hr = detect_header_row(ws)
+                col_list = [str(ws.cell(row=hr, column=c).value or "").strip().replace("\n", " ")
+                           for c in range(1, (ws.max_column or 20) + 1)]
+                col_list = [c for c in col_list if c]
+                wb.close()
+                click.echo(f"从参考文件读取 {len(col_list)} 列")
+            else:
+                click.echo("参考文件不是xlsx格式，无法预览列映射", err=True)
+                return
+        elif not col_list:
+            col_list = ["镜号", "景别·运镜", "画面描述", "口播文案", "时长",
+                       "花字/特效", "音效/声画", "灯光/机位", "备注"]
+            click.echo("使用默认9列格式")
+
+        sample_shot = {
+            "shot_number": 1, "duration": "3", "visual": "产品主图+外观特写",
+            "voiceover": f"{product} {category} 评测。{key_points[:40]}...",
+            "jingbie": "中景", "yunjing": "推",
+            "huazi": key_points[:20], "audio": "", "lighting": "", "camera_setup": "", "notes": ""
+        }
+        click.echo(preview_column_mapping(col_list, sample_shot))
+        click.echo("[OK] 确认格式无误？去掉 --preview 即可全量生成。")
+        return
 
     click.echo(f"Generating storyboard from brief: {product} [{category}]")
 
