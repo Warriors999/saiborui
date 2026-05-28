@@ -265,7 +265,7 @@ def generate_docx_report(videos: list[dict] = None, period: str = "weekly") -> P
     doc.add_paragraph()
     footer = doc.add_paragraph()
     footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = footer.add_run('— 赛博涛 数据驱动内容工厂 · 竞品学习系统 —')
+    run = footer.add_run('— 赛博瑞 数据驱动内容工厂 · 竞品学习系统 —')
     run.font.size = Pt(8)
     run.font.color.rgb = RGBColor(148, 163, 184)
 

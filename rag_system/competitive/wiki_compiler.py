@@ -55,7 +55,7 @@ def compile_to_wiki(session_dir: Path, category: str):
         page_file = WIKI_DIR / page_path
         existing = page_file.read_text(encoding="utf-8") if page_file.exists() else "（新页面，暂无内容）"
 
-        prompt = f"""你是赛博涛知识库的维护者。你需要根据最新竞品分析结果，更新知识库Wiki页面。
+        prompt = f"""你是赛博瑞知识库的维护者。你需要根据最新竞品分析结果，更新知识库Wiki页面。
 
 ## 当前Wiki页面内容
 {existing[:2000]}
