@@ -41,11 +41,13 @@ def cli():
 @click.option("--competitors", default="", help="竞品信息")
 @click.option("--duration", "-d", default=2.0, type=float, help="目标时长，分钟 (默认: 2.0)")
 @click.option("--format", "script_format", default="review",
-              help="脚本格式：review / tierlist / comparison (默认: review)")
+              help="脚本格式：review / tierlist / comparison / hkrr / hamd (默认: review)")
+@click.option("--mode", default="normal",
+              help="生成模式：normal / experimental（更大token、更激进风格）")
 @click.option("--temperature", default=0.8, type=float, help="LLM 温度 (默认: 0.8)")
 @click.option("--output", "-o", default=None, type=click.Path(dir_okay=False), help="输出文件路径 (.txt)")
 def generate(product, category, key_points, brief, persona, price, competitors,
-             duration, script_format, temperature, output):
+             duration, script_format, mode, temperature, output):
     """Generate video script from product brief using RAG-enhanced LLM.
 
     Retrieves relevant past scripts from the knowledge base as style
@@ -204,6 +206,7 @@ def generate(product, category, key_points, brief, persona, price, competitors,
         brief_context=brief_context,
         cover_direction=cover_direction,
         analytics_context=analytics_context,
+        mode=mode,
     )
 
     if output:

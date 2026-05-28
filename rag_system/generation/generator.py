@@ -11,6 +11,8 @@ from rag_system.generation.prompts import (
     CATEGORY_CONTEXT,
     SYSTEM_PROMPT,
     USER_PROMPT,
+    FRAMEWORK_HKRR,
+    FRAMEWORK_HAMD,
 )
 from rag_system.retrieval.retriever import RetrievedChunk
 from rag_system.generation.meme_engine import (
@@ -43,6 +45,7 @@ class Generator:
         brief_context: str = "",
         cover_direction: str = "",
         analytics_context: str = "",
+        mode: str = "normal",
     ) -> str:
         profile = PERSONA_PROFILES.get(persona, {})
         context = _format_context(retrieved_chunks or [])
@@ -70,9 +73,20 @@ class Generator:
 - 全程左右对比：A产品 vs B产品
 - 每个维度（性能/手感/价格）各一段
 - 结尾给出明确选择建议"""
+        elif script_format == "hkrr":
+            format_instruction = FRAMEWORK_HKRR
+        elif script_format == "hamd":
+            format_instruction = FRAMEWORK_HAMD
 
         # ~290 chars/min for Douyin short video pacing
         target_chars = int(duration_minutes * 290)
+
+        # Experimental mode: more creative, bigger output
+        if mode == "experimental":
+            temperature = max(temperature, 0.95)
+            max_tokens = max(max_tokens, 6144)
+            target_chars = int(target_chars * 1.3)
+            logger.info("Experimental mode: temp=%.2f, max_tokens=%d", temperature, max_tokens)
 
         # Pick a meme for the opening, or use fallback
         meme = pick_best_meme(category, product_name, key_points)
