@@ -40,6 +40,7 @@ class Generator:
         retrieved_chunks: list[RetrievedChunk] | None = None,
         temperature: float = 0.8,
         max_tokens: int = 4096,
+        brief_context: str = "",
     ) -> str:
         profile = PERSONA_PROFILES.get(persona, {})
         context = _format_context(retrieved_chunks or [])
@@ -94,6 +95,9 @@ class Generator:
         if wiki_context:
             system += "\n\n## 竞品学习知识库（Wiki编译结果，可直接参考）\n" + wiki_context
             logger.info("Wiki injected: %d chars for category=%s", len(wiki_context), category)
+        if brief_context:
+            system += "\n\n## Brief卖点分析（结构化编辑指南）\n" + brief_context
+            logger.info("Brief analysis injected: %d chars", len(brief_context))
         if format_instruction:
             system += format_instruction
             logger.info("Format: %s", script_format)

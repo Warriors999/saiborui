@@ -33,7 +33,9 @@ def cli():
 @click.option("--product", "-p", required=True, help="产品名称，如：ROG龙鳞ACE MINI")
 @click.option("--category", "-c", required=True,
               help="品类：keyboard / mouse / monitor / laptop / phone / gpu / headphone / desk_chair")
-@click.option("--key-points", "-k", required=True, help="核心卖点，逗号分隔，如：轻量化54g, 8K回报率, 399元")
+@click.option("--key-points", "-k", default="", help="核心卖点，逗号分隔，如：轻量化54g, 8K回报率, 399元")
+@click.option("--brief", "-b", default=None, type=click.Path(exists=True),
+              help="Brief文档路径 (.txt)，自动解析卖点和封面建议")
 @click.option("--persona", default="折腾到吐", help="人设名称 (默认: 折腾到吐)")
 @click.option("--price", default="", help="价格信息")
 @click.option("--competitors", default="", help="竞品信息")
@@ -42,7 +44,7 @@ def cli():
               help="脚本格式：review / tierlist / comparison (默认: review)")
 @click.option("--temperature", default=0.8, type=float, help="LLM 温度 (默认: 0.8)")
 @click.option("--output", "-o", default=None, type=click.Path(dir_okay=False), help="输出文件路径 (.txt)")
-def generate(product, category, key_points, persona, price, competitors,
+def generate(product, category, key_points, brief, persona, price, competitors,
              duration, script_format, temperature, output):
     """Generate video script from product brief using RAG-enhanced LLM.
 
@@ -56,14 +58,58 @@ def generate(product, category, key_points, persona, price, competitors,
             -k "54g轻量化,8K回报率,399元" --format tierlist
 
         python -m rag_system generate -p "迈从K20" -c speaker \\
-            -k "双声道,RGB灯效,99元" -d 1.5 -o output/scripts/maicong.txt
+            --brief briefs/maicong.txt
     """
+    from pathlib import Path
     from rag_system.generation.generator import Generator
     from rag_system.retrieval.retriever import Retriever
     from rag_system.embedding.embedder import Embedder
     from rag_system.storage.vector_store import VectorStore
 
+    # Validate: either --key-points or --brief must be provided
+    if not key_points and not brief:
+        raise click.UsageError("必须提供 --key-points 或 --brief")
+
     click.echo(f"Generating script for: {product} [{category}]")
+
+    # --- Brief Analyzer integration (封面前置) ---
+    brief_context = ""
+    cover_suggestion = ""
+
+    if brief:
+        from rag_system.generation.brief_analyzer import (
+            parse_brief, brief_to_prompt_context, generate_recommendation,
+        )
+        from rag_system.utils import sanitize_filename
+
+        brief_text = Path(brief).read_text(encoding="utf-8")
+        analysis = parse_brief(brief_text)
+        brief_context = brief_to_prompt_context(analysis)
+        cover_suggestion = analysis.cover_suggestion
+
+        # Derive key_points from brief if not explicitly provided
+        if analysis.selling_points and not key_points:
+            sp_names = [sp.name for sp in sorted(analysis.selling_points, key=lambda s: -s.priority)]
+            key_points = ", ".join(sp_names[:6])
+            click.echo(f"Parsed {len(analysis.selling_points)} selling points from brief")
+
+        if analysis.must_mentions:
+            click.echo(f"Must-mentions: {len(analysis.must_mentions)}")
+        if cover_suggestion:
+            click.echo(f"Cover concept: {cover_suggestion[:80]}...")
+
+        # Save cover suggestion for cover command
+        covers_dir = Path("output/covers")
+        covers_dir.mkdir(parents=True, exist_ok=True)
+        safe_name = sanitize_filename(product)
+        cover_path = covers_dir / f"{safe_name}-cover-suggestion.txt"
+        rec = generate_recommendation(analysis, persona=persona)
+        cover_path.write_text(
+            f"产品: {product}\n人设: {persona}\n品类: {category}\n\n"
+            f"封面建议: {cover_suggestion}\n\n--- 完整编辑指南 ---\n{rec}",
+            encoding="utf-8",
+        )
+        click.echo(f"Brief analysis saved: {cover_path}")
 
     # RAG retrieval for style context
     embedder = Embedder()
@@ -87,10 +133,10 @@ def generate(product, category, key_points, persona, price, competitors,
         script_format=script_format,
         retrieved_chunks=chunks,
         temperature=temperature,
+        brief_context=brief_context,
     )
 
     if output:
-        from pathlib import Path
         path = Path(output)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(script, encoding="utf-8")
@@ -101,6 +147,14 @@ def generate(product, category, key_points, persona, price, competitors,
         click.echo("=" * 60)
 
     click.echo(f"Done: {len(script)} characters")
+
+    # Pipeline analytics event
+    try:
+        from rag_system.generation.analytics import log_event
+        log_event("generate", product=product, persona=persona, category=category,
+                  char_count=len(script), format=script_format, wiki_used=bool(chunks))
+    except Exception:
+        pass
 
 
 # ============================================================
@@ -240,6 +294,15 @@ def storyboard(product, category, key_points, persona, price, competitors,
     click.echo(f"  Huazi: {huazi_shots} shots | Jingbie: {dict(jingbies.most_common(4))}")
     click.echo(f"  File: {safe_path}")
     click.echo(f"{'='*50}")
+
+    # Pipeline analytics event
+    try:
+        from rag_system.generation.analytics import log_event
+        log_event("storyboard", product=product, persona=persona, category=category,
+                  shot_count=len(shots), vo_chars=total_vo,
+                  yunjing_variety=len(set(s.get("yunjing", "") for s in shots)))
+    except Exception:
+        pass
 
 
 # ============================================================
@@ -507,6 +570,181 @@ def competitive_report(period, category, output):
 
     path = generate_docx_report(videos=videos, period=period)
     click.echo(f"Report saved: {path}")
+
+
+# ============================================================
+# analytics — Pipeline analytics and reporting
+# ============================================================
+
+@cli.command("analytics")
+@click.option("--days", "-d", default=30, type=int, help="统计周期，天 (默认: 30)")
+@click.option("--persona", "-p", default=None, help="按人设过滤")
+@click.option("--output", "-o", default=None, type=click.Path(dir_okay=False),
+              help="输出JSON路径 (默认: 只打印)")
+def analytics(days, persona, output):
+    """Show pipeline analytics report — 管线产量与效率分析.
+
+    Tracks every 'generate' and 'storyboard' run with structured metrics.
+    Shows persona breakdown, category distribution, format mix, and velocity.
+
+    Examples:
+
+        python -m rag_system analytics
+
+        python -m rag_system analytics --days 7
+
+        python -m rag_system analytics --persona "折腾到吐"
+
+        python -m rag_system analytics -o output/analytics_report.json
+    """
+    import json
+    from pathlib import Path
+
+    from rag_system.generation.analytics import generate_report, format_report, read_events
+
+    click.echo(f"Analyzing pipeline activity over the last {days} days...")
+    report = generate_report(days=days)
+
+    if persona:
+        # Filter events by persona for display
+        events = read_events(days=days)
+        filtered = [e for e in events if e.get("persona") == persona]
+        click.echo(f"Filtered to persona '{persona}': {len(filtered)} events")
+        report["total_generations"] = sum(1 for e in filtered if e.get("type") == "generate")
+        report["total_storyboards"] = sum(1 for e in filtered if e.get("type") == "storyboard")
+
+    text = format_report(report)
+    click.echo(text)
+
+    if output:
+        Path(output).write_text(
+            json.dumps(report, ensure_ascii=False, indent=2, default=str),
+            encoding="utf-8",
+        )
+        click.echo(f"JSON report saved: {output}")
+
+
+# ============================================================
+# cover — Cover image prompt generator (封面前置)
+# ============================================================
+
+@cli.command("cover")
+@click.option("--product", "-p", required=True, help="产品名称")
+@click.option("--category", "-c", default="",
+              help="品类：keyboard / mouse / monitor / laptop / phone / gpu / headphone / desk_chair")
+@click.option("--persona", default="折腾到吐", help="人设名称 (默认: 折腾到吐)")
+@click.option("--from-brief", default=None, type=click.Path(exists=True),
+              help="从Brief文档中提取封面建议")
+@click.option("--suggestion", "-s", default="", help="直接给出封面建议文案")
+@click.option("--description", "-d", default="", help="补充产品描述")
+@click.option("--style", default="douyin_tech_review",
+              help="封面风格：douyin_tech_review / bilibili_review / xiaohongshu (默认: douyin_tech_review)")
+@click.option("--output", "-o", default=None, type=click.Path(dir_okay=False),
+              help="输出路径 (默认: output/covers/{product}-cover-prompt.txt)")
+def cover(product, category, persona, from_brief, suggestion, description,
+          style, output):
+    """Generate a 5-dimension cover image design prompt. 封面前置工作流.
+
+    Expands a cover concept into a full AI image generation prompt
+    covering type, palette, rendering, text overlay, and mood.
+    Output is ready to paste into Midjourney / DALL-E / Stable Diffusion.
+
+    Examples:
+
+        python -m rag_system cover -p "ROG龙鳞ACE MINI" -c mouse \\
+            -s "鼠标悬浮+RGB光圈+黑色背景"
+
+        python -m rag_system cover -p "迈从K20" -c speaker \\
+            --from-brief briefs/maicong.txt
+
+        python -m rag_system cover -p "红魔11SPro" -c phone --persona "朋克" \\
+            -s "透明探索版背面展示+跑分数字悬浮" -d "电竞手机，RGB风扇，透明背板"
+    """
+    from pathlib import Path
+
+    from rag_system.generation.cover_generator import (
+        generate_cover_prompt, save_cover_prompt,
+    )
+    from rag_system.utils import sanitize_filename
+
+    # Resolve cover suggestion
+    cover_text = suggestion
+    if from_brief and not cover_text:
+        from rag_system.generation.brief_analyzer import parse_brief
+        brief_text = Path(from_brief).read_text(encoding="utf-8")
+        analysis = parse_brief(brief_text)
+        cover_text = analysis.cover_suggestion
+        if cover_text:
+            click.echo(f"Extracted cover concept from brief: {cover_text[:80]}...")
+        else:
+            click.echo("Brief has no cover suggestion. Provide one with --suggestion.", err=True)
+            raise SystemExit(1)
+
+    if not cover_text:
+        raise click.UsageError("必须提供 --suggestion 或 --from-brief")
+
+    click.echo(f"Generating cover design for: {product}")
+    click.echo(f"Style: {style} | Persona: {persona}")
+
+    prompt = generate_cover_prompt(
+        product_name=product,
+        category=category,
+        persona=persona,
+        cover_suggestion=cover_text,
+        product_description=description,
+        style=style,
+    )
+
+    out_path = Path(output) if output else None
+    saved_path = save_cover_prompt(prompt, product, output_dir=out_path.parent if out_path else None)
+    if out_path:
+        import shutil
+        shutil.move(str(saved_path), str(out_path))
+        saved_path = out_path
+
+    click.echo(f"\nCover prompt saved: {saved_path}")
+    click.echo("\nTo generate the actual image, paste the prompt into:")
+    click.echo("  Midjourney / DALL-E / Stable Diffusion / seedance")
+    click.echo(f"\nPreview:\n{prompt[:400]}...")
+
+
+# ============================================================
+# dashboard — Dynamic dashboard generator (数据中台)
+# ============================================================
+
+@cli.command("dashboard")
+@click.option("--output", "-o", default=None, type=click.Path(dir_okay=False),
+              help="输出路径 (默认: output/dashboard.html)")
+def dashboard(output):
+    """Regenerate dashboard.html with live project statistics. 数据中台.
+
+    Scans knowledge base, output directories, wiki, and git log
+    to produce a fully dynamic HTML dashboard with real numbers.
+
+    Example:
+
+        python -m rag_system dashboard
+    """
+    from pathlib import Path
+
+    from rag_system.generation.dashboard_generator import collect_data, generate_dashboard
+
+    click.echo("Collecting project statistics...")
+    data = collect_data()
+
+    click.echo(f"  KB: {data['kb_chunks']} chunks from {data['kb_sources']} sources "
+               f"({data['kb_categories']} categories)")
+    click.echo(f"  Output: {data['scripts_count']} scripts | "
+               f"{data['storyboards_count']} storyboards | "
+               f"{data['audits_count']} audits")
+    click.echo(f"  Competitive: {data['competitive_count']} videos | "
+               f"Wiki: {data['wiki_pages']} pages")
+    click.echo(f"  Code: {data['code_lines']} lines | {data['code_modules']} modules | "
+               f"{data['git_total_commits']} commits")
+
+    out_path = Path(output) if output else None
+    saved = generate_dashboard(data, output_path=out_path)
+    click.echo(f"Dashboard saved: {saved}")
 
 
 if __name__ == "__main__":
