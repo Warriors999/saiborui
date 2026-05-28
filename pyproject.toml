@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "saiborui"
+version = "1.0.0"
+description = "赛博瑞 · 数据驱动内容工厂 — 短视频创作者的AI全栈工具箱，从客户Brief到成片分镜，全链路自动化"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.12"
+authors = [
+    {name = "D先生"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Markup",
+]
+keywords = [
+    "rag",
+    "retrieval-augmented-generation",
+    "content-creation",
+    "short-video",
+    "ai-toolkit",
+    "storyboard",
+    "douyin",
+]
+dependencies = [
+    # Core RAG
+    "llama-index>=0.10.68",
+    "llama-index-vector-stores-chroma>=0.1.10",
+    "chromadb>=0.5.5",
+    # Embeddings
+    "sentence-transformers>=3.0.1",
+    # Document parsing
+    "python-docx>=1.1.2",
+    "openpyxl>=3.1.5",
+    "xlrd>=1.2.0",
+    "pdfplumber>=0.11.1",
+    # API (DeepSeek via OpenAI-compatible endpoint)
+    "openai>=1.55.0",
+    # CLI
+    "click>=8.1.7",
+    "python-dotenv>=1.0.1",
+    "tqdm>=4.66.5",
+]
+
+[project.scripts]
+saiborui = "rag_system.cli:cli"
+
+[project.urls]
+Homepage = "https://github.com/Warriors999/saiborui"
+Repository = "https://github.com/Warriors999/saiborui"
+Changelog = "https://github.com/Warriors999/saiborui/blob/master/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+include = ["rag_system*"]
+
+[tool.setuptools.exclude-package-data]
+# wiki/, 2025text/, data/ are NOT package data — they live at the project root
+# and are excluded from the installed wheel by default via packages.find.include.
+"*" = ["*.pyc", "__pycache__"]
