@@ -403,6 +403,9 @@ def format_storyboard_to_template(
     last_col = get_column_letter(num_cols) if num_cols else "A"
     ws.auto_filter.ref = f"A1:{last_col}{1 + len(shots)}"
 
+    # Lighting diagrams for template mode
+    _create_lighting_svgs(wb, shots, product_name, output_path)
+
     wb.save(str(output_path))
     return output_path
 

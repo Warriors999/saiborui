@@ -136,8 +136,7 @@ def generate(product, category, key_points, brief, persona, price, competitors,
     _validate_format(script_format)
     _validate_mode(mode)
 
-    if perspective:
-        from rag_system.generation.prompts import PERSPECTIVE_INJECTION
+    from rag_system.generation.prompts import PERSPECTIVE_INJECTION
 
     click.echo(f"Generating script for: {product} [{category}]")
 
@@ -479,6 +478,8 @@ def generate_storyboard(script: str, product: str, persona: str,
 @click.option("--price", default="", help="价格信息")
 @click.option("--competitors", default="", help="竞品信息")
 @click.option("--extra-notes", default="", help="额外备注（拍摄要求、风格偏好等）")
+@click.option("--perspective", default="",
+              help="个人观点注入 — 你对产品的真实体验和态度")
 @click.option("--temperature", default=0.8, type=float, help="LLM 温度 (默认: 0.8)")
 @click.option("--output", "-o", default=None, type=click.Path(file_okay=False),
               help="输出目录 (默认: output/storyboards)")
@@ -490,7 +491,7 @@ def generate_storyboard(script: str, product: str, persona: str,
 @click.option("--preview", is_flag=True, default=False,
               help="仅预览列映射，不调LLM生成")
 def storyboard(product, category, key_points, persona, price, competitors,
-               extra_notes, temperature, output, no_audit, format_ref, columns,
+               extra_notes, perspective, temperature, output, no_audit, format_ref, columns,
                preview=False):
     """Generate storyboard directly from product brief (RAG-enhanced).
 
@@ -573,6 +574,7 @@ def storyboard(product, category, key_points, persona, price, competitors,
         price=price,
         competitors=competitors,
         extra_notes=extra_notes,
+        perspective=perspective,
     )
 
     gen = StoryboardGenerator()
@@ -621,6 +623,10 @@ def storyboard(product, category, key_points, persona, price, competitors,
     click.echo(f"  Huazi: {huazi_shots} shots | Jingbie: {dict(jingbies.most_common(4))}")
     click.echo(f"  File: {safe_path}")
     click.echo(f"{'='*50}")
+
+    # Output registration
+    from rag_system.generation.output_manager import register_output
+    register_output("storyboard", safe_path, {"product": product, "persona": persona, "category": category})
 
     # Pipeline analytics event
     try:

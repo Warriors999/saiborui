@@ -569,6 +569,7 @@ STORYBOARD_USER_PROMPT = """## 新产品信息
 价格：{price}
 竞品参考：{competitors}
 补充备注：{extra_notes}
+个人观点注入：{perspective}
 
 ## 产品类别约定
 {category_conventions}

@@ -40,6 +40,7 @@ class ProductBrief:
     price: str = ""
     competitors: str = ""
     extra_notes: str = ""
+    perspective: str = ""
 
 
 class StoryboardGenerator:
@@ -83,6 +84,7 @@ class StoryboardGenerator:
             price=brief.price,
             competitors=brief.competitors or "无",
             extra_notes=brief.extra_notes or "无",
+            perspective=brief.perspective or "无",
             category_conventions=conv_text,
             context=context,
         )
