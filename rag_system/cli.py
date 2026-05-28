@@ -283,7 +283,12 @@ def generate(product, category, key_points, brief, persona, price, competitors,
     if output:
         path = Path(output)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(script, encoding="utf-8")
+        # Save formatted .docx via docx_formatter
+        if path.suffix == '.docx':
+            from rag_system.generation.docx_formatter import format_script_to_docx
+            format_script_to_docx(script, product, persona, key_points, path)
+        else:
+            path.write_text(script, encoding="utf-8")
         click.echo(f"Script saved to: {path}")
     else:
         click.echo("\n" + "=" * 60)
