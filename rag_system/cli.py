@@ -12,6 +12,63 @@ Commands:
 """
 
 import click
+from rag_system.utils import logger
+
+# ---- Input validation ----
+
+VALID_CATEGORIES = {
+    "keyboard", "monitor", "mouse", "gpu", "laptop", "headphone",
+    "phone", "desk_chair", "speaker",
+}
+VALID_PERSONAS = {"折腾到吐", "好设牛啊", "朋克", "超机懂"}
+VALID_FORMATS = {"review", "tierlist", "comparison", "hkrr", "hamd"}
+VALID_MODES = {"normal", "experimental"}
+
+
+def _validate_category(category: str):
+    if category not in VALID_CATEGORIES:
+        close = min(VALID_CATEGORIES, key=lambda c: _edit_distance(c, category))
+        msg = f"未知品类 '{category}'。你是想说 '{close}' 吗？\n可选: {', '.join(sorted(VALID_CATEGORIES))}"
+        raise click.BadParameter(msg, param_hint="--category / -c")
+
+
+def _validate_persona(persona: str):
+    if persona not in VALID_PERSONAS:
+        raise click.BadParameter(
+            f"未知人设 '{persona}'。可选: {', '.join(sorted(VALID_PERSONAS))}",
+            param_hint="--persona")
+
+
+def _validate_format(fmt: str):
+    if fmt not in VALID_FORMATS:
+        raise click.BadParameter(
+            f"未知格式 '{fmt}'。可选: {', '.join(sorted(VALID_FORMATS))}",
+            param_hint="--format")
+
+
+def _validate_mode(mode: str):
+    if mode not in VALID_MODES:
+        raise click.BadParameter(
+            f"未知模式 '{mode}'。可选: {', '.join(sorted(VALID_MODES))}",
+            param_hint="--mode")
+
+
+def _edit_distance(a: str, b: str) -> int:
+    """Levenshtein distance for typo suggestions."""
+    if len(a) < len(b):
+        a, b = b, a
+    if len(b) == 0:
+        return len(a)
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a):
+        curr = [i + 1]
+        for j, cb in enumerate(b):
+            curr.append(min(
+                prev[j + 1] + 1, curr[j] + 1,
+                prev[j] + (0 if ca == cb else 1)
+            ))
+        prev = curr
+    return prev[-1]
 
 
 @click.group()
@@ -71,6 +128,11 @@ def generate(product, category, key_points, brief, persona, price, competitors,
     # Validate: either --key-points or --brief must be provided
     if not key_points and not brief:
         raise click.UsageError("必须提供 --key-points 或 --brief")
+
+    _validate_category(category)
+    _validate_persona(persona)
+    _validate_format(script_format)
+    _validate_mode(mode)
 
     click.echo(f"Generating script for: {product} [{category}]")
 
@@ -178,8 +240,8 @@ def generate(product, category, key_points, brief, persona, price, competitors,
         if parts:
             analytics_context = "\n".join(parts)
             click.echo(f"Analytics: {len(relevant)} refs, {len(audit_events)} audit records")
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Non-critical error: %s", e)
 
     # RAG retrieval for style context
     embedder = Embedder()
@@ -221,13 +283,21 @@ def generate(product, category, key_points, brief, persona, price, competitors,
 
     click.echo(f"Done: {len(script)} characters")
 
+    # Output registration
+    if output:
+        from rag_system.generation.output_manager import register_output
+        register_output("script", Path(output), {
+            "product": product, "persona": persona, "category": category,
+            "format": script_format,
+        })
+
     # Pipeline analytics event
     try:
         from rag_system.generation.analytics import log_event
         log_event("generate", product=product, persona=persona, category=category,
                   char_count=len(script), format=script_format, wiki_used=bool(chunks))
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Non-critical error: %s", e)
 
     # Audit + log results for learning feedback loop
     try:
@@ -241,8 +311,8 @@ def generate(product, category, key_points, brief, persona, price, competitors,
                   passed=audit_result.passed, total_checks=total_n,
                   passed_count=passed_n, failed_checks=failed,
                   warnings=len(audit_result.warnings))
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Non-critical error: %s", e)
 
 
 # ============================================================
@@ -333,6 +403,8 @@ def generate_storyboard(script: str, product: str, persona: str,
     result = storyboard_pipeline(Path(script), product, persona,
                                  reference_path=ref_path, columns=col_list)
     click.echo(f"Done: {result}")
+    from rag_system.generation.output_manager import register_output
+    register_output("storyboard", result, {"product": product, "persona": persona})
 
 
 # ============================================================
@@ -497,8 +569,8 @@ def storyboard(product, category, key_points, persona, price, competitors,
         log_event("storyboard", product=product, persona=persona, category=category,
                   shot_count=len(shots), vo_chars=total_vo,
                   yunjing_variety=len(set(s.get("yunjing", "") for s in shots)))
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Non-critical error: %s", e)
 
 
 # ============================================================
@@ -990,6 +1062,47 @@ def dashboard(output):
     out_path = Path(output) if output else None
     saved = generate_dashboard(data, output_path=out_path)
     click.echo(f"Dashboard saved: {saved}")
+
+
+# ============================================================
+# outputs — Output management (产出管理)
+# ============================================================
+
+@cli.command("outputs")
+@click.option("--type", "output_type", default=None, help="script / storyboard / cover / audit")
+@click.option("--product", "-p", default=None, help="按产品名过滤")
+@click.option("--latest", "-l", is_flag=True, default=False, help="只显示最新一条")
+@click.option("--limit", "-n", default=20, type=int, help="显示数量 (默认: 20)")
+def outputs(output_type, product, latest, limit):
+    """List generated outputs with metadata — 产出管理.
+
+    Reads output/index.jsonl and displays registered artifacts with
+    timestamp, type, product name, and file path.
+
+    Examples:
+
+        python -m rag_system outputs
+
+        python -m rag_system outputs --type script -n 10
+
+        python -m rag_system outputs --product "ROG" --type storyboard
+
+        python -m rag_system outputs --latest
+    """
+    from rag_system.generation.output_manager import list_outputs, get_latest
+
+    if latest:
+        entry = get_latest(output_type)
+        if entry:
+            click.echo(f"[{entry['ts'][:19]}] {entry['type']}: {entry['path']}")
+        else:
+            click.echo("No outputs found.")
+        return
+
+    entries = list_outputs(output_type=output_type, limit=limit, product=product)
+    for e in entries:
+        click.echo(f"[{e['ts'][:19]}] {e['type']:<10} {e.get('product', ''):<20} {e['path']}")
+    click.echo(f"\n{len(entries)} outputs shown.")
 
 
 if __name__ == "__main__":

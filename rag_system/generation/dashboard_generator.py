@@ -171,7 +171,8 @@ def _collect_competitive_stats(data: dict) -> None:
             data["deep_sessions"] = sum(1 for d in sessions_dir.iterdir() if d.is_dir())
         else:
             data["deep_sessions"] = 0
-    except Exception:
+    except Exception as e:
+        logger.debug("Dashboard collector skipped: %s", e)
         data["deep_sessions"] = 0
 
 
@@ -183,7 +184,8 @@ def _collect_wiki_stats(data: dict) -> None:
             data["wiki_pages"] = sum(1 for _ in wiki_dir.rglob("*.md"))
         else:
             data["wiki_pages"] = 0
-    except Exception:
+    except Exception as e:
+        logger.debug("Dashboard collector skipped: %s", e)
         data["wiki_pages"] = 0
 
 
@@ -196,7 +198,8 @@ def _collect_code_stats(data: dict) -> None:
             f for f in rag_dir.rglob("*.py")
             if "__pycache__" not in f.parts
         ]
-    except Exception:
+    except Exception as e:
+        logger.debug("Dashboard collector skipped: %s", e)
         pass
 
     data["code_modules"] = len(py_files)
@@ -204,7 +207,8 @@ def _collect_code_stats(data: dict) -> None:
     for f in py_files:
         try:
             total_lines += len(f.read_text(encoding="utf-8").splitlines())
-        except Exception:
+        except Exception as e:
+        logger.debug("Dashboard collector skipped: %s", e)
             pass
     data["code_lines"] = total_lines
 
@@ -242,7 +246,8 @@ def _collect_git_stats(data: dict) -> None:
         )
         if result.returncode == 0:
             total = int(result.stdout.strip())
-    except Exception:
+    except Exception as e:
+        logger.debug("Dashboard collector skipped: %s", e)
         pass
 
     data["git_commits"] = commits
@@ -254,7 +259,8 @@ def _collect_version(data: dict) -> None:
     version_path = PROJECT_ROOT / "VERSION"
     try:
         data["version"] = version_path.read_text(encoding="utf-8").strip()
-    except Exception:
+    except Exception as e:
+        logger.debug("Dashboard collector skipped: %s", e)
         data["version"] = "0.0.0"
 
 
@@ -329,7 +335,8 @@ def _count_files(
                 continue
             count += 1
         return count
-    except Exception:
+    except Exception as e:
+        logger.debug("Dashboard collector skipped: %s", e)
         return 0
 
 
