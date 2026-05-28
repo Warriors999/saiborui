@@ -111,6 +111,37 @@ def generate(product, category, key_points, brief, persona, price, competitors,
         )
         click.echo(f"Brief analysis saved: {cover_path}")
 
+    # --- 封面前置: 封面方向注入 → 文案围绕封面视角展开 ---
+    cover_direction = ""
+    if cover_suggestion:
+        cover_direction = (
+            f"本次视频封面方向：{cover_suggestion}。"
+            f"重要：请确保脚本开场hook能直接支撑这个封面标题，"
+            f"全文内容围绕封面承诺展开，不要跑题。"
+        )
+        click.echo(f"Cover-first: 封面方向已注入prompt")
+
+    # --- Analytics反哺: 查历史表现 → 指导本次生成 ---
+    analytics_context = ""
+    try:
+        from rag_system.generation.analytics import read_events
+        events = read_events(days=90)
+        relevant = [e for e in events
+                    if e.get("type") == "generate"
+                    and e.get("persona") == persona
+                    and e.get("category") == category]
+        if relevant:
+            avg_chars = sum(e.get("char_count", 0) for e in relevant) // len(relevant)
+            formats_used = list(set(e.get("format", "review") for e in relevant))
+            analytics_context = (
+                f"历史数据参考：'{persona}'人设在'{category}'品类已生成{len(relevant)}次，"
+                f"平均{avg_chars}字/篇，常用格式：{', '.join(formats_used[:3])}。"
+                f"请保持风格一致。"
+            )
+            click.echo(f"Analytics: {len(relevant)} historical refs, avg {avg_chars} chars")
+    except Exception:
+        pass
+
     # RAG retrieval for style context
     embedder = Embedder()
     store = VectorStore()
@@ -134,6 +165,8 @@ def generate(product, category, key_points, brief, persona, price, competitors,
         retrieved_chunks=chunks,
         temperature=temperature,
         brief_context=brief_context,
+        cover_direction=cover_direction,
+        analytics_context=analytics_context,
     )
 
     if output:

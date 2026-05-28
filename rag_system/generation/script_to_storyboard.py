@@ -219,6 +219,7 @@ def generate_storyboard(script_data: dict, product_name: str, persona: str) -> d
         shot.setdefault("lighting", "")
         shot.setdefault("camera_setup", "")
         shot.setdefault("notes", "")
+        shot.setdefault("visual_prompt", "")
         # Transition: "开场" for first shot, "硬切" for rest
         if i == 0:
             shot.setdefault("transition", "开场")
@@ -233,6 +234,22 @@ def generate_storyboard(script_data: dict, product_name: str, persona: str) -> d
             if m:
                 shot["huazi"] = m.group(1)
                 shot["voiceover"] = re.sub(r"（花字：[^）]+）", "", vo).strip()
+
+    # Generate visual concept prompts for key shots (视觉对齐)
+    # — pure string templating from existing shot data, no LLM call.
+    # Gives the crew an English-format prompt they can paste into
+    # Midjourney / DALL-E for visual reference before shooting.
+    for shot in shots:
+        if shot.get("act", "") in ("hook", "reveal", "deep_dive"):
+            visual = shot.get("visual", "")
+            jingbie = shot.get("jingbie", "")
+            yunjing = shot.get("yunjing", "")
+            shot["visual_prompt"] = (
+                f"{visual}. {jingbie} shot, {yunjing} movement. "
+                f"Cinematic lighting, 16:9, photorealistic."
+            )
+        else:
+            shot["visual_prompt"] = ""
 
     # Merge LLM metadata with defaults
     final_metadata = {

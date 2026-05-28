@@ -20,6 +20,7 @@ HEADER_KEYWORD_MAP: list[tuple[list[str], str]] = [
     (["音效", "声画", "audio", "sfx", "sound", "声音"], "audio"),
     (["灯光", "机位", "lighting", "camera_setup", "camera setup", "布光"], "lighting_camera"),
     (["备注", "notes", "备注说明", "remark", "说明"], "notes"),
+    (["视觉参考", "visual prompt", "concept", "参考图", "AI提示词", "视觉提示", "prompt"], "visual_prompt"),
     (["修改意见", "修改", "revision", "review", "反馈"], None),
 ]
 
@@ -181,6 +182,8 @@ def resolve_field_value(shot: dict, field: str | None) -> str:
         return "\n".join(parts) if parts else ""
     if field == "notes":
         return str(shot.get("notes", ""))
+    if field == "visual_prompt":
+        return str(shot.get("visual_prompt", ""))
     return ""
 
 
