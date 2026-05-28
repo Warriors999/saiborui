@@ -165,7 +165,9 @@ def generate(product, category, key_points, brief, persona, price, competitors,
 @click.argument("script", type=click.Path(exists=True))
 @click.argument("product")
 @click.argument("persona", default="折腾到吐")
-def generate_storyboard(script: str, product: str, persona: str):
+@click.option("--format-ref", default=None, type=click.Path(exists=True),
+              help="甲方参考xlsx文件，自动匹配列格式输出")
+def generate_storyboard(script: str, product: str, persona: str, format_ref: str | None = None):
     """Convert finalized .docx script into a shot-by-shot storyboard .xlsx.
 
     Pipeline: parse .docx → LLM shot breakdown → audit → auto-fix → save.
@@ -182,7 +184,8 @@ def generate_storyboard(script: str, product: str, persona: str):
     from rag_system.generation.script_to_storyboard import storyboard_pipeline
 
     click.echo(f"Generating storyboard for: {product}")
-    result = storyboard_pipeline(Path(script), product, persona)
+    ref_path = Path(format_ref) if format_ref else None
+    result = storyboard_pipeline(Path(script), product, persona, reference_path=ref_path)
     click.echo(f"Done: {result}")
 
 
@@ -203,8 +206,10 @@ def generate_storyboard(script: str, product: str, persona: str):
 @click.option("--output", "-o", default=None, type=click.Path(file_okay=False),
               help="输出目录 (默认: output/storyboards)")
 @click.option("--no-audit", is_flag=True, default=False, help="跳过自审步骤")
+@click.option("--format-ref", default=None, type=click.Path(exists=True),
+              help="甲方参考xlsx文件，自动匹配列格式输出")
 def storyboard(product, category, key_points, persona, price, competitors,
-               extra_notes, temperature, output, no_audit):
+               extra_notes, temperature, output, no_audit, format_ref):
     """Generate storyboard directly from product brief (RAG-enhanced).
 
     Skips the script step — goes straight from brief to camera-ready
@@ -279,6 +284,7 @@ def storyboard(product, category, key_points, persona, price, competitors,
         product_name=product,
         persona=persona,
         output_path=safe_path,
+        reference_path=Path(format_ref) if format_ref else None,
     )
 
     # Summary

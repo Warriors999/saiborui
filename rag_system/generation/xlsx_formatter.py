@@ -12,9 +12,16 @@ import math
 import re as _re
 from pathlib import Path
 
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
+
+from .template_adapter import (
+    detect_header_row,
+    build_column_mapping,
+    extract_column_config,
+    resolve_field_value,
+)
 
 # ── Design System Colors ──
 PRIMARY = "1E40AF"
@@ -32,8 +39,18 @@ def format_storyboard_to_xlsx(
     product_name: str,
     persona: str,
     output_path: Path,
+    reference_path: Path | None = None,
 ) -> Path:
-    """Convert storyboard JSON to a professionally formatted .xlsx file."""
+    """Convert storyboard JSON to a professionally formatted .xlsx file.
+
+    Args:
+        reference_path: If provided, delegate to template-based formatting
+            using the reference file's column structure.
+    """
+    if reference_path:
+        return format_storyboard_to_template(
+            storyboard, product_name, persona, output_path, reference_path
+        )
     wb = Workbook()
     ws = wb.active
     ws.title = "分镜脚本"
@@ -257,6 +274,109 @@ def format_storyboard_to_xlsx(
     # LIGHTING DIAGRAM SHEET — per-shot top-down
     # ═══════════════════════════════════════════
     _create_lighting_svgs(wb, shots, product_name, output_path)
+
+    wb.save(str(output_path))
+    return output_path
+
+
+def format_storyboard_to_template(
+    storyboard: dict,
+    product_name: str,
+    persona: str,
+    output_path: Path,
+    reference_path: Path,
+) -> Path:
+    """Format storyboard to a template-based xlsx matching the reference file's
+    column structure, using the project's Swiss color scheme.
+
+    Workflow:
+    1. Load the reference xlsx and detect its header row.
+    2. Build a column mapping (header text -> shot dict field).
+    3. Extract column widths from the reference.
+    4. Write data rows by resolving field values through the mapping.
+    5. Apply Swiss-style formatting and freeze panes.
+    """
+    # ── 1. Load reference & detect structure ──
+    ref_wb = load_workbook(reference_path)
+    ref_ws = ref_wb.active
+    header_row = detect_header_row(ref_ws)
+
+    # Read headers from the detected row
+    headers = []
+    for c in range(1, (ref_ws.max_column or 20) + 1):
+        text = str(ref_ws.cell(row=header_row, column=c).value or "").strip()
+        if not text:
+            break
+        headers.append(text)
+
+    column_mapping = build_column_mapping(headers)
+    column_configs = extract_column_config(ref_ws, header_row)
+
+    # Close reference -- we have everything we need
+    ref_wb.close()
+
+    # ── 2. Create output workbook ──
+    shots = storyboard.get("shots", [])
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "分镜脚本"
+
+    num_cols = len(column_configs)
+
+    # ── 3. Column widths from reference ──
+    for config in column_configs:
+        ws.column_dimensions[config["letter"]].width = config.get("width", 12)
+
+    # ── 4. Header row ──
+    ws.row_dimensions[1].height = 28
+    for ci, config in enumerate(column_configs):
+        cell = ws.cell(row=1, column=ci + 1, value=config["header"])
+        cell.font = font_col_header
+        cell.fill = fill_header
+        cell.alignment = align_center
+        cell.border = border_all_thin
+
+    # ── 5. Data rows ──
+    for ri, shot in enumerate(shots):
+        row_num = 2 + ri
+        is_alt = ri % 2 == 1
+        row_fill = fill_alt_row if is_alt else fill_white
+
+        # Write cells via column mapping
+        for ci, config in enumerate(column_configs):
+            field = column_mapping.get(ci)
+            value = resolve_field_value(shot, field)
+
+            cell = ws.cell(row=row_num, column=ci + 1, value=value)
+            cell.font = font_body
+            cell.fill = row_fill
+            cell.alignment = align_left_wrap
+            cell.border = border_all_thin
+
+        # Auto-calculate row height
+        max_lines = 1
+        for ci, config in enumerate(column_configs):
+            field = column_mapping.get(ci)
+            if field is not None:
+                val = resolve_field_value(shot, field)
+                if val:
+                    col_width = config.get("width", 12)
+                    if col_width > 0:
+                        char_width = col_width / 2.0  # rough estimate for CJK
+                        lines_needed = max(1, len(str(val)) / char_width)
+                        max_lines = max(max_lines, lines_needed)
+        ws.row_dimensions[row_num].height = max(28, min(140, int(max_lines * 18 + 6)))
+
+    # ── 6. Final touches ──
+    ws.freeze_panes = "A2"
+    ws.sheet_properties.pageSetUpPr = None
+    ws.page_setup.orientation = "landscape"
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 0
+    ws.page_setup.paperSize = ws.PAPERSIZE_A4
+
+    last_col = get_column_letter(num_cols) if num_cols else "A"
+    ws.auto_filter.ref = f"A1:{last_col}{1 + len(shots)}"
 
     wb.save(str(output_path))
     return output_path
