@@ -223,6 +223,12 @@ def audit_script(text: str, key_points: str = "", duration_minutes: float = 2.0)
         key_points: Expected selling points to check coverage.
         duration_minutes: Target video duration in minutes (default 2.0).
     """
+    if not text or not text.strip():
+        return AuditResult(
+            passed=True, checks=[],
+            warnings=["Empty script — nothing to audit"],
+            suggestions=[],
+        )
     checks = []
     warnings = []
     suggestions = []
