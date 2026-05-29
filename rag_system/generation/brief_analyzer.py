@@ -165,8 +165,20 @@ def generate_recommendation(analysis: BriefAnalysis, persona: str = "折腾到�
 # ============================================================
 
 def _extract_product_name(text: str) -> str:
-    m = re.search(r'(红魔\s*(?:游戏手机\s*)?11\s*S\s*PRO?\s*系列?)', text, re.I)
-    return m.group(1).strip() if m else "红魔11SPro"
+    # Try explicit patterns first
+    patterns = [
+        r'(?:产品名称|产品名|产品)[：:]\s*(.+?)(?:\n|$)',
+        r'^(.+?)(?:新品信息|产品信息|Brief|brief)',
+    ]
+    for pat in patterns:
+        m = re.search(pat, text, re.MULTILINE)
+        if m:
+            name = m.group(1).strip()
+            if len(name) >= 3 and len(name) <= 40:
+                return name
+    # Fallback: first non-empty line as product name
+    first_line = text.strip().split("\n")[0].strip()
+    return first_line[:40] if len(first_line) >= 2 else "新产品"
 
 
 def _extract_duration(text: str) -> str:
@@ -236,7 +248,65 @@ def _extract_selling_points(text: str) -> list[SellingPoint]:
         )
         points.append(sp)
 
-    return points if points else _extract_selling_points_fallback(text)
+    if points and len(points) >= 2:
+        return points
+    # Low yield from structured format — try natural-language extraction
+    natural = _extract_from_natural_brief(text)
+    return natural if natural and len(natural) >= 2 else (points or _extract_selling_points_fallback(text))
+
+
+def _extract_from_natural_brief(text: str) -> list[SellingPoint]:
+    """Extract selling points from natural-language briefs without (占比%) markers.
+
+    Handles briefs structured with numbered sections, bullet points, or
+    product-name headers. Prioritizes specs, features, and unique attributes.
+    """
+    points = []
+    # Split by numbered sections or product headers
+    sections = re.split(r'\n(?=(?:\d+[.、）\)]\s*|[①②③④⑤⑥⑦⑧⑨⑩])|(?:产品信息|视频需求|核心卖点))', text)
+
+    for sec in sections:
+        sec = sec.strip()
+        if not sec or len(sec) < 20:
+            continue
+
+        # Extract section header as selling point name
+        header_match = re.match(r'(?:[\d一二三四五六七八九十]+[.、）\)]\s*)?(.+?)(?:\n|：)', sec)
+        name = header_match.group(1).strip() if header_match else ""
+        if not name or len(name) > 40:
+            name = "核心产品"
+
+        # Score the section for keyword density
+        spec_keywords = [
+            "磁轴", "回报率", "精度", "传感器", "DPI", "RGB", "ARGB", "灯效",
+            "轻量化", "续航", "延迟", "响应", "驱动", "Gasket", "结构",
+            "铝合金", "阳极", "丝印", "纳米", "定制", "旗舰", "8K", "4K",
+            "无线", "双模", "蓝牙", "2.4G", "欧姆龙", "TTC", "原相", "PAW",
+            "Nordic", "处理器", "CPU", "GPU", "RTX", "Hz", "分辨率", "亮度",
+            "色域", "散热", "接口", "生态", "协同", "互联",
+        ]
+        content = sec[len(name):] if name != "核心产品" else sec
+        kw_count = sum(1 for kw in spec_keywords if kw in content)
+
+        # Skip meta sections that aren't real products
+        if any(skip in name for skip in ["视频需求", "发布时间", "注意事项", "参考", "备注"]):
+            continue
+
+        if kw_count >= 1:
+            max_pct = min(35, max(10, kw_count * 8))
+            sp = SellingPoint(
+                name=name[:30],
+                proportion=max_pct / 100,
+                priority=min(9, 3 + kw_count // 2),
+                deep_dive=(kw_count >= 5),
+                key_phrases=_extract_key_phrases(content),
+                hook_candidate=("首发" in sec or "旗舰" in sec or "最强" in sec or "极致" in sec),
+            )
+            points.append(sp)
+
+    # Sort by priority
+    points.sort(key=lambda p: (-p.priority, -p.proportion))
+    return points
 
 
 def _extract_selling_points_fallback(text: str) -> list[SellingPoint]:
