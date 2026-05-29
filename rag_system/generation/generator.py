@@ -18,6 +18,7 @@ from rag_system.retrieval.retriever import RetrievedChunk
 from rag_system.generation.meme_engine import (
     pick_best_meme, meme_opening_prompt, no_meme_opening_prompt,
 )
+from rag_system.generation.douyin_filter import filter_prohibited
 from rag_system.utils import logger
 
 
@@ -158,7 +159,11 @@ class Generator:
         # Auto-learn: log generation event to wiki for continuous improvement
         _auto_learn(product_name, category, persona, raw, wiki_context)
 
-        return raw
+        # Apply Douyin prohibited-phrases filter before returning
+        filtered, changes = filter_prohibited(raw)
+        if changes:
+            logger.info("Douyin filter: %d replacement(s) — %s", len(changes), changes[:5])
+        return filtered
 
 
 def _auto_learn(product: str, category: str, persona: str, script: str, wiki_used: str):

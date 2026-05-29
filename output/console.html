@@ -49,21 +49,26 @@ select{appearance:none;cursor:pointer}
 <h1>赛博瑞 · 控制台</h1>
 <div class="sub">在线构建命令 · 一键复制到终端执行</div>
 
+<div id="kb-stats" style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap"></div>
+
 <div class="grid2">
   <!-- GENERATE SCRIPT -->
   <div class="card">
     <h2>生成文案</h2>
     <div class="row">
       <div class="col"><label>产品名称</label><input id="g-prod" value="网易严选S9Game电竞椅" placeholder="例: 迈从K99键盘"></div>
-      <div class="col"><label>品类</label><select id="g-cat"><option>keyboard</option><option>mouse</option><option>monitor</option><option>laptop</option><option>phone</option><option>gpu</option><option>headphone</option><option selected>desk_chair</option></select></div>
+      <div class="col"><label>品类</label><select id="g-cat"></select></div>
     </div>
     <div class="row">
-      <div class="col"><label>人设</label><select id="g-persona"><option selected>折腾到吐</option><option>好设牛啊</option><option>朋克</option><option>超机懂</option></select></div>
-      <div class="col"><label>格式</label><select id="g-format"><option selected>review (评测体)</option><option>tierlist (榜单体)</option><option>comparison (对比体)</option></select></div>
+      <div class="col"><label>人设</label><select id="g-persona"></select></div>
+      <div class="col"><label>格式</label><select id="g-format"></select></div>
     </div>
     <div class="row">
       <div class="col"><label>时长(分钟)</label><input id="g-dur" value="2.5" type="number" step="0.5"></div>
       <div class="col"><label>价格</label><input id="g-price" placeholder="例: 1499-1599元"></div>
+    </div>
+    <div class="row">
+      <div class="col"><label>模式</label><select id="g-mode"></select></div>
     </div>
     <label>关键卖点</label><textarea id="g-kp">腰骶联动腰靠满级支撑,8D百变扶手丝滑调节,轿跑级环抱坐感一秒入魂</textarea>
     <button class="btn" onclick="buildGenerate()">构建命令</button>
@@ -75,7 +80,7 @@ select{appearance:none;cursor:pointer}
     <h2>定稿→分镜</h2>
     <label>脚本文件路径</label><input id="s-path" value="output/scripts/网易严选S9Game电竞椅-折腾到吐.docx">
     <label>产品名称</label><input id="s-prod" value="网易严选S9Game电竞椅">
-    <label>人设</label><select id="s-persona"><option selected>折腾到吐</option><option>好设牛啊</option><option>朋克</option><option>超机懂</option></select>
+    <label>人设</label><select id="s-persona"></select>
     <button class="btn" onclick="buildStoryboard()" style="margin-top:12px">构建命令</button>
     <div id="sb-cmd"></div>
   </div>
@@ -84,8 +89,8 @@ select{appearance:none;cursor:pointer}
   <div class="card">
     <h2>竞品学习</h2>
     <div class="row">
-      <div class="col"><label>品类</label><select id="c-cat"><option>keyboard</option><option>mouse</option><option>monitor</option><option>laptop</option><option>phone</option><option>gpu</option><option>headphone</option><option>desk_chair</option></select></div>
-      <div class="col"><label>数量</label><select id="c-top"><option>1</option><option selected>3</option><option>5</option></select></div>
+      <div class="col"><label>品类</label><select id="c-cat"></select></div>
+      <div class="col"><label>数量</label><select id="c-top"><option value="1">1</option><option value="3" selected>3</option><option value="5">5</option></select></div>
     </div>
     <button class="btn" onclick="buildCompetitive()">构建命令</button>
     <div id="comp-cmd"></div>
@@ -104,46 +109,141 @@ select{appearance:none;cursor:pointer}
 </div>
 
 <script>
-function cmdBox(cmd) {
-  return `<div class="cmd-box"><button class="copy" onclick="copy(this,'${cmd.replace(/'/g,"\\'")}')">复制</button><code>${cmd}</code></div>`
+// ============================================================
+// Embedded app data — mirrors rag_system/cli.py validators
+// ============================================================
+var APP_DATA = {
+  // VALID_CATEGORIES (line 19-22)
+  categories: ["desk_chair","gpu","headphone","keyboard","laptop","monitor","mouse","phone","speaker"],
+
+  // VALID_PERSONAS (line 23)
+  personas: ["折腾到吐","好设牛啊","朋克","超机懂"],
+
+  // VALID_FORMATS (line 24) with display labels
+  formats: [
+    {value:"review",     label:"review (评测体)"},
+    {value:"tierlist",   label:"tierlist (榜单体)"},
+    {value:"comparison", label:"comparison (对比体)"},
+    {value:"hkrr",       label:"hkrr (HKRR定位框架)"},
+    {value:"hamd",       label:"hamd (HAMD创作法)"}
+  ],
+
+  // VALID_MODES (line 25) with display labels
+  modes: [
+    {value:"normal",       label:"normal (标准)"},
+    {value:"experimental", label:"experimental (含思考token)"}
+  ]
+};
+
+// ============================================================
+// Dynamic dropdown population
+// ============================================================
+function populateSelect(id, items, defaultVal) {
+  var sel = document.getElementById(id);
+  if (!sel) return;
+  sel.innerHTML = '';
+  items.forEach(function(item) {
+    var opt = document.createElement('option');
+    if (typeof item === 'string') {
+      opt.value = item;
+      opt.textContent = item;
+    } else {
+      opt.value = item.value;
+      opt.textContent = item.label;
+    }
+    if (opt.value === defaultVal) opt.selected = true;
+    sel.appendChild(opt);
+  });
 }
+
+// ============================================================
+// KB Stats — fetch from pre-generated JSON, fallback to embedded data
+// ============================================================
+function fetchDashboardStats() {
+  var el = document.getElementById('kb-stats');
+
+  // Try to read dashboard_data.json (pre-generated by the pipeline)
+  fetch('dashboard_data.json')
+    .then(function(resp) {
+      if (!resp.ok) throw new Error('not found');
+      return resp.json();
+    })
+    .then(function(data) {
+      var cats = (data.category_count || (data.categories && data.categories.length) || APP_DATA.categories.length);
+      var docs = (data.doc_count || data.total_docs || data.script_count || '—');
+      el.innerHTML =
+        '<div class="tag ok">KB 品类: ' + cats + '</div>' +
+        '<div class="tag ok">KB 文档: ' + docs + '</div>';
+    })
+    .catch(function() {
+      // Fallback: show what we know from embedded data
+      el.innerHTML =
+        '<div class="tag ok">品类: ' + APP_DATA.categories.length + '</div>' +
+        '<div class="tag ok">人设: ' + APP_DATA.personas.length + '</div>' +
+        '<div class="tag ok">格式: ' + APP_DATA.formats.length + '</div>' +
+        '<div class="tag ok">模式: ' + APP_DATA.modes.length + '</div>';
+    });
+}
+
+// ============================================================
+// Init — populate all dropdowns on page load
+// ============================================================
+(function init() {
+  populateSelect('g-cat',    APP_DATA.categories, 'desk_chair');
+  populateSelect('g-persona', APP_DATA.personas,   '折腾到吐');
+  populateSelect('g-format',  APP_DATA.formats,    'review');
+  populateSelect('g-mode',    APP_DATA.modes,      'normal');
+  populateSelect('s-persona', APP_DATA.personas,   '折腾到吐');
+  populateSelect('c-cat',    APP_DATA.categories,  'desk_chair');
+
+  fetchDashboardStats();
+})();
+
+// ============================================================
+// Command builders
+// ============================================================
+function cmdBox(cmd) {
+  return '<div class="cmd-box"><button class="copy" onclick="copy(this,\'' + cmd.replace(/'/g,"\\'") + '\')">复制</button><code>' + cmd + '</code></div>';
+}
+
 function copy(btn,text){
   navigator.clipboard.writeText(text);
-  btn.textContent='已复制!';setTimeout(()=>btn.textContent='复制',1500)
+  btn.textContent='已复制!';setTimeout(function(){btn.textContent='复制'},1500);
 }
 
 function buildGenerate(){
-  const p=document.getElementById('g-prod').value;
-  const c=document.getElementById('g-cat').value;
-  const pp=document.getElementById('g-persona').value;
-  const f=document.getElementById('g-format').value.split(' ')[0];
-  const d=document.getElementById('g-dur').value;
-  const pr=document.getElementById('g-price').value;
-  const kp=document.getElementById('g-kp').value.replace(/\n/g,'');
-  const cmd=`python -m rag_system generate --product "${p}" --category ${c} --persona "${pp}" --key-points "${kp}" --duration ${d}${pr?` --price "${pr}"`:''} --format ${f}`;
-  document.getElementById('gen-cmd').innerHTML=cmdBox(cmd);
+  var p  = document.getElementById('g-prod').value;
+  var c  = document.getElementById('g-cat').value;
+  var pp = document.getElementById('g-persona').value;
+  var f  = document.getElementById('g-format').value;
+  var d  = document.getElementById('g-dur').value;
+  var pr = document.getElementById('g-price').value;
+  var m  = document.getElementById('g-mode').value;
+  var kp = document.getElementById('g-kp').value.replace(/\n/g,'');
+  var cmd = 'python -m rag_system generate --product "' + p + '" --category ' + c + ' --persona "' + pp + '" --key-points "' + kp + '" --duration ' + d + (pr ? ' --price "' + pr + '"' : '') + ' --format ' + f + ' --mode ' + m;
+  document.getElementById('gen-cmd').innerHTML = cmdBox(cmd);
 }
 
 function buildStoryboard(){
-  const p=document.getElementById('s-path').value;
-  const n=document.getElementById('s-prod').value;
-  const pp=document.getElementById('s-persona').value;
-  const cmd=`python -m rag_system generate-storyboard "${p}" "${n}" "${pp}"`;
-  document.getElementById('sb-cmd').innerHTML=cmdBox(cmd);
+  var p  = document.getElementById('s-path').value;
+  var n  = document.getElementById('s-prod').value;
+  var pp = document.getElementById('s-persona').value;
+  var cmd = 'python -m rag_system generate-storyboard "' + p + '" "' + n + '" "' + pp + '"';
+  document.getElementById('sb-cmd').innerHTML = cmdBox(cmd);
 }
 
 function buildCompetitive(){
-  const c=document.getElementById('c-cat').value;
-  const t=document.getElementById('c-top').value;
-  const cmd=`python -m rag_system competitive search --category ${c} --top ${t}`;
-  document.getElementById('comp-cmd').innerHTML=cmdBox(cmd);
+  var c = document.getElementById('c-cat').value;
+  var t = document.getElementById('c-top').value;
+  var cmd = 'python -m rag_system competitive search --category ' + c + ' --top ' + t;
+  document.getElementById('comp-cmd').innerHTML = cmdBox(cmd);
 }
 
 function buildAudit(){
-  const p=document.getElementById('a-path').value;
-  const d=document.getElementById('a-dur').value;
-  const cmd=`python -m rag_system audit --file "${p}" --duration ${d}`;
-  document.getElementById('audit-cmd').innerHTML=cmdBox(cmd);
+  var p = document.getElementById('a-path').value;
+  var d = document.getElementById('a-dur').value;
+  var cmd = 'python -m rag_system audit --file "' + p + '" --duration ' + d;
+  document.getElementById('audit-cmd').innerHTML = cmdBox(cmd);
 }
 </script>
 
