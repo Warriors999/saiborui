@@ -32,8 +32,9 @@ class SellingPoint:
 @dataclass
 class BriefAnalysis:
     product_name: str
-    target_duration: str         # e.g., "3-5分钟"
-    publish_time: str
+    category: str = ""           # detected product category
+    target_duration: str = ""    # e.g., "3-5分钟"
+    publish_time: str = ""
     selling_points: list[SellingPoint] = field(default_factory=list)
     must_mentions: list[str] = field(default_factory=list)
     content_donts: list[str] = field(default_factory=list)
@@ -52,6 +53,7 @@ def parse_brief(framework_text: str, detail_text: str = "") -> BriefAnalysis:
     combined = framework_text + "\n" + detail_text
     analysis = BriefAnalysis(
         product_name=_extract_product_name(combined),
+        category=_detect_category(combined),
         target_duration=_extract_duration(combined),
         publish_time=_extract_publish_time(combined),
     )
@@ -163,6 +165,26 @@ def generate_recommendation(analysis: BriefAnalysis, persona: str = "折腾到�
 # ============================================================
 # Parsing helpers
 # ============================================================
+
+def _detect_category(text: str) -> str:
+    """Detect product category from brief keywords."""
+    CATEGORY_KEYWORDS = {
+        "keyboard": ["键盘", "键帽", "轴体", "磁轴", "机械键盘", "Gasket", "键位"],
+        "mouse": ["鼠标", "轻量化", "DPI", "传感器", "微动", "PAW", "回报率", "滚轮"],
+        "laptop": ["笔记本", "游戏本", "轻薄本", "处理器", "独显", "RTX"],
+        "headphone": ["耳机", "降噪", "头戴式", "TWS", "入耳"],
+        "monitor": ["显示器", "屏幕", "HDR", "分辨率", "刷新率", "IPS", "VA"],
+        "phone": ["手机", "骁龙", "iPhone", "安卓"],
+        "gpu": ["显卡", "GPU", "显存", "RTX", "GTX"],
+        "desk_chair": ["桌椅", "电竞椅", "人体工学", "升降桌"],
+        "speaker": ["音箱", "音响"],
+    }
+    scores = {}
+    for cat, kws in CATEGORY_KEYWORDS.items():
+        scores[cat] = sum(1 for kw in kws if kw in text)
+    best = max(scores, key=scores.get)
+    return best if scores[best] >= 2 else "other"
+
 
 def _extract_product_name(text: str) -> str:
     # Try explicit patterns first
