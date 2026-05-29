@@ -4,7 +4,7 @@
 
 短视频创作者的AI全栈工具箱。从客户Brief到成片分镜，全链路自动化。
 
-**v1.0.0** | 568知识库chunks | 8品类 | 17次迭代
+**v1.0.0** | 40模块 · 10,732行 · 42提交 | 568 chunks · 10品类 | 13条CLI · 59测试
 
 ---
 
@@ -18,13 +18,17 @@
                                     灯位SVG + 运镜强制分配
 ```
 
-**文案引擎**：模仿D先生写作风格，支持4人设(折腾到吐/好设牛啊/朋克/超机懂)、8品类、10条铁律。3种格式：评测体/榜单体/对比体。
+**文案引擎**：模仿D先生写作风格，支持4人设、10品类、12条铁律、5种格式(review/tierlist/comparison/hkrr/hamd)、2种模式(normal/experimental)。Brief结构化解析+封面方向注入+个人观点注入+抖音禁词过滤。
 
-**分镜引擎**：北电教材标准，9列专业xlsx，运镜强制分配(固定≤40%)，灯位SVG俯视图。
+**分镜引擎**：北电教材标准，LLM拆镜+视觉对齐(英文concept prompt)+运镜强制分配(固定≤40%)+自审修复。3种输出模式：默认9列/甲方参考文件(--format-ref)/口头描述列(--columns)/秒级预览(--preview)。灯位SVG全格式支持。
 
-**审核引擎**：14项自动检查(口语化、电商味、流水账、禁用词、态度密度、节奏等)，不合格自动修复。
+**审核引擎**：15项自动检查(含信息搬运检测)。自动修复循环(最多3轮)，句级结构重写(长短句/电商味/态度密度程序化修复)。AI点映团3视角模拟审稿。
 
-**竞品学习**：B站搜索→下载→Whisper转录→OpenCV视觉分析→librosa音频分析→LLM深度解读→Karpathy Wiki知识复利。
+**竞品学习**：B站搜索→下载→Whisper转录→OpenCV/librosa分析→LLM解读→Karpathy Wiki知识复利。
+
+**数据闭环**：管线事件追踪+审计闭环+人设×品类交叉效能矩阵+产出索引管理+动态仪表盘。
+
+**选题系统**：AI每日选题日报，6维评分(热度/信息差/争议/人设匹配/实操价值/差异化)。
 
 ---
 
@@ -88,7 +92,8 @@ python -m rag_system competitive report  # 生成周报
 
 ```
 赛博瑞/
-├── rag_system/           # 核心引擎(40模块, ~7600行)
+├── rag_system/           # 核心引擎(40模块, ~10700行)
+├── tests/                # 测试套件(5文件, 59测试)
 │   ├── generation/       # 文案+分镜+审核
 │   ├── competitive/      # 竞品学习管线
 │   ├── retrieval/        # RAG语义检索
@@ -110,14 +115,20 @@ python -m rag_system competitive report  # 生成周报
 
 | 命令 | 用途 |
 |------|------|
-| `rag_system generate` | 生成文案 |
-| `rag_system generate-storyboard` | 定稿→分镜 |
-| `rag_system storyboard` | RAG分镜(从Brief) |
-| `rag_system audit` | 审核脚本/分镜 |
+| `rag_system generate` | 生成文案 (支持--brief/--perspective) |
+| `rag_system generate-storyboard` | 定稿→分镜 (--format-ref/--columns/--preview) |
+| `rag_system storyboard` | RAG分镜(从Brief，支持--perspective) |
+| `rag_system audit` | 审核脚本/分镜 (--audience AI点映团) |
 | `rag_system search` | 语义搜索知识库 |
 | `rag_system stats` | 知识库统计 |
+| `rag_system init` | 首次运行引导向导 |
 | `rag_system competitive search` | 竞品搜索+分析 |
 | `rag_system competitive report` | 竞品周报 |
+| `rag_system analytics` | 管线分析 (--matrix 交叉效能) |
+| `rag_system cover` | 5维封面设计prompt |
+| `rag_system dashboard` | 动态仪表盘 |
+| `rag_system topic-daily` | 选题日报 |
+| `rag_system outputs` | 产出管理 |
 
 ---
 
