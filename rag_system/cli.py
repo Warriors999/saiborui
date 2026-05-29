@@ -377,6 +377,12 @@ def generate(product, category, key_points, brief, persona, price, competitors,
 
             click.echo(f"Audit (pass {retry+1}): {passed_n}/{total_n} passed" +
                        (f" | Failed: {', '.join(failed)}" if failed else " [ALL PASS]") + status)
+            # Show actionable fix suggestions for each failure
+            if failed and retry == 0:
+                click.echo("  Fix suggestions:")
+                for f in failed:
+                    tip = FIX_TIPS.get(f, "请检查此项")
+                    click.echo(f"    - {f}: {tip}")
 
             # Quality gate: stop if we hit threshold AND no regression
             if passed_n >= QUALITY_THRESHOLD and not failed:
@@ -668,6 +674,109 @@ def _fix_attitude_density(script: str) -> str:
             result.append(line)
 
     return "\n".join(result)
+
+
+# ============================================================
+# generate-storyboard — Finalized script → storyboard xlsx
+# ============================================================
+
+# ============================================================
+# quick — 新手模式: Brief → 成品脚本 (全自动)
+# ============================================================
+
+@cli.command("quick")
+@click.option("--brief", "-b", required=True, type=click.Path(exists=True),
+              help="Brief文档路径 (.txt 或 .pdf)")
+@click.option("--persona", "-p", default="折腾到吐", help="人设名称 (默认: 折腾到吐)")
+@click.option("--output", "-o", default=None, type=click.Path(dir_okay=False),
+              help="输出路径 (默认: output/scripts/{产品}-{人设}.docx)")
+def quick(brief, persona, output):
+    """新手模式 — 三步出脚本：上传Brief → 选人设 → 拿到成品。
+
+    Auto-runs the full pipeline: brief analysis → generation → audit
+    → auto-fix → formatted docx. No advanced options needed.
+
+    Example:
+        python -m rag_system quick --brief briefs/产品.txt
+        python -m rag_system quick -b briefs/产品.txt -p "朋克"
+    """
+    from pathlib import Path
+    from rag_system.generation.generator import Generator
+    from rag_system.retrieval.retriever import Retriever
+    from rag_system.embedding.embedder import Embedder
+    from rag_system.storage.vector_store import VectorStore
+    from rag_system.generation.brief_analyzer import parse_brief, brief_to_prompt_context
+    from rag_system.generation.auditor import audit_script
+    from rag_system.generation.docx_formatter import format_script_to_docx
+    from rag_system.generation.prompts import PERSPECTIVE_INJECTION
+
+    click.echo("=" * 50)
+    click.echo("  赛博瑞 · 新手模式")
+    click.echo("  三步出成品：上传Brief → 选人设 → 拿到脚本")
+    click.echo("=" * 50)
+
+    # Step 1: Parse brief
+    brief_text = Path(brief).read_text(encoding="utf-8")
+    analysis = parse_brief(brief_text)
+    product = analysis.product_name or Path(brief).stem[:30]
+    category = analysis.category or "other"
+    sp_names = [sp.name for sp in sorted(analysis.selling_points, key=lambda s: -s.priority)]
+    key_points = ", ".join(sp_names[:6]) if sp_names else ""
+    brief_context = brief_to_prompt_context(analysis)
+
+    click.echo(f"\n[1/3] Brief 解析完成")
+    click.echo(f"  产品: {product}")
+    click.echo(f"  品类: {category}")
+    click.echo(f"  卖点: {key_points[:80]}")
+    if analysis.cover_suggestion:
+        click.echo(f"  封面: {analysis.cover_suggestion[:60]}")
+
+    # Step 2: Generate + auto-fix
+    click.echo(f"\n[2/3] 生成脚本中...")
+    embedder = Embedder()
+    store = VectorStore()
+    retriever = Retriever(embedder, store)
+    chunks = retriever.retrieve(f"{product} {category} {key_points}", top_k=8, category=category)
+    gen = Generator()
+
+    script = gen.generate(
+        product_name=product, category=category, key_points=key_points,
+        persona=persona, retrieved_chunks=chunks,
+        brief_context=brief_context,
+        cover_direction=f"封面方向：{analysis.cover_suggestion}" if analysis.cover_suggestion else "",
+    )
+
+    # Quick auto-fix (up to 3 rounds)
+    for retry in range(3):
+        result = audit_script(script, key_points=key_points)
+        failed = [c["name"] for c in result.checks if not c.get("passed")]
+        passed_n = sum(1 for c in result.checks if c.get("passed"))
+        if not failed or passed_n >= 8:
+            break
+        if retry < 2:
+            script = _apply_structural_fixes(script, failed)
+    click.echo(f"  脚本: {len(script)} 字")
+
+    # Step 3: Save
+    click.echo(f"\n[3/3] 保存成品...")
+    out_path = Path(output) if output else Path(f"output/scripts/{product}-{persona}.docx")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    format_script_to_docx(script, product, persona, key_points, out_path)
+    click.echo(f"  已保存: {out_path}")
+
+    # Summary
+    final = audit_script(script, key_points=key_points)
+    final_passed = sum(1 for c in final.checks if c.get("passed"))
+    final_total = len(final.checks)
+    click.echo(f"\n{'='*50}")
+    click.echo(f"  成品质量: {final_passed}/{final_total} 项通过")
+    if final_passed < final_total:
+        click.echo(f"  未通过项:")
+        for c in final.checks:
+            if not c.get("passed"):
+                click.echo(f"    - {c['name']}: {c.get('detail', '')[:60]}")
+    click.echo(f"  文件: {out_path}")
+    click.echo(f"{'='*50}")
 
 
 # ============================================================
