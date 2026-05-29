@@ -208,8 +208,7 @@ def _collect_code_stats(data: dict) -> None:
         try:
             total_lines += len(f.read_text(encoding="utf-8").splitlines())
         except Exception as e:
-        logger.debug("Dashboard collector skipped: %s", e)
-            pass
+            logger.debug("Dashboard collector skipped: %s", e)
     data["code_lines"] = total_lines
 
 
