@@ -746,16 +746,26 @@ def quick(brief, persona, output):
         cover_direction=f"封面方向：{analysis.cover_suggestion}" if analysis.cover_suggestion else "",
     )
 
-    # Quick auto-fix (up to 3 rounds)
-    for retry in range(3):
+    # Auto-fix with quality gate + anti-regression (same as generate)
+    QUALITY_THRESHOLD = 8
+    MAX_RETRIES = 5
+    best_script = script
+    best_score = 0
+    for retry in range(MAX_RETRIES):
         result = audit_script(script, key_points=key_points)
         failed = [c["name"] for c in result.checks if not c.get("passed")]
         passed_n = sum(1 for c in result.checks if c.get("passed"))
-        if not failed or passed_n >= 8:
+        if passed_n > best_score:
+            best_score = passed_n
+            best_script = script
+        elif passed_n < best_score:
+            script = best_script
+        if passed_n >= QUALITY_THRESHOLD and not failed:
             break
-        if retry < 2:
+        if retry < MAX_RETRIES - 1 and failed:
             script = _apply_structural_fixes(script, failed)
-    click.echo(f"  脚本: {len(script)} 字")
+    script = best_script
+    click.echo(f"  脚本: {len(script)} 字 | 最佳评分: {best_score}/11")
 
     # Step 3: Save
     click.echo(f"\n[3/3] 保存成品...")
@@ -1524,7 +1534,9 @@ def cover(product, category, persona, from_brief, suggestion, description,
 @cli.command("dashboard")
 @click.option("--output", "-o", default=None, type=click.Path(dir_okay=False),
               help="输出路径 (默认: output/dashboard.html)")
-def dashboard(output):
+@click.option("--open", "open_browser", is_flag=True, default=False,
+              help="生成后在浏览器中打开")
+def dashboard(output, open_browser):
     """Regenerate dashboard.html with live project statistics. 数据中台.
 
     Scans knowledge base, output directories, wiki, and git log
@@ -1533,6 +1545,7 @@ def dashboard(output):
     Example:
 
         python -m rag_system dashboard
+        python -m rag_system dashboard --open
     """
     from pathlib import Path
 
@@ -1554,6 +1567,11 @@ def dashboard(output):
     out_path = Path(output) if output else None
     saved = generate_dashboard(data, output_path=out_path)
     click.echo(f"Dashboard saved: {saved}")
+
+    if open_browser:
+        import webbrowser
+        webbrowser.open(str(saved.resolve()))
+        click.echo("Opened in browser.")
 
 
 # ============================================================
