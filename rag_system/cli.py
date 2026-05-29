@@ -249,36 +249,57 @@ def generate(product, category, key_points, brief, persona, price, competitors,
         logger.warning("Non-critical error: %s", e)
 
     # RAG retrieval for style context
-    embedder = Embedder()
-    store = VectorStore()
-    retriever = Retriever(embedder, store)
-    query = f"{product} {category} {key_points}"
-    chunks = retriever.retrieve(query, top_k=8, category=category)
+    try:
+        embedder = Embedder()
+        store = VectorStore()
+        retriever = Retriever(embedder, store)
+        query = f"{product} {category} {key_points}"
+        chunks = retriever.retrieve(query, top_k=8, category=category)
+    except Exception as e:
+        es = str(e).lower()
+        if "chroma" in es or "sqlite" in es:
+            _friendly_error("chromadb")
+        elif "embed" in es or "bge" in es or "model" in es:
+            _friendly_error("embedding")
+        else:
+            _friendly_error("connection", str(e))
+        return
 
     if chunks:
         click.echo(f"Retrieved {len(chunks)} reference chunks from knowledge base")
 
     gen = Generator()
-    script = gen.generate(
-        product_name=product,
-        category=category,
-        key_points=key_points,
-        persona=persona,
-        price=price,
-        competitors=competitors,
-        duration_minutes=duration,
-        script_format=script_format,
-        retrieved_chunks=chunks,
-        temperature=temperature,
-        brief_context=brief_context,
-        cover_direction=cover_direction,
-        analytics_context=analytics_context,
-        mode=mode,
-        perspective_context=(
-            PERSPECTIVE_INJECTION.format(perspectives=perspective)
-            if perspective else ""
-        ),
-    )
+    try:
+        script = gen.generate(
+            product_name=product,
+            category=category,
+            key_points=key_points,
+            persona=persona,
+            price=price,
+            competitors=competitors,
+            duration_minutes=duration,
+            script_format=script_format,
+            retrieved_chunks=chunks,
+            temperature=temperature,
+            brief_context=brief_context,
+            cover_direction=cover_direction,
+            analytics_context=analytics_context,
+            mode=mode,
+            perspective_context=(
+                PERSPECTIVE_INJECTION.format(perspectives=perspective)
+                if perspective else ""
+            ),
+        )
+    except Exception as e:
+        es = str(e).lower()
+        if "invalid" in es or "auth" in es or "key" in es or "401" in es or "403" in es:
+            _friendly_error("invalid_api_key")
+        elif "quota" in es or "balance" in es or "429" in es:
+            _friendly_error("insufficient_quota")
+        elif "connect" in es or "timeout" in es or "network" in es:
+            _friendly_error("connection", str(e))
+        else:
+            raise
 
     if output:
         path = Path(output)
@@ -313,7 +334,9 @@ def generate(product, category, key_points, brief, persona, price, competitors,
     except Exception as e:
         logger.warning("Non-critical error: %s", e)
 
-    # Audit + auto-fix loop (max 3 retries)
+    # Audit + auto-fix loop with quality gate + anti-regression
+    QUALITY_THRESHOLD = 8  # minimum passed/total ratio
+    MAX_RETRIES = 5
     try:
         from rag_system.generation.auditor import audit_script
         FIX_TIPS = {
@@ -327,19 +350,44 @@ def generate(product, category, key_points, brief, persona, price, competitors,
             "卖点覆盖": "确保每个核心卖点都有对应口播段落，不遗漏",
             "信息搬运检测": "每个产品段至少1处个人观点（有一说一/我用下来/说实话），参数翻译成体验",
         }
-
-        # Checks that can be fixed programmatically (no LLM needed)
         STRUCTURAL_CHECKS = {"长短句节奏", "口播时长", "电商味", "态度密度"}
 
-        for retry in range(3):
+        best_script = script
+        best_score = 0
+
+        for retry in range(MAX_RETRIES):
             audit_result = audit_script(script, key_points=key_points, duration_minutes=duration)
             failed = [c["name"] for c in audit_result.checks if not c.get("passed")]
             passed_n = sum(1 for c in audit_result.checks if c.get("passed"))
             total_n = len(audit_result.checks)
-            click.echo(f"Audit (pass {retry+1}): {passed_n}/{total_n} passed" +
-                       (f" | Failed: {', '.join(failed)}" if failed else " [ALL PASS]"))
+            score = passed_n
 
-            if not failed or retry >= 2:
+            # Anti-regression: track best version
+            if score > best_score:
+                best_score = score
+                best_script = script
+                status = " [BEST]" if retry > 0 else ""
+            elif score < best_score:
+                status = f" [REGRESS — keeping best at {best_score}/{total_n}]"
+                script = best_script  # revert to best
+                if output:
+                    Path(output).write_text(script, encoding="utf-8")
+            else:
+                status = ""
+
+            click.echo(f"Audit (pass {retry+1}): {passed_n}/{total_n} passed" +
+                       (f" | Failed: {', '.join(failed)}" if failed else " [ALL PASS]") + status)
+
+            # Quality gate: stop if we hit threshold AND no regression
+            if passed_n >= QUALITY_THRESHOLD and not failed:
+                log_event("audit", product=product, persona=persona, category=category,
+                          passed=audit_result.passed, total_checks=total_n,
+                          passed_count=passed_n, failed_checks=failed,
+                          warnings=len(audit_result.warnings))
+                break
+
+            # Stop if no failures
+            if not failed:
                 log_event("audit", product=product, persona=persona, category=category,
                           passed=audit_result.passed, total_checks=total_n,
                           passed_count=passed_n, failed_checks=failed,
@@ -350,18 +398,17 @@ def generate(product, category, key_points, brief, persona, price, competitors,
             structural_fails = [f for f in failed if f in STRUCTURAL_CHECKS]
             content_fails = [f for f in failed if f not in STRUCTURAL_CHECKS]
 
-            # Step 1: Apply programmatic structural fixes first (no LLM)
+            # Step 1: programmatic structural fixes
             if structural_fails:
                 click.echo(f"  [Structural] Fixing: {', '.join(structural_fails)}")
                 script = _apply_structural_fixes(script, structural_fails)
                 click.echo(f"  [Structural] Done — {len(script)} chars")
                 if output:
                     Path(output).write_text(script, encoding="utf-8")
-                # If no content issues remaining, re-audit before calling LLM
                 if not content_fails:
                     continue
 
-            # Step 2: LLM revision for remaining content-level issues only
+            # Step 2: LLM revision for content-level issues
             if content_fails:
                 fix_instructions = "\n".join(
                     f"- {f}: {FIX_TIPS.get(f, '请改进')}" for f in content_fails
@@ -373,7 +420,6 @@ def generate(product, category, key_points, brief, persona, price, competitors,
                 )
                 click.echo(f"  [LLM] Fixing {len(content_fails)} content issues: {', '.join(content_fails)}")
 
-                # Call LLM for revision
                 revision_response = gen.client.chat.completions.create(
                     model=gen.model,
                     messages=[
@@ -386,11 +432,52 @@ def generate(product, category, key_points, brief, persona, price, competitors,
                 script = revision_response.choices[0].message.content.strip()
                 click.echo(f"  [LLM] Done — {len(script)} chars")
 
-                # Save revised script
                 if output:
                     Path(output).write_text(script, encoding="utf-8")
+
+        # Ensure final output is the best version
+        script = best_script
+        if output:
+            Path(output).write_text(script, encoding="utf-8")
     except Exception as e:
         logger.warning("Audit/auto-fix error: %s", e)
+
+
+# ── Human-friendly error messages ──
+
+ERROR_TRANSLATIONS = {
+    "invalid_api_key": (
+        "API 密钥无效，DeepSeek 拒绝了请求。\n"
+        "  请检查 .env 文件中的 DEEPSEEK_API_KEY 是否正确。\n"
+        "  申请地址: https://platform.deepseek.com"
+    ),
+    "insufficient_quota": (
+        "DeepSeek API 额度不足。\n"
+        "  请登录 platform.deepseek.com 检查账户余额。"
+    ),
+    "connection": (
+        "网络连接失败，无法访问 DeepSeek API。\n"
+        "  请检查网络连接和代理设置。\n"
+        "  如果使用代理，确认端口 7897 已开启。"
+    ),
+    "chromadb": (
+        "知识库未初始化或已损坏。\n"
+        "  请运行: python -m rag_system init"
+    ),
+    "embedding": (
+        "向量模型加载失败。\n"
+        "  首次运行需要下载 BGE 模型（约1.3GB），请确保网络畅通。\n"
+        "  如果下载失败，设置环境变量 HF_ENDPOINT=https://hf-mirror.com 使用镜像。"
+    ),
+}
+
+
+def _friendly_error(error_type: str, detail: str = ""):
+    """Print a user-friendly Chinese error message instead of a stack trace."""
+    msg = ERROR_TRANSLATIONS.get(error_type, f"未知错误: {detail}")
+    click.echo(f"\n[ERROR] {msg}", err=True)
+    if detail:
+        logger.debug("Original error: %s", detail)
 
 
 # ============================================================
