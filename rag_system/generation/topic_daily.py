@@ -188,7 +188,7 @@ def score_topics(
     # Augment system prompt with persona + focus context
     persona_note = ""
     if persona == "折腾到吐":
-        persona_note = "\n博主人设补充：硬核数码博主，最擅长"价格对飚国际大厂"和"把参数翻译成体验"。重数据、重实测、敢说缺点。"
+        persona_note = "\n博主人设补充：硬核数码博主，擅长价格对飚和参数翻译。重数据、重实测、敢说缺点。"
     elif persona == "好设牛啊":
         persona_note = "\n博主人设补充：设计美学导向，关注颜值、做工细节和使用体验。"
     elif persona == "朋克":
