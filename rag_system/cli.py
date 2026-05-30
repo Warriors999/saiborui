@@ -808,16 +808,21 @@ def quick(brief, persona, output):
         click.echo(f"  {click.style('[WARN]', fg='yellow')} 需人工审核 (7-8/11)")
     else:
         click.echo(f"  {click.style('[PASS]', fg='green')} 质量达标")
-    # Render audit scorecard (strip ANSI + sanitize for GBK)
-    from rag_system.generation.scorecard import render_audit_scorecard
-    import re as _re
-    # Clean audit detail strings from PDF garbage
-    for c in final.checks:
-        if 'detail' in c:
-            c['detail'] = _safe(str(c.get('detail', '')))
-    card = render_audit_scorecard(final, _safe(product))
-    card = _re.sub(r'\x1b\[[0-9;]*m', '', card)
-    click.echo(card)
+    # Render audit scorecard (with GBK-safe fallback)
+    try:
+        from rag_system.generation.scorecard import render_audit_scorecard
+        import re as _re
+        for c in final.checks:
+            c["detail"] = _safe(str(c.get("detail", "")))
+            c["name"] = _safe(str(c.get("name", "")))
+        card = render_audit_scorecard(final, _safe(product))
+        card = _re.sub(r'\x1b\[[0-9;]*m', '', card)
+        click.echo(card)
+    except Exception:
+        for c in final.checks:
+            s = "PASS" if c.get("passed") else "FAIL"
+            click.echo(f"  [{s}] {_safe(str(c.get("name","")))}")
+
     click.echo(f"  文件: {_safe(str(out_path))}")
     click.echo(f"{'='*50}")
 
