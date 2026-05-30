@@ -377,12 +377,16 @@ def generate(product, category, key_points, brief, persona, price, competitors,
 
             click.echo(f"Audit (pass {retry+1}): {passed_n}/{total_n} passed" +
                        (f" | Failed: {', '.join(failed)}" if failed else " [ALL PASS]") + status)
-            # Show actionable fix suggestions for each failure
-            if failed and retry == 0:
-                click.echo("  Fix suggestions:")
-                for f in failed:
-                    tip = FIX_TIPS.get(f, "请检查此项")
-                    click.echo(f"    - {f}: {tip}")
+            # Show scorecard on first pass
+            if retry == 0:
+                from rag_system.generation.scorecard import render_audit_scorecard
+                import re as _re
+                for c in audit_result.checks:
+                    if 'detail' in c:
+                        c['detail'] = _re.sub(r'[\x00-\x1f\x7f-\x9f]', '', str(c.get('detail', '')))
+                card = render_audit_scorecard(audit_result, "")
+                card = _re.sub(r'\x1b\[[0-9;]*m', '', card)
+                click.echo(card)
 
             # Quality gate: stop if we hit threshold AND no regression
             if passed_n >= QUALITY_THRESHOLD and not failed:
@@ -788,11 +792,16 @@ def quick(brief, persona, output):
     final_total = len(final.checks)
     click.echo(f"\n{'='*50}")
     click.echo(f"  成品质量: {final_passed}/{final_total} 项通过")
-    if final_passed < final_total:
-        click.echo(f"  未通过项:")
-        for c in final.checks:
-            if not c.get("passed"):
-                click.echo(f"    - {_safe(c['name'])}: {_safe(c.get('detail', '')[:60])}")
+    # Render audit scorecard (strip ANSI + sanitize for GBK)
+    from rag_system.generation.scorecard import render_audit_scorecard
+    import re as _re
+    # Clean audit detail strings from PDF garbage
+    for c in final.checks:
+        if 'detail' in c:
+            c['detail'] = _safe(str(c.get('detail', '')))
+    card = render_audit_scorecard(final, _safe(product))
+    card = _re.sub(r'\x1b\[[0-9;]*m', '', card)
+    click.echo(card)
     click.echo(f"  文件: {_safe(str(out_path))}")
     click.echo(f"{'='*50}")
 
