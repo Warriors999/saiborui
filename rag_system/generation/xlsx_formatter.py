@@ -528,9 +528,39 @@ def _get_light_ratio(shot: dict) -> str:
 
 
 def _create_lighting_svgs(wb, shots, product_name, output_path):
-    """Add lighting reference sheet with embedded diagram images."""
-    import io
-    from PIL import Image as PILImage, ImageDraw
+    """Generate SVG lighting diagrams, convert to PNG via sharp, embed in xlsx."""
+    import io, subprocess, tempfile, os
+    from openpyxl.drawing.image import Image as XlImg
+
+    SVG_TPL = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 400">
+  <defs>
+    <marker id="aK" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2563eb"/></marker>
+    <marker id="aF" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/></marker>
+    <marker id="aC" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#16a34a"/></marker>
+    <style>text{{font-family:"Microsoft YaHei","PingFang SC",sans-serif}}</style>
+  </defs>
+  <rect width="540" height="400" fill="#ffffff"/>
+  <rect x="200" y="120" width="140" height="100" rx="6" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+  <text x="270" y="165" fill="#1e293b" font-size="13" font-weight="bold" text-anchor="middle">产品</text>
+  <text x="270" y="185" fill="#94a3b8" font-size="9" text-anchor="middle">桌面摆放</text>
+  <circle cx="460" cy="70" r="24" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="460" y="66" fill="#1e40af" font-size="11" font-weight="bold" text-anchor="middle">主灯</text>
+  <text x="460" y="82" fill="#64748b" font-size="8" text-anchor="middle">__KEY_ANGLE__</text>
+  <line x1="438" y1="78" x2="325" y2="135" stroke="#2563eb" stroke-width="2" marker-end="url(#aK)"/>
+__FILL_SVG__
+  <circle cx="270" cy="350" r="22" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="270" y="346" fill="#15803d" font-size="10" font-weight="bold" text-anchor="middle">机位</text>
+  <text x="270" y="372" fill="#64748b" font-size="8" text-anchor="middle">__CAM__</text>
+  <line x1="270" y1="328" x2="270" y2="260" stroke="#16a34a" stroke-width="2" marker-end="url(#aC)"/>
+  <rect x="180" y="380" width="180" height="18" rx="3" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="270" y="393" fill="#1e40af" font-size="10" font-weight="bold" text-anchor="middle">光比 主:辅 ~ __RATIO__</text>
+</svg>"""
+
+    FILL_TPL = """  <circle cx="80" cy="180" r="20" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
+  <text x="80" y="176" fill="#475569" font-size="10" font-weight="bold" text-anchor="middle">辅灯</text>
+  <text x="80" y="196" fill="#94a3b8" font-size="8" text-anchor="middle">__FILL_LABEL__</text>
+  <line x1="100" y1="180" x2="195" y2="155" stroke="#94a3b8" stroke-width="2" marker-end="url(#aF)"/>"""
+    NO_FILL = '  <text x="80" y="185" fill="#94a3b8" font-size="9" text-anchor="middle">单灯布光</text>'
 
     groups = {}
     for si, shot in enumerate(shots):
@@ -545,13 +575,14 @@ def _create_lighting_svgs(wb, shots, product_name, output_path):
         return
 
     ws = wb.create_sheet("灯位图")
-    ws.column_dimensions["A"].width = 50
-    ws.column_dimensions["B"].width = 18
-    ws.column_dimensions["C"].width = 40
-    ws.column_dimensions["D"].width = 14
-    ws.column_dimensions["E"].width = 28
-    ws.column_dimensions["F"].width = 28
-    headers = ["灯位示意图", "适用镜号", "主灯光位", "光比", "机位", "布光技法"]
+    ws.column_dimensions["A"].width = 8
+    ws.column_dimensions["B"].width = 50
+    ws.column_dimensions["C"].width = 16
+    ws.column_dimensions["D"].width = 38
+    ws.column_dimensions["E"].width = 14
+    ws.column_dimensions["F"].width = 26
+    ws.column_dimensions["G"].width = 26
+    headers = ["灯位", "灯位示意图", "适用镜号", "主灯光位", "光比", "机位", "布光技法"]
     for ci, h in enumerate(headers, 1):
         cell = ws.cell(row=1, column=ci, value=h)
         cell.font = font_col_header
@@ -560,9 +591,12 @@ def _create_lighting_svgs(wb, shots, product_name, output_path):
         cell.border = border_all_thin
     ws.row_dimensions[1].height = 26
 
+    tmp_dir = output_path.parent / "_tmp_lighting"
+    tmp_dir.mkdir(exist_ok=True)
+
     for gi, ((lt, cam, ratio), shot_nums) in enumerate(groups.items()):
         row = gi + 2
-        ws.row_dimensions[row].height = 200
+        ws.row_dimensions[row].height = 260
         label = f"灯位{chr(65+gi)}"
         shot_ref = ", ".join(str(n) for n in shot_nums[:8])
         ref_shot = shots[shot_nums[0] - 1] if shot_nums else {}
@@ -571,54 +605,45 @@ def _create_lighting_svgs(wb, shots, product_name, output_path):
         cam_short = (cam or "50mm F2.8").replace("机位:", "").replace("机位：", "")[:25]
         key_angle = setup.get("key_angle", "右前40°")
         has_fill = bool(setup.get("fill"))
+        fill_label = setup.get("fill", "左侧补光") if has_fill else ""
 
-        # Draw lighting diagram with PIL
-        img = PILImage.new("RGB", (360, 260), "white")
-        draw = ImageDraw.Draw(img)
-        # Product (center)
-        draw.rectangle([140, 60, 220, 160], outline="black", width=2)
-        draw.text((180, 105), "产品", fill="black")
-        # Main light (top right)
-        draw.ellipse([280, 20, 340, 80], outline="#2563eb", width=2)
-        draw.text((288, 40), "主灯", fill="#2563eb")
-        draw.text((288, 55), key_angle[:8], fill="#1e40af")
-        draw.line([300, 60, 200, 80], fill="#2563eb", width=2)
-        # Fill light (top left, if present)
-        if has_fill:
-            draw.ellipse([20, 20, 80, 80], outline="#94a3b8", width=2)
-            draw.text((30, 40), "辅灯", fill="#64748b")
-            draw.line([60, 60, 160, 80], fill="#94a3b8", width=2)
-        else:
-            draw.text((30, 50), "单灯", fill="#94a3b8")
-        # Camera (bottom)
-        draw.ellipse([150, 200, 210, 255], outline="#16a34a", width=2)
-        draw.text((155, 220), "机位", fill="#16a34a")
-        draw.line([180, 200, 180, 165], fill="#16a34a", width=2)
-        # Ratio box
-        draw.rectangle([120, 170, 240, 195], outline="#cbd5e1")
-        draw.text((130, 175), f"光比 {ratio}", fill="#1e40af")
-        # Technique
-        draw.text((10, 240), technique[:30], fill="#64748b")
+        fill_svg = FILL_TPL.replace("__FILL_LABEL__", fill_label[:10]) if has_fill else NO_FILL
+        svg = SVG_TPL.replace("__KEY_ANGLE__", key_angle).replace("__CAM__", cam_short[:16]).replace("__RATIO__", ratio).replace("__FILL_SVG__", fill_svg)
 
-        # Save to bytes and embed in xlsx
-        from openpyxl.drawing.image import Image as XlImg
-        buf = io.BytesIO()
-        img.save(buf, format="PNG")
-        buf.seek(0)
-        xl_img = XlImg(buf)
-        xl_img.width = 340
-        xl_img.height = 240
-        ws.add_image(xl_img, f"A{row}")
+        svg_path = tmp_dir / f"{label}.svg"
+        png_path = tmp_dir / f"{label}.png"
+        svg_path.write_text(svg, encoding="utf-8")
 
-        # Text columns
-        row_data = ["", shot_ref, lt or "未指定", ratio, cam_short, technique]
+        # Convert SVG to PNG via resvg, embed via BytesIO
+        import subprocess, shutil, io
+        svg_path = svg_path.resolve()
+        resvg_bin = shutil.which("resvg") or "resvg"
+        r = subprocess.run([resvg_bin, str(svg_path), str(png_path)],
+                          capture_output=True, timeout=15)
+        if r.returncode == 0 and png_path.exists() and png_path.stat().st_size > 500:
+            # Load PNG bytes directly to avoid file-lock issues
+            png_bytes = png_path.read_bytes()
+            xl_img = XlImg(io.BytesIO(png_bytes))
+            xl_img.width = 420
+            xl_img.height = 260
+            ws.add_image(xl_img, f"B{row}")
+
+        svg_path.unlink(missing_ok=True)
+        png_path.unlink(missing_ok=True)
+
+        row_data = [label, "", shot_ref, lt or "未指定", ratio, cam_short, technique]
         for ci, val in enumerate(row_data, 1):
-            if ci == 1:
-                continue  # image column
             cell = ws.cell(row=row, column=ci, value=val)
             cell.font = font_body
-            cell.alignment = align_left_wrap if ci >= 3 else align_center
+            cell.alignment = align_left_wrap if ci >= 4 else align_center
             cell.border = border_all_thin
+
+    try:
+        for f in tmp_dir.iterdir():
+            f.unlink()
+        tmp_dir.rmdir()
+    except Exception:
+        pass
 
 def _derive_technique(shot: dict) -> str:
     """Derive professional shooting technique note from shot data. Not fabricated."""
