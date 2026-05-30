@@ -260,7 +260,12 @@ def _step_vector_store() -> int:
         if count > 0:
             click.echo(f"    {click.style('[OK]', fg='green')}  知识库就绪 — {count} 条数据已索引")
         else:
-            click.echo(f"    {click.style('[OK]', fg='green')}  知识库就绪 (空库 — 稍后导入数据即可)")
+            seed_dir = Path(__file__).parent.parent / "examples"
+            seed_count = len(list(seed_dir.glob("*.docx"))) if seed_dir.exists() else 0
+            click.echo(f"    {click.style('[OK]', fg='green')}  知识库就绪 (空库)")
+            if seed_count:
+                click.echo(f"    {click.style('[..]', fg='cyan')}  发现 {seed_count} 篇种子示例脚本 (examples/)")
+                click.echo(f"    {click.style('[..]', fg='cyan')}  运行 python -m rag_system ingest 即可导入")
         return count
     except Exception as e:
         click.echo(f"    {click.style('[!!]', fg='yellow')}  知识库初始化遇到问题: {e}")
