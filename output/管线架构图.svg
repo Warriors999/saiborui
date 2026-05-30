@@ -120,15 +120,15 @@
 
   <!-- Stats bar -->
   <rect x="60" y="758" width="1000" height="35" rx="6" fill="rgba(30,41,59,0.6)" stroke="#334155" stroke-width="0.5"/>
-  <text x="90" y="780" fill="#e2e8f0" font-family="JetBrains Mono,monospace" font-size="10">48模块</text>
+  <text x="90" y="780" fill="#e2e8f0" font-family="JetBrains Mono,monospace" font-size="10">41模块</text>
   <text x="180" y="780" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="10">|</text>
-  <text x="200" y="780" fill="#e2e8f0" font-family="JetBrains Mono,monospace" font-size="10">11,252行</text>
+  <text x="200" y="780" fill="#e2e8f0" font-family="JetBrains Mono,monospace" font-size="10">11,400行</text>
   <text x="310" y="780" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="10">|</text>
   <text x="330" y="780" fill="#e2e8f0" font-family="JetBrains Mono,monospace" font-size="10">14CLI</text>
   <text x="420" y="780" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="10">|</text>
   <text x="440" y="780" fill="#e2e8f0" font-family="JetBrains Mono,monospace" font-size="10">59测试·CI</text>
   <text x="560" y="780" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="10">|</text>
-  <text x="580" y="780" fill="#e2e8f0" font-family="JetBrains Mono,monospace" font-size="10">52提交</text>
+  <text x="580" y="780" fill="#e2e8f0" font-family="JetBrains Mono,monospace" font-size="10">70提交</text>
   <text x="670" y="780" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="10">|</text>
   <text x="690" y="780" fill="#e2e8f0" font-family="JetBrains Mono,monospace" font-size="10">568chunks·10品类</text>
   <text x="860" y="780" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="10">|</text>
