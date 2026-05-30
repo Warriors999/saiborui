@@ -1383,7 +1383,9 @@ def competitive_report(period, category, output):
               help="输出JSON路径 (默认: 只打印)")
 @click.option("--matrix", is_flag=True, default=False,
               help="人设×品类交叉效能矩阵 — 数据驱动人设选择")
-def analytics(days, persona, output, matrix):
+@click.option("--insight", is_flag=True, default=False,
+              help="数据洞察报告 — 反推文案/剪辑/拍摄改进建议")
+def analytics(days, persona, output, matrix, insight):
     """Show pipeline analytics report — 管线产量与效率分析.
 
     Tracks every 'generate' and 'storyboard' run with structured metrics.
@@ -1407,7 +1409,12 @@ def analytics(days, persona, output, matrix):
     from rag_system.generation.analytics import (
         generate_report, format_report, read_events,
         persona_category_matrix, format_matrix_report,
+        generate_insight_report,
     )
+
+    if insight:
+        click.echo(generate_insight_report(days=days))
+        return
 
     if matrix:
         click.echo(f"Building persona x category matrix (last {days} days)...")

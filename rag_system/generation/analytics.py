@@ -150,7 +150,7 @@ def format_report(report: dict) -> str:
         for name, counts in sorted_bp:
             total = counts["scripts"] + counts["storyboards"]
             bar_len = min(total, 30)
-            bar = "█" * bar_len
+            bar = "#" * bar_len
             lines.append(
                 f"    {name:<20} {counts['scripts']:>3}s + {counts['storyboards']:>3}b = {total:>3}  {bar}"
             )
@@ -167,7 +167,7 @@ def format_report(report: dict) -> str:
         for name, counts in sorted_bc:
             total = counts["scripts"] + counts["storyboards"]
             bar_len = min(total, 30)
-            bar = "█" * bar_len
+            bar = "#" * bar_len
             lines.append(
                 f"    {name:<20} {counts['scripts']:>3}s + {counts['storyboards']:>3}b = {total:>3}  {bar}"
             )
@@ -179,7 +179,7 @@ def format_report(report: dict) -> str:
         sorted_bf = sorted(bf.items(), key=lambda x: x[1], reverse=True)
         for fmt, count in sorted_bf:
             bar_len = min(count, 30)
-            bar = "█" * bar_len
+            bar = "#" * bar_len
             lines.append(f"    {fmt:<20} {count:>5}  {bar}")
 
     # Recommendations: best persona per category
@@ -346,5 +346,101 @@ def format_matrix_report(matrix: dict) -> str:
             f"  {persona:<12} {category:<12} {gens:>6} {avg_chars:>6} {pass_rate:>6} {score:>6.1f}  {failed}"
         )
 
+    lines.append("=" * 60)
+    return "\n".join(lines)
+
+
+# ---- Insight Report: data-driven improvement suggestions ----
+
+def generate_insight_report(days: int = 30) -> str:
+    """Analyze historical audit data and generate actionable improvement suggestions.
+
+    Reads audit events, finds patterns by persona/category, detects trends,
+    and returns a structured improvement report.
+    """
+    events = read_events(days=days)
+    audit_events = [e for e in events if e.get("type") == "audit"]
+
+    if not audit_events:
+        return "暂无足够数据生成洞察报告。请先运行几次 generate 命令积累数据。"
+
+    from collections import Counter, defaultdict
+
+    lines = ["", "=" * 60, "  数据洞察报告 — 反推文案/剪辑/拍摄改进", "=" * 60]
+    lines.append(f"  分析周期: 最近 {days} 天 | 审计记录: {len(audit_events)} 条")
+    lines.append("-" * 60)
+
+    # 1. Overall quality trend
+    lines.append("\n[1] 整体质量趋势")
+    recent_scores = []
+    for ae in sorted(audit_events, key=lambda e: e.get("ts", ""))[-10:]:
+        passed = ae.get("passed_count", 0)
+        total = ae.get("total_checks", 11)
+        ts = ae.get("ts", "")[:10]
+        recent_scores.append((ts, passed, total))
+    if len(recent_scores) >= 3:
+        first_avg = sum(s[1] for s in recent_scores[:3]) / max(len(recent_scores[:3]), 1)
+        last_avg = sum(s[1] for s in recent_scores[-3:]) / max(len(recent_scores[-3:]), 1)
+        trend = "↑ 改善中" if last_avg > first_avg else ("↓ 下降中" if last_avg < first_avg else "→ 持平")
+        lines.append(f"  近期趋势: {trend} (前3次均分 {first_avg:.1f}/11 → 近3次均分 {last_avg:.1f}/11)")
+        for ts, p, t in recent_scores[-5:]:
+            bar = "#" * p + "-" * (t - p)
+            lines.append(f"    {ts}  {bar}  {p}/{t}")
+
+    # 2. High-frequency failures by category
+    lines.append("\n[2] 各品类高频失败项 — 针对性改进方向")
+    cat_fails: dict[str, Counter] = defaultdict(Counter)
+    for ae in audit_events:
+        cat = ae.get("category", "unknown")
+        for fname in ae.get("failed_checks", []):
+            cat_fails[cat][fname] += 1
+
+    FIX_SUGGESTIONS = {
+        "信息搬运检测": "文案: 每个产品段落加入个人态度（有一说一/我用下来）。拍摄: 加入真人出镜讲述个人体验的镜头。",
+        "态度密度": "文案: 每段至少1处明确态度。拍摄: 增加博主面对镜头直接表态的画面。",
+        "长短句节奏": "文案: 长短句交替，长句≤25字，短句≤10字。剪辑: 切换节奏——数据段快切，体验段慢推。",
+        "口播时长": "文案: 精简口播，删冗余修饰词。剪辑: 加速B-roll，用画面代替口播信息。",
+        "电商味": "文案: 避免促销用语，用体验描述代替。拍摄: 减少价格弹窗频率，多拍产品使用场景。",
+        "口语化程度": "文案: 多用短句和语气词（吧、啊、呢）。剪辑: 保留自然停顿和语气，不要过度剪辑。",
+        "卖点覆盖": "文案: 确保每个核心卖点有对应段落。拍摄: 每个卖点配至少1个特写镜头。",
+        "流水账检测": "文案: 避免'首先/然后/接着'结构，用钩子开场。剪辑: 每30秒一个视觉转折点。",
+    }
+
+    for cat, fails in sorted(cat_fails.items()):
+        top3 = fails.most_common(3)
+        if top3:
+            lines.append(f"\n  [{cat}]")
+            for fname, count in top3:
+                fix = FIX_SUGGESTIONS.get(fname, "请检查此项")
+                lines.append(f"    {fname} (失败{count}次)")
+                lines.append(f"      → {fix}")
+
+    # 3. Cross-reference: what the data says about content quality
+    lines.append("\n[3] 综合建议（基于 {0} 天数据）".format(days))
+    generate_events = [e for e in events if e.get("type") == "generate"]
+    if generate_events:
+        avg_chars = sum(e.get("char_count", 0) for e in generate_events) // max(len(generate_events), 1)
+        lines.append(f"  平均脚本字数: {avg_chars} (目标: 800-1200)")
+        if avg_chars < 700:
+            lines.append("    → 字数偏低，可能信息密度不足。建议增加产品细节和体验描述。")
+        elif avg_chars > 1300:
+            lines.append("    → 字数偏高，注意口播时长。建议精简非核心内容，把部分信息移到花字。")
+
+    overall_fails = Counter()
+    for ae in audit_events:
+        for fname in ae.get("failed_checks", []):
+            overall_fails[fname] += 1
+    total_audits = len(audit_events)
+    if total_audits > 0 and overall_fails:
+        lines.append(f"\n  全局最高频失败项 (TOP 3):")
+        for fname, count in overall_fails.most_common(3):
+            rate = count / total_audits
+            lines.append(f"    - {fname}: {count}/{total_audits}次 ({rate:.0%})")
+            fix = FIX_SUGGESTIONS.get(fname, "")
+            if fix:
+                lines.append(f"      → {fix}")
+
+    lines.append("\n" + "=" * 60)
+    lines.append("  提示: 将以上洞察注入下次生成的 --perspective 参数，效果更好。")
     lines.append("=" * 60)
     return "\n".join(lines)
