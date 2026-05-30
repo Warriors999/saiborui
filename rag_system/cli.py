@@ -724,12 +724,15 @@ def quick(brief, persona, output):
     key_points = ", ".join(sp_names[:6]) if sp_names else ""
     brief_context = brief_to_prompt_context(analysis)
 
+    # Sanitize for Windows GBK terminals
+    def _safe(s): return s.encode("gbk", errors="replace").decode("gbk") if s else ""
+
     click.echo(f"\n[1/3] Brief 解析完成")
-    click.echo(f"  产品: {product}")
+    click.echo(f"  产品: {_safe(product)}")
     click.echo(f"  品类: {category}")
-    click.echo(f"  卖点: {key_points[:80]}")
+    click.echo(f"  卖点: {_safe(key_points[:80])}")
     if analysis.cover_suggestion:
-        click.echo(f"  封面: {analysis.cover_suggestion[:60]}")
+        click.echo(f"  封面: {_safe(analysis.cover_suggestion[:60])}")
 
     # Step 2: Generate + auto-fix
     click.echo(f"\n[2/3] 生成脚本中...")
@@ -769,13 +772,15 @@ def quick(brief, persona, output):
 
     # Step 3: Save
     click.echo(f"\n[3/3] 保存成品...")
-    out_path = Path(output) if output else Path(f"output/scripts/{product}-{persona}.docx")
+    from rag_system.utils import sanitize_filename, sanitize_text
+    out_path = Path(output) if output else Path(f"output/scripts/{sanitize_filename(product)}-{persona}.docx")
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    format_script_to_docx(script, product, persona, key_points, out_path)
-    click.echo(f"  已保存: {out_path}")
+    clean_script = sanitize_text(script)
+    format_script_to_docx(clean_script, product, persona, key_points, out_path)
+    click.echo(f"  已保存: {_safe(str(out_path))}")
 
     # Summary
-    final = audit_script(script, key_points=key_points)
+    final = audit_script(clean_script, key_points=key_points)
     final_passed = sum(1 for c in final.checks if c.get("passed"))
     final_total = len(final.checks)
     click.echo(f"\n{'='*50}")
@@ -784,8 +789,8 @@ def quick(brief, persona, output):
         click.echo(f"  未通过项:")
         for c in final.checks:
             if not c.get("passed"):
-                click.echo(f"    - {c['name']}: {c.get('detail', '')[:60]}")
-    click.echo(f"  文件: {out_path}")
+                click.echo(f"    - {_safe(c['name'])}: {_safe(c.get('detail', '')[:60])}")
+    click.echo(f"  文件: {_safe(str(out_path))}")
     click.echo(f"{'='*50}")
 
 

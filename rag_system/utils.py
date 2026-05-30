@@ -49,7 +49,20 @@ def write_cache(filepath: Path, cache_dir: Path, text: str) -> None:
 
 def sanitize_filename(name: str) -> str:
     """Sanitize a string for use as a filename."""
-    return name.replace("/", "-").replace("\\", "-").replace(":", "-")
+    import re
+    # Strip control characters and non-printable Unicode
+    name = re.sub(r'[\x00-\x1f\x7f-\x9f​-‏ - ﻿￰-￿]', '', name)
+    return name.replace("/", "-").replace("\\", "-").replace(":", "-").replace("*", "-").replace("?", "-").replace("\"", "-").replace("<", "-").replace(">", "-").replace("|", "-")
+
+
+def sanitize_text(text: str) -> str:
+    """Strip characters that break XML/GBK/docx output."""
+    import re
+    # Remove NULL bytes and ASCII control chars
+    text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', text)
+    # Remove Unicode private use area and unassigned
+    text = re.sub(r'[-﷐-﷯￰-￿]', '', text)
+    return text
 
 def parse_duration_str(d: str) -> int:
     """Parse duration string like '3s' or '1-2s' to integer seconds."""
