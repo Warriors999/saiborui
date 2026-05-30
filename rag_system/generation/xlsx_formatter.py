@@ -527,13 +527,8 @@ def _get_light_ratio(shot: dict) -> str:
     return _get_lighting_setup(shot)["ratio"]
 
 
-def _create_lighting_svgs(wb: Workbook, shots: list[dict], product_name: str, output_path: Path):
-    """Generate per-group SVG lighting diagrams + reference sheet in xlsx.
-
-    Each unique lighting setup gets a clean SVG file matching the
-    approved template (白底黑线, 光轴, 角度标注, 光比).
-    """
-    # Group shots by lighting setup
+def _create_lighting_svgs(wb, shots, product_name, output_path):
+    """Add lighting reference sheet to the xlsx (no separate SVG files)."""
     groups = {}
     for si, shot in enumerate(shots):
         lt = shot.get("lighting", "").strip()
@@ -543,117 +538,37 @@ def _create_lighting_svgs(wb: Workbook, shots: list[dict], product_name: str, ou
         if key not in groups:
             groups[key] = []
         groups[key].append(shot.get("shot_number", si + 1))
-
     if not groups:
         return
-
-    svg_dir = output_path.parent / f"{output_path.stem}_lighting"
-    svg_dir.mkdir(parents=True, exist_ok=True)
-
-    for gi, ((lt, cam, ratio), shot_nums) in enumerate(groups.items()):
-        label = f"灯位{chr(65+gi)}"
-        ref_shot = shots[shot_nums[0] - 1] if shot_nums else {}
-        setup = _get_lighting_setup(ref_shot)
-        technique = _derive_technique(ref_shot) if ref_shot else ""
-        key_angle = setup.get("key_angle", "右前40°")
-        has_fill = bool(setup.get("fill"))
-        shot_ref = ", ".join(str(n) for n in shot_nums[:8])
-        cam_short = (cam or "50mm F2.8").replace("机位:", "").replace("机位：", "")[:25]
-
-        fill_svg = ""
-        if has_fill:
-            fill_svg = '''  <circle cx="80" cy="210" r="18" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
-  <text x="80" y="206" fill="#475569" font-size="10" font-weight="bold" text-anchor="middle">辅 灯</text>
-  <text x="80" y="226" fill="#94a3b8" font-size="8" text-anchor="middle">左侧补光</text>
-  <line x1="98" y1="210" x2="220" y2="210" stroke="#64748b" stroke-width="2" marker-end="url(#aF)"/>'''
-        else:
-            fill_svg = '  <text x="80" y="215" fill="#94a3b8" font-size="9" text-anchor="middle">单灯布光</text>'
-
-        svg = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 500">
-  <defs>
-    <marker id="aK" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2563eb"/></marker>
-    <marker id="aF" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#64748b"/></marker>
-    <marker id="aC" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#16a34a"/></marker>
-    <marker id="aR" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#dc2626"/></marker>
-    <style>text{{font-family:'PingFang SC','Microsoft YaHei',sans-serif}}</style>
-  </defs>
-  <rect width="540" height="500" fill="#ffffff"/>
-  <text x="270" y="26" fill="#1e293b" font-size="13" font-weight="bold" text-anchor="middle">{label} — {product_name}</text>
-  <text x="270" y="44" fill="#64748b" font-size="9" text-anchor="middle">镜号: {shot_ref}</text>
-  <line x1="30" y1="54" x2="510" y2="54" stroke="#e2e8f0" stroke-width="1"/>
-  <rect x="220" y="165" width="100" height="80" rx="6" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
-  <text x="270" y="200" fill="#1e293b" font-size="12" font-weight="bold" text-anchor="middle">产 品</text>
-  <text x="270" y="220" fill="#94a3b8" font-size="9" text-anchor="middle">桌面摆放</text>
-  <line x1="270" y1="245" x2="270" y2="290" stroke="#dc2626" stroke-width="2" marker-end="url(#aR)"/>
-  <text x="290" y="272" fill="#dc2626" font-size="11" font-weight="bold">正面朝向</text>
-  <circle cx="270" cy="400" r="18" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
-  <text x="270" y="396" fill="#15803d" font-size="10" font-weight="bold" text-anchor="middle">机位</text>
-  <text x="270" y="426" fill="#64748b" font-size="8" text-anchor="middle">{cam_short}</text>
-  <line x1="270" y1="382" x2="270" y2="300" stroke="#16a34a" stroke-width="2" marker-end="url(#aC)"/>
-  <text x="290" y="345" fill="#16a34a" font-size="10" font-weight="bold">镜头朝向</text>
-  <line x1="270" y1="382" x2="210" y2="245" stroke="#16a34a" stroke-width="1" stroke-dasharray="4,3" opacity="0.3"/>
-  <line x1="270" y1="382" x2="330" y2="245" stroke="#16a34a" stroke-width="1" stroke-dasharray="4,3" opacity="0.3"/>
-  <line x1="270" y1="245" x2="270" y2="382" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,4"/>
-  <circle cx="460" cy="120" r="20" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
-  <text x="460" y="116" fill="#1e40af" font-size="11" font-weight="bold" text-anchor="middle">主 灯</text>
-  <text x="460" y="134" fill="#64748b" font-size="8" text-anchor="middle">{key_angle}</text>
-  <text x="460" y="146" fill="#64748b" font-size="8" text-anchor="middle">5600K</text>
-  <line x1="442" y1="130" x2="318" y2="188" stroke="#2563eb" stroke-width="2" marker-end="url(#aK)"/>
-  <text x="400" y="150" fill="#2563eb" font-size="9">{key_angle}</text>
-{fill_svg}
-  <rect x="200" y="458" width="140" height="30" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
-  <text x="270" y="477" fill="#1e40af" font-size="11" font-weight="bold" text-anchor="middle">光比 主:辅 ≈ {ratio}</text>
-  <line x1="350" y1="443" x2="470" y2="443" stroke="#cbd5e1" stroke-width="1"/>
-  <text x="410" y="438" fill="#94a3b8" font-size="8" text-anchor="middle">≈ 1.5m</text>
-  <text x="420" y="477" fill="#64748b" font-size="8" text-anchor="middle">{technique}</text>
-</svg>'''
-        (svg_dir / f"{label}.svg").write_text(svg, encoding="utf-8")
-
-    # Reference sheet
-    ws = wb.create_sheet("灯光机位图")
-    for c_letter, w in [("A", 5), ("B", 12), ("C", 28), ("D", 12), ("E", 28), ("F", 16)]:
-        ws.column_dimensions[c_letter].width = w
-    ctr = Alignment(horizontal="center", vertical="center")
-    ctr_w = Alignment(horizontal="center", vertical="center", wrap_text=True)
-    ws.merge_cells("A1:F1")
-    ws["A1"] = f"灯光机位图 — {product_name}  (SVG文件见同文件夹)"
-    ws["A1"].font = Font(name="微软雅黑", size=12, bold=True, color=TEXT_HEADER)
-    ws["A1"].fill = PatternFill("solid", fgColor=PRIMARY)
-    ws["A1"].alignment = ctr
-    ws.row_dimensions[1].height = 28
-    headers = ["灯位", "镜号", "灯光配置", "光比", "机位", "SVG文件"]
+    ws = wb.create_sheet("灯位图")
+    ws.column_dimensions["A"].width = 10
+    ws.column_dimensions["B"].width = 18
+    ws.column_dimensions["C"].width = 46
+    ws.column_dimensions["D"].width = 16
+    ws.column_dimensions["E"].width = 30
+    ws.column_dimensions["F"].width = 30
+    headers = ["灯位", "适用镜号", "主灯光位", "光比", "机位", "布光技法"]
     for ci, h in enumerate(headers, 1):
-        cell = ws.cell(row=3, column=ci, value=h)
-        cell.font = Font(name="微软雅黑", size=10, bold=True, color=TEXT_HEADER)
-        cell.fill = PatternFill("solid", fgColor=PRIMARY)
-        cell.alignment = ctr
-        cell.border = Border(left=Side(style="thin", color=BORDER_COLOR),
-                             right=Side(style="thin", color=BORDER_COLOR),
-                             top=Side(style="thin", color=BORDER_COLOR),
-                             bottom=Side(style="thin", color=BORDER_COLOR))
-    ws.row_dimensions[3].height = 24
-    row = 4
+        cell = ws.cell(row=1, column=ci, value=h)
+        cell.font = font_col_header
+        cell.fill = fill_header
+        cell.alignment = align_center
+        cell.border = border_all_thin
+    ws.row_dimensions[1].height = 26
     for gi, ((lt, cam, ratio), shot_nums) in enumerate(groups.items()):
+        row = gi + 2
         label = f"灯位{chr(65+gi)}"
         shot_ref = ", ".join(str(n) for n in shot_nums[:8])
-        lt_short = (lt or "右前45°+柔光箱 5600K")[:40]
-        cam_short = (cam or "50mm F2.8")[:35]
-        data = [label, shot_ref, lt_short, f"主:辅≈{ratio}", cam_short, f"{label}.svg"]
-        for ci, val in enumerate(data, 1):
+        ref_shot = shots[shot_nums[0] - 1] if shot_nums else {}
+        technique = _derive_technique(ref_shot) if ref_shot else ""
+        cam_short = (cam or "50mm F2.8").replace("机位:", "").replace("机位：", "")[:25]
+        row_data = [label, shot_ref, lt or "未指定", ratio, cam_short, technique]
+        for ci, val in enumerate(row_data, 1):
             cell = ws.cell(row=row, column=ci, value=val)
-            cell.font = Font(name="微软雅黑", size=9, color=TEXT_PRIMARY)
-            cell.alignment = ctr_w
-            cell.border = Border(left=Side(style="thin", color=BORDER_COLOR),
-                                 right=Side(style="thin", color=BORDER_COLOR),
-                                 top=Side(style="thin", color=BORDER_COLOR),
-                                 bottom=Side(style="thin", color=BORDER_COLOR))
-            if row % 2 == 0:
-                cell.fill = PatternFill("solid", fgColor="F8FAFC")
-        ws.row_dimensions[row].height = 22
-        row += 1
-    ws.sheet_properties.pageSetUpPr = None
-    ws.page_setup.orientation = "landscape"
-
+            cell.font = font_body
+            cell.alignment = align_left_wrap if ci >= 3 else align_center
+            cell.border = border_all_thin
+        ws.row_dimensions[row].height = max(28, 16 * (len(lt) // 30 + 1))
 
 def _derive_technique(shot: dict) -> str:
     """Derive professional shooting technique note from shot data. Not fabricated."""

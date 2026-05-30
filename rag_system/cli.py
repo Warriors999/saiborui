@@ -779,9 +779,11 @@ def quick(brief, persona, output):
 
     # Step 3: Save
     click.echo(f"\n[3/3] 保存成品...")
+    from datetime import datetime as _dt
     from rag_system.utils import sanitize_filename, sanitize_text
-    out_path = Path(output) if output else Path(f"output/scripts/{sanitize_filename(product)}-{persona}.docx")
-    out_path.parent.mkdir(parents=True, exist_ok=True)
+    proj_dir = Path(output) if output else Path(f"output/{_dt.now():%Y-%m-%d}_{sanitize_filename(product)}")
+    proj_dir.mkdir(parents=True, exist_ok=True)
+    out_path = proj_dir / f"文案_{sanitize_filename(product)}.docx"
     clean_script = sanitize_text(script)
     format_script_to_docx(clean_script, product, persona, key_points, out_path)
     click.echo(f"  已保存: {_safe(str(out_path))}")
