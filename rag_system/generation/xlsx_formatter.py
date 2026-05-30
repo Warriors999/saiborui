@@ -528,7 +528,10 @@ def _get_light_ratio(shot: dict) -> str:
 
 
 def _create_lighting_svgs(wb, shots, product_name, output_path):
-    """Add lighting reference sheet to the xlsx (no separate SVG files)."""
+    """Add lighting reference sheet with embedded diagram images."""
+    from PIL import Image, ImageDraw
+    import io
+
     groups = {}
     for si, shot in enumerate(shots):
         lt = shot.get("lighting", "").strip()
@@ -540,14 +543,15 @@ def _create_lighting_svgs(wb, shots, product_name, output_path):
         groups[key].append(shot.get("shot_number", si + 1))
     if not groups:
         return
+
     ws = wb.create_sheet("灯位图")
-    ws.column_dimensions["A"].width = 10
+    ws.column_dimensions["A"].width = 50
     ws.column_dimensions["B"].width = 18
-    ws.column_dimensions["C"].width = 46
-    ws.column_dimensions["D"].width = 16
-    ws.column_dimensions["E"].width = 30
-    ws.column_dimensions["F"].width = 30
-    headers = ["灯位", "适用镜号", "主灯光位", "光比", "机位", "布光技法"]
+    ws.column_dimensions["C"].width = 40
+    ws.column_dimensions["D"].width = 14
+    ws.column_dimensions["E"].width = 28
+    ws.column_dimensions["F"].width = 28
+    headers = ["灯位示意图", "适用镜号", "主灯光位", "光比", "机位", "布光技法"]
     for ci, h in enumerate(headers, 1):
         cell = ws.cell(row=1, column=ci, value=h)
         cell.font = font_col_header
@@ -555,20 +559,66 @@ def _create_lighting_svgs(wb, shots, product_name, output_path):
         cell.alignment = align_center
         cell.border = border_all_thin
     ws.row_dimensions[1].height = 26
+
     for gi, ((lt, cam, ratio), shot_nums) in enumerate(groups.items()):
         row = gi + 2
+        ws.row_dimensions[row].height = 200
         label = f"灯位{chr(65+gi)}"
         shot_ref = ", ".join(str(n) for n in shot_nums[:8])
         ref_shot = shots[shot_nums[0] - 1] if shot_nums else {}
+        setup = _get_lighting_setup(ref_shot)
         technique = _derive_technique(ref_shot) if ref_shot else ""
         cam_short = (cam or "50mm F2.8").replace("机位:", "").replace("机位：", "")[:25]
-        row_data = [label, shot_ref, lt or "未指定", ratio, cam_short, technique]
+        key_angle = setup.get("key_angle", "右前40°")
+        has_fill = bool(setup.get("fill"))
+
+        # Draw lighting diagram with PIL
+        img = Image.new("RGB", (360, 260), "white")
+        draw = ImageDraw.Draw(img)
+        # Product (center)
+        draw.rectangle([140, 60, 220, 160], outline="black", width=2)
+        draw.text((180, 105), "产品", fill="black")
+        # Main light (top right)
+        draw.ellipse([280, 20, 340, 80], outline="#2563eb", width=2)
+        draw.text((288, 40), "主灯", fill="#2563eb")
+        draw.text((288, 55), key_angle[:8], fill="#1e40af")
+        draw.line([300, 60, 200, 80], fill="#2563eb", width=2)
+        # Fill light (top left, if present)
+        if has_fill:
+            draw.ellipse([20, 20, 80, 80], outline="#94a3b8", width=2)
+            draw.text((30, 40), "辅灯", fill="#64748b")
+            draw.line([60, 60, 160, 80], fill="#94a3b8", width=2)
+        else:
+            draw.text((30, 50), "单灯", fill="#94a3b8")
+        # Camera (bottom)
+        draw.ellipse([150, 200, 210, 255], outline="#16a34a", width=2)
+        draw.text((155, 220), "机位", fill="#16a34a")
+        draw.line([180, 200, 180, 165], fill="#16a34a", width=2)
+        # Ratio box
+        draw.rectangle([120, 170, 240, 195], outline="#cbd5e1")
+        draw.text((130, 175), f"光比 {ratio}", fill="#1e40af")
+        # Technique
+        draw.text((10, 240), technique[:30], fill="#64748b")
+
+        # Save to bytes and embed in xlsx
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        buf.seek(0)
+        from openpyxl.drawing.image import Image as XlImage
+        xl_img = XlImage(buf)
+        xl_img.width = 340
+        xl_img.height = 240
+        ws.add_image(xl_img, f"A{row}")
+
+        # Text columns
+        row_data = ["", shot_ref, lt or "未指定", ratio, cam_short, technique]
         for ci, val in enumerate(row_data, 1):
+            if ci == 1:
+                continue  # image column
             cell = ws.cell(row=row, column=ci, value=val)
             cell.font = font_body
             cell.alignment = align_left_wrap if ci >= 3 else align_center
             cell.border = border_all_thin
-        ws.row_dimensions[row].height = max(28, 16 * (len(lt) // 30 + 1))
 
 def _derive_technique(shot: dict) -> str:
     """Derive professional shooting technique note from shot data. Not fabricated."""
