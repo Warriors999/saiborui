@@ -516,13 +516,13 @@ _FILLER_PATTERNS = [
 
 # Short perspective sentences to inject between long sentences (rhythm fix)
 _SHORT_BURSTS = [
-    "有一说一。", "不吹不黑。", "说实话。", "懂的都懂。",
+    "确实。", "不吹不黑。", "讲道理。", "懂的都懂。",
     "这就很顶。", "你品。", "真的。",
 ]
 
-# Perspective markers for attitude density injection
+# Perspective markers for attitude density injection (diverse, not just 有一说一)
 _PERSPECTIVE_MARKERS = [
-    "有一说一", "说实话", "不吹不黑", "我个人", "我觉得",
+    "说实话", "不吹不黑", "我个人", "我觉得", "我用下来", "实测", "上手发现", "体验下来",
     "我用下来", "我感觉", "实测", "亲测", "上手",
 ]
 
@@ -645,31 +645,34 @@ def _fix_ecommerce_smell(script: str) -> str:
 
 
 def _fix_attitude_density(script: str) -> str:
-    """Prepend '有一说一，' to paragraphs that lack perspective markers.
+    """Add one attitude marker to the first paragraph that lacks it.
 
-    Targets the auditor's 态度密度 check — ensures at least one attitude marker
-    per substantive paragraph (skips metadata lines like 封面/简介/花字).
+    Targets 态度密度 check — but only inserts ONCE, not on every paragraph.
     """
     lines = script.split("\n")
     result = []
+    fixed = False  # Only fix ONE paragraph
+    # Cycle through markers to avoid repetition
+    markers = ["说实话，", "不吹不黑，", "我个人觉得，", "我用下来，", "上手发现，"]
 
-    for line in lines:
+    for i, line in enumerate(lines):
         stripped = line.strip()
         if not stripped:
             result.append(line)
             continue
 
-        # Skip metadata/structural lines
+        # Skip metadata
         if (stripped.startswith("封面") or stripped.startswith("简介") or
                 stripped.startswith("花字") or stripped.startswith("#")):
             result.append(line)
             continue
 
-        # Check if line already has a perspective marker
         has_marker = any(m in stripped for m in _PERSPECTIVE_MARKERS)
-        if not has_marker and len(stripped) > 15:
+        if not has_marker and not fixed and len(stripped) > 20:
             indent = line[:len(line) - len(line.lstrip())]
-            result.append(f"{indent}有一说一，{stripped}")
+            marker = markers[i % len(markers)]
+            result.append(f"{indent}{marker}{stripped}")
+            fixed = True
         else:
             result.append(line)
 

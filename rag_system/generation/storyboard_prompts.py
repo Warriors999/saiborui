@@ -183,7 +183,7 @@ PERSONA_STORYBOARD_PROFILES = {
         "tone": "专业但不枯燥，吐槽犀利，口语化极强。常用'你别说''我跟你说''兄弟们''简直了''掀桌''闭眼入'。",
         "hook_style": "bold_claim_or_pain_point",  # 大胆断言或痛点共鸣
         "price_emphasis": "extreme",  # 价格是高潮，必须反复强调
-        "signature": "我是折腾到吐，我们下期再见",
+        "signature": "",
     },
     "好设牛啊": {
         "description": "设计美学导向的数码博主，关注产品颜值、做工细节和使用体验。",
