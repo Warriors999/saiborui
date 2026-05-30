@@ -915,6 +915,8 @@ def generate_storyboard(script: str, product: str, persona: str,
     result = storyboard_pipeline(Path(script), product, persona,
                                  reference_path=ref_path, columns=col_list)
     click.echo(f"Done: {result}")
+    click.echo("  分镜质检: 请在 xlsx 中查看灯位图sheet和审核结果")
+    click.echo("  质量门槛: 分镜审核>=8/14达标, 不可拍镜数=0为合格")
     from rag_system.generation.output_manager import register_output
     register_output("storyboard", result, {"product": product, "persona": persona})
 
@@ -1640,11 +1642,30 @@ def topic_daily(persona, focus, top_n, output):
         python -m rag_system topic-daily
         python -m rag_system topic-daily --persona "朋克" --focus ai -n 10
     """
-    from rag_system.generation.topic_daily import run_topic_daily
+    from rag_system.generation.topic_daily import run_topic_daily, generate_daily_brief
 
     click.echo(f"Generating daily topic brief... (persona={persona}, focus={focus})")
+    brief = generate_daily_brief(persona=persona, category_focus=focus, top_n=top_n)
     text = run_topic_daily(persona=persona, category_focus=focus, top_n=top_n, output=output)
     click.echo(text)
+
+    # Quality gate: score card for top topics
+    if brief.topics:
+        try:
+            from rag_system.generation.scorecard import render_topic_scorecard
+            import re as _re2
+            card = render_topic_scorecard(brief.topics)
+            card = _re2.sub(r'\x1b\[[0-9;]*m', '', card)
+            click.echo(card)
+            # Threshold check
+            low = [t for t in brief.topics if t.total_score < 35]
+            high = [t for t in brief.topics if t.total_score >= 45]
+            if low:
+                click.echo(f"  [WARN] {len(low)}个选题评分偏低(<35/60)，不建议选用")
+            if high:
+                click.echo(f"  [PASS] {len(high)}个选题评分优秀(>=45/60)，强烈推荐")
+        except Exception:
+            pass
 
     if output:
         click.echo(f"Saved: {output}")
