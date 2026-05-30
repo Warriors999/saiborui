@@ -480,13 +480,14 @@ def _split_long_vo_shots(shots: list[dict]) -> list[dict]:
     return new_shots
 
 
-def storyboard_pipeline(docx_path: Path, product_name: str, persona: str = "折腾到吐", reference_path: Path = None, columns: list[str] = None) -> Path:
+def storyboard_pipeline(docx_path: Path, product_name: str, persona: str = "折腾到吐", reference_path: Path = None, columns: list[str] = None, output_dir: Path = None) -> Path:
     """Full pipeline: script → storyboard → audit → fix → save."""
-    output_dir = Path("output/storyboards")
+    if output_dir is None:
+        output_dir = docx_path.parent  # same folder as the script
     output_dir.mkdir(parents=True, exist_ok=True)
     from rag_system.utils import sanitize_filename
     safe_name = sanitize_filename(product_name)
-    xlsx_path = output_dir / f"{safe_name}-{persona}-分镜表.xlsx"
+    xlsx_path = output_dir / f"分镜_{safe_name}.xlsx"
 
     # Step 1: Parse script
     logger.info(f"读取定稿脚本: {docx_path}")

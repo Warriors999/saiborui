@@ -913,7 +913,8 @@ def generate_storyboard(script: str, product: str, persona: str,
 
     click.echo(f"Generating storyboard for: {product}")
     result = storyboard_pipeline(Path(script), product, persona,
-                                 reference_path=ref_path, columns=col_list)
+                                 reference_path=ref_path, columns=col_list,
+                                 output_dir=Path(script).parent)
     click.echo(f"Done: {result}")
     click.echo("  分镜质检: 请在 xlsx 中查看灯位图sheet和审核结果")
     click.echo("  质量门槛: 分镜审核>=8/14达标, 不可拍镜数=0为合格")
