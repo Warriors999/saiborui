@@ -529,8 +529,8 @@ def _get_light_ratio(shot: dict) -> str:
 
 def _create_lighting_svgs(wb, shots, product_name, output_path):
     """Add lighting reference sheet with embedded diagram images."""
-    from PIL import Image, ImageDraw
     import io
+    from PIL import Image as PILImage, ImageDraw
 
     groups = {}
     for si, shot in enumerate(shots):
@@ -573,7 +573,7 @@ def _create_lighting_svgs(wb, shots, product_name, output_path):
         has_fill = bool(setup.get("fill"))
 
         # Draw lighting diagram with PIL
-        img = Image.new("RGB", (360, 260), "white")
+        img = PILImage.new("RGB", (360, 260), "white")
         draw = ImageDraw.Draw(img)
         # Product (center)
         draw.rectangle([140, 60, 220, 160], outline="black", width=2)
@@ -601,11 +601,11 @@ def _create_lighting_svgs(wb, shots, product_name, output_path):
         draw.text((10, 240), technique[:30], fill="#64748b")
 
         # Save to bytes and embed in xlsx
+        from openpyxl.drawing.image import Image as XlImg
         buf = io.BytesIO()
         img.save(buf, format="PNG")
         buf.seek(0)
-        from openpyxl.drawing.image import Image as XlImage
-        xl_img = XlImage(buf)
+        xl_img = XlImg(buf)
         xl_img.width = 340
         xl_img.height = 240
         ws.add_image(xl_img, f"A{row}")
