@@ -578,29 +578,31 @@ def _fix_sentence_rhythm(script: str) -> str:
             result.append(part)
             continue
 
-        # Only break sentences that exceed the FIX_TIPS threshold of 25 chars
-        if len(part) > 25:
+        # Aggressive split: >20 chars → break at every comma
+        if len(part) > 20:
             comma_positions = [m.start() for m in re.finditer(r"[，,]", part)]
             if comma_positions:
-                # Break at the comma nearest to the middle of the sentence
-                mid = len(part) // 2
-                best_pos = min(comma_positions, key=lambda p: abs(p - mid))
-                first_half = part[:best_pos] + "。"
-                second_half = part[best_pos + 1:]  # skip the comma
-                result.append(first_half)
-                # Insert a short burst if the second half is still long
-                if len(second_half) > 20:
-                    result.append(random.choice(_SHORT_BURSTS))
-                result.append(second_half)
-            else:
-                # No comma to break at — force a split at ~18 chars
-                if len(part) > 30:
-                    break_at = min(18, max(len(part) - 8, 8))
-                    result.append(part[:break_at] + "。")
-                    remaining = part[break_at:]
-                    if len(remaining) > 20:
+                # Break at ALL commas in long sentences, not just the middle
+                prev = 0
+                for pos in comma_positions:
+                    chunk = part[prev:pos].strip()
+                    if chunk:
+                        result.append(chunk + "。")
+                    prev = pos + 1
+                last_chunk = part[prev:].strip()
+                if last_chunk:
+                    if len(last_chunk) > 20:
                         result.append(random.choice(_SHORT_BURSTS))
-                    result.append(remaining)
+                    result.append(last_chunk)
+            else:
+                # No comma: force split every ~15 chars
+                if len(part) > 25:
+                    for k in range(0, len(part), 15):
+                        chunk = part[k:k+15].strip()
+                        if chunk:
+                            result.append(chunk + ("。" if k + 15 < len(part) else ""))
+                    if len(part) > 40:
+                        result.insert(-1, random.choice(_SHORT_BURSTS))
                 else:
                     result.append(part)
         else:
@@ -794,6 +796,18 @@ def quick(brief, persona, output):
     final_total = len(final.checks)
     click.echo(f"\n{'='*50}")
     click.echo(f"  成品质量: {final_passed}/{final_total} 项通过")
+
+    # Quality gate: block delivery if unacceptable
+    if final_passed < 7:
+        click.echo(f"  {click.style('[BLOCKED]', fg='red')} 质量不达标 (< 7/11)，自动修复未能达标。")
+        click.echo(f"  建议: 用 --perspective 补充更多个人观点和体验描述后重试。")
+        click.echo(f"  已跳过文件保存。")
+        click.echo(f"{'='*50}")
+        return
+    elif final_passed < 8:
+        click.echo(f"  {click.style('[WARN]', fg='yellow')} 需人工审核 (7-8/11)")
+    else:
+        click.echo(f"  {click.style('[PASS]', fg='green')} 质量达标")
     # Render audit scorecard (strip ANSI + sanitize for GBK)
     from rag_system.generation.scorecard import render_audit_scorecard
     import re as _re
