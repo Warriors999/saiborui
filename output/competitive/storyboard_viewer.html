@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>分镜脚本 — 微星X68K磁轴键盘 + X7M旗舰鼠标</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0c;
+  --surface: #131418;
+  --card: #1a1c22;
+  --border: #252830;
+  --text: #e4e4e7;
+  --text-dim: #71717a;
+  --text-muted: #52525b;
+  --accent: #f59e0b;
+  --accent-glow: rgba(245, 158, 11, 0.15);
+  --red: #ef4444;
+  --red-glow: rgba(239, 68, 68, 0.1);
+  --green: #22c55e;
+  --blue: #3b82f6;
+  --blue-glow: rgba(59, 130, 246, 0.1);
+  --cyan: #06b6d4;
+  --purple: #a855f7;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans SC', sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Header ── */
+.header {
+  position: sticky; top: 0; z-index: 100;
+  background: linear-gradient(180deg, rgba(10,10,12,0.98) 60%, rgba(10,10,12,0));
+  padding: 32px 40px 48px;
+  backdrop-filter: blur(20px);
+}
+.header-inner {
+  max-width: 1400px; margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: flex-end;
+}
+.header-left h1 {
+  font-size: 28px; font-weight: 700; letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--text) 0%, #a1a1aa 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 6px;
+}
+.header-left .meta {
+  font-size: 13px; color: var(--text-dim);
+  display: flex; gap: 16px; align-items: center;
+}
+.header-left .meta span { display: flex; align-items: center; gap: 4px; }
+.header-right {
+  display: flex; gap: 8px;
+}
+.stat-pill {
+  padding: 8px 16px; border-radius: 20px;
+  font-size: 12px; font-weight: 500; letter-spacing: 0.02em;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.stat-pill strong { color: var(--text); font-weight: 600; margin-right: 2px; }
+.stat-pill.accent { border-color: rgba(245,158,11,0.3); color: var(--accent); }
+
+/* ── Main grid ── */
+.main { max-width: 1400px; margin: 0 auto; padding: 0 40px 80px; }
+.shot-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 12px;
+}
+
+/* ── Shot card ── */
+.shot-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  position: relative;
+}
+.shot-card:hover {
+  border-color: #3f3f46;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+}
+.shot-card.featured { border-left: 3px solid var(--accent); }
+.shot-card.transition {
+  border-left: 3px solid var(--purple);
+}
+.shot-card.transition::before {
+  content: '↻ 转场匹配';
+  position: absolute; top: 8px; right: 12px;
+  font-size: 10px; color: var(--purple); font-weight: 500;
+  font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em;
+}
+
+/* ── Card header ── */
+.card-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.shot-num {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: var(--accent-glow); border: 1px solid rgba(245,158,11,0.25);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 700; color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  flex-shrink: 0;
+}
+.shot-tags { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+.tag {
+  padding: 3px 10px; border-radius: 12px;
+  font-size: 11px; font-weight: 500; letter-spacing: 0.02em;
+  border: 1px solid var(--border);
+}
+.tag.jingbie { background: var(--blue-glow); border-color: rgba(59,130,246,0.25); color: var(--blue); }
+.tag.yunjing { background: var(--red-glow); border-color: rgba(239,68,68,0.2); color: var(--red); }
+.tag.duration {
+  background: transparent; border-color: var(--border);
+  color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 10px;
+}
+
+/* ── Card body ── */
+.card-body { padding: 16px 18px; }
+.visual-desc {
+  font-size: 14px; line-height: 1.7; color: #d4d4d8;
+  margin-bottom: 14px;
+}
+.vo-line {
+  background: linear-gradient(90deg, rgba(168,85,247,0.08) 0%, transparent 100%);
+  border-left: 2px solid var(--purple);
+  padding: 10px 14px; margin: 12px 0;
+  border-radius: 0 8px 8px 0;
+}
+.vo-line .vo-label {
+  font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--purple); font-weight: 600; margin-bottom: 4px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.vo-line .vo-text {
+  font-size: 15px; font-weight: 500; line-height: 1.6; color: #e4e4e7;
+}
+
+/* ── Card footer: lighting ── */
+.card-footer {
+  padding: 10px 18px;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  background: rgba(0,0,0,0.2);
+  display: flex; gap: 16px; flex-wrap: wrap;
+}
+.tech-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 10px; color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+.tech-item .tech-icon { font-size: 11px; }
+.tech-item .tech-val { color: var(--text-dim); }
+
+.huazi-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 4px;
+  background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.15);
+  font-size: 10px; color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+}
+.audio-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 4px;
+  background: rgba(6,182,212,0.08); border: 1px solid rgba(6,182,212,0.15);
+  font-size: 10px; color: var(--cyan);
+  font-family: 'JetBrains Mono', monospace;
+}
+.note-text {
+  font-size: 11px; color: var(--text-muted);
+  font-style: italic; margin-top: 6px;
+}
+
+/* ── Footer branding ── */
+.branding {
+  text-align: center; padding: 40px; opacity: 0.3;
+  transition: opacity 0.3s;
+}
+.branding:hover { opacity: 0.6; }
+.branding a {
+  color: var(--text-dim); text-decoration: none;
+  font-size: 11px; letter-spacing: 0.05em;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .shot-grid { grid-template-columns: 1fr; }
+  .header-inner { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .header-left h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-left">
+      <h1>微星X68K磁轴键盘 + X7M旗舰鼠标</h1>
+      <div class="meta">
+        <span>折腾到吐</span>
+        <span>|</span>
+        <span>30镜</span>
+        <span>|</span>
+        <span>90s</span>
+        <span>|</span>
+        <span>16:9 横版</span>
+        <span>|</span>
+        <span>审核 10/14 通过</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="stat-pill accent"><strong>30</strong> 镜头</div>
+      <div class="stat-pill">特写 11</div>
+      <div class="stat-pill">中景 5</div>
+      <div class="stat-pill">固定 12</div>
+      <div class="stat-pill">推 6</div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="shot-grid" id="shotGrid"></div>
+</div>
+
+<div class="branding">
+  <a href="https://deerflow.tech" target="_blank">Created By Deerflow</a>
+</div>
+
+<script>
+const DATA = {"product":"微星X68K磁轴键盘 + X7M旗舰鼠标","persona":"折腾到吐","duration":"90s","ratio":"16:9 横版","shots":[{"num":1,"jingbie":"中景","yunjing":"推","desc":"桌面俯视，微星X68K键盘和X7M鼠标并排放置，背景黑色布纹。镜头从略远缓慢推近至键盘鼠标占满画面2/3。","vo":"提起微星，","duration":"2s","huazi":"","audio":"","lighting":"主灯:右前45°+柔光箱 | 辅灯:左侧补光 | 色温:5600K\n机位:俯拍45° | 焦段:50mm | 光圈:F4\n光比: 主:辅≈3:1","notes":"产品居中，对称构图"},{"num":2,"jingbie":"特写","yunjing":"推","desc":"微星logo特写，键盘右上角的金属logo在灯光下反光。","vo":"你们的第一反应是不是主板、显卡、笔记本？","duration":"5s","huazi":"","audio":"","lighting":"主光:右前60°+柔光箱 | 色温:5600K | 辅光:左侧反光板弱补\n机位:正面 | 焦段:50mm | 光圈:F2.8\n光比: 主:辅≈3:1","notes":"logo擦亮，反光清晰"},{"num":3,"jingbie":"中近景","yunjing":"摇","desc":"鼠标X7M侧面，镜头从鼠标底部缓慢上摇至顶部，展示整体轮廓。","vo":"外设这块，存在感不强","duration":"5s","huazi":"","audio":"","lighting":"主光:顶部垂直+柔光箱 | 色温:5600K\n机位:正面 | 焦段:50mm | 光圈:F2.8\n光比: 主:辅≈2:1","notes":""},{"num":4,"jingbie":"特写","yunjing":"推","desc":"键盘从画面左侧入画，与前一镜鼠标出画方向匹配。展示X68K全铝外壳质感。","vo":"但最近x系列出来后，","duration":"5s","huazi":"微星X68K 磁轴键盘/ X7M无线鼠标。","audio":"","lighting":"主光:右前45°+柔光箱 | 色温:5600K\n机位:正面 | 焦段:50mm | 光圈:F2.8\n光比: 主:辅≈2:1","notes":"键盘从左入画，动作匹配"},{"num":5,"jingbie":"中景","yunjing":"固定","desc":"产品摆正展示，花字居中下方弹出。","vo":"我感觉微星是想认真冲一下高端外设了","duration":"4s","huazi":"微星X68K 磁轴键盘/ X7M无线鼠标。","audio":"","lighting":"主光:右前45°+柔光箱 | 色温:5600K\n机位:正面 | 焦段:50mm | 光圈:F4\n光比: 主:辅≈2:1","notes":"产品摆正，花字居中下"},{"num":6,"jingbie":"特写","yunjing":"固定","desc":"俯拍鼠标X7M，对称构图展示模具设计。","vo":"鼠标的设计还是偏保守的","duration":"4s","huazi":"","audio":"","lighting":"主光:顶部垂直+柔光箱 | 辅光:左右反光板\n机位:俯拍90° | 焦段:50mm | 光圈:F4\n光比: 主:辅≈2:1","notes":"俯拍鼠标，对称构图"},{"num":7,"jingbie":"大特写","yunjing":"固定","desc":"鼠标底部标签特写，手指轻点标签展示信息。","vo":"是48g，中小手尺寸的对称模具","duration":"5s","huazi":"48g / 中小手对称模具","audio":"","lighting":"主光:顶部垂直+柔光箱 | 色温:5600K\n机位:俯拍90° | 焦段:50mm | 光圈:F2.8\n光比: 主:辅≈3:1","notes":"标签清晰，手指点一下"},{"num":8,"jingbie":"大特写","yunjing":"推","desc":"鼠标尾部特写，展示饱满弧度。","vo":"屁股比较饱满，","duration":"3s","huazi":"","audio":"","lighting":"主光:右前45°+柔光箱 | 色温:5600K\n机位:右前 | 焦段:50mm | 光圈:F2.8\n光比: 主:辅≈3:1","notes":"鼠标尾部特写，弧线清晰"},{"num":9,"jingbie":"特写","yunjing":"固定","desc":"手指放在鼠标上展示握持姿势，手心贴紧尾部。","vo":"手心后半段能被撑住，握着不空","duration":"4s","huazi":"","audio":"","lighting":"主光:右前45°+柔光箱 | 色温:5600K\n机位:右前 | 焦段:50mm | 光圈:F2.8\n光比: 主:辅≈2:1","notes":"手指放上去，展示握持"},{"num":10,"jingbie":"大特写","yunjing":"推","desc":"微距拍摄鼠标侧面引导槽，手指沿槽滑动。","vo":"两侧的引导槽也很明显，手指一放上去就知道该怎么发力，很好控制","duration":"7s","huazi":"","audio":"","lighting":"主光:右前45°+柔光箱 | 色温:5600K\n机位:右前 | 焦段:50mm | 光圈:F2.8\n光比: 主:辅≈3:1","notes":"微距拍引导槽，手指滑动"},{"num":11,"jingbie":"特写","yunjing":"固定","desc":"鼠标底部标签特写，标签翻转展示PAW3950和诺迪克芯片型号。","vo":"PAW3950 传感器/诺迪克54主控，都挺旗舰","duration":"5s","huazi":"PAW3950 / 诺迪克54主控","audio":"","lighting":"主光:顶部垂直+柔光箱 | 色温:5600K | 辅光:左右反光板\n机位:俯拍90° | 焦段:50mm | 光圈:F2.8\n光比: 主:辅≈2:1","notes":"标签翻转，展示型号"},{"num":12,"jingbie":"近景","yunjing":"固定","desc":"透明外壳下拍摄鼠标主板，展示内部结构。","vo":"性能和续航，也是现在的T0梯队","duration":"4s","huazi":"","audio":"","lighting":"主光:底部打光+柔光箱 | 色温:5600K\n机位:俯拍45° | 焦段:50mm | 光圈:F2.8\n光比: 主:辅≈2:1","notes":"透明外壳下拍主板"},{"num":13,"jingbie":"中近景","yunjing":"固定","desc":"测试平台上显示性能数据，花字标注关键数值。","vo":"按键手感清脆，点下去的反馈干干净净，不肉。","duration":"5s","huazi":"T0梯队","audio":"","lighting":"主光:右前45°+柔光箱 | 色温:5600K\n机位:右前45° | 焦段:50mm | 光圈:F4\n光比: 主:辅≈2:1","notes":"测试平台亮数据"},{"num":14,"jingbie":"特写","yunjing":"推","desc":"手指按压鼠标按键，慢动作展示回弹，同步录制按键声音。","vo":"键盘这边，微星就更有秀肌肉的味道了","duration":"5s","huazi":"","audio":"按键声","lighting":"主光:右前45°+柔光箱 | 色温:5600K\n机位:正面 | 焦段:50mm | 光圈:F2.8\n光比: 主:辅≈3:1","notes":"手指按按键，声音同步"},{"num":15,"jingbie":"[转场:动作匹配]中景","yunjing":"摇","desc":"键盘从画面左侧入画，与前一镜鼠标按键动作匹配。","vo":"全铝外壳，将近4斤的重量，拿起来很沉","duration":"7s","huazi":"重量:1880g","audio":"","lighting":"主光:右前45°+柔光箱 | 色温:5600K\n机位:正面 | 焦段:50mm | 光圈:F4\n光比: 主:辅≈2:1","notes":"键盘从左入画，动作匹配"},{"num":16,"jingbie":"特写","yunjing":"推","desc":"键盘金属表面反光特写，花字显示重量数据。","vo":"","duration":"2s","huazi":"重量:1880g","audio":"","lighting":"主光:右前45°+柔光箱 | 色温:5600K\n机位:右前 | 焦段:50mm | 光圈:F2.8\n光比: 主:辅≈3:1","notes":"金属表面反光，花字显示重量"},{"num":17,"jingbie":"[转场:动作匹配]全景","yunjing":"拉","desc":"展示键盘整体造型，从特写拉远至全景，展示\"外星飞船\"外观。","vo":"外观有点像外星飞船，","duration":"4s","huazi":"","audio":"","lighting":"主光:右前45°+柔光箱 | 色温:5600K\n机位:正面 | 焦段:50mm | 光圈:F4\n光比: 主:辅≈2:1","notes":"展示整体造型"},{"num":18,"jingbie":"特写","yunjing":"固定","desc":"键帽透光特写，展示下灯位效果。","vo":"透明键帽、下灯位，两侧还有 X 元素灯带","duration":"5s","huazi":"下灯位 / X元素灯带","audio":"","lighting":"主光:底部打光+柔光箱 | 色温:5600K\n机位:俯拍45° | 焦段:50mm | 光圈:F2.8\n光比: 主:辅≈2:1","notes":"键帽透光，展示下灯位"},{"num":19,"jingbie":"全景","yunjing":"固定","desc":"键盘灯带点亮，RGB效果全开，展示电竞氛围。","vo":"开灯之后很尤其的酷，电竞味也足。","duration":"4s","huazi":"","audio":"","lighting":"关闭主辅光 | 仅靠键盘自身RGB发光\n机位:正面 | 焦段:50mm | 光圈:F1.8\n光比: 纯键盘发光","notes":"灯带点亮，RGB效果"},{"num":20,"jingbie":"特写","yunjing":"固定","desc":"轴体按压特写，花字显示轴体名称。","vo":"轴体的手感也调的刚刚好","duration":"4s","huazi":"微星定制 X-Stellar 星核磁轴","audio":"","lighting":"主光:右前45°+柔光箱 | 色温:5600K\n机位:正面 | 焦段:50mm | 光圈:F2.8\n光比: 主:辅≈3:1","notes":"轴体按压，花字显示"},{"num":21,"jingbie":"大特写","yunjing":"固定","desc":"微距拍摄轴心运动，慢动作展示弹簧压缩与回弹。","vo":"不软塌塌，按下去手感很润，","duration":"4s","huazi":"","audio":"","lighting":"主光:右前45°+柔光箱 | 色温:5600K\n机位:正面 | 焦段:50mm | 光圈:F2.8\n光比: 主:辅≈3:1","notes":"微距拍轴心运动"},{"num":22,"jingbie":"特写","yunjing":"固定","desc":"键盘底部标签展示，花字显示gasket结构和6层填充。","vo":"但整体的反馈偏硬朗，声音有点类石子音","duration":"5s","huazi":"gasket结构/6层填充","audio":"","lighting":"主光:顶部垂直+柔光箱 | 色温:5600K | 辅光:左右反光板\n机位:俯拍90° | 焦段:50mm | 光圈:F2.8\n光比: 主:辅≈2:1","notes":"底部标签，花字显示"},{"num":23,"jingbie":"中近景","yunjing":"微推","desc":"驱动界面截图展示，花字标注功能名称。","vo":"至于性能层面，","duration":"4s","huazi":"8k/0.01mmRT/全链延迟0.471 ms","audio":"","lighting":"关闭主辅光 | 屏幕自身发光\n机位:正面 | 焦段:50mm | 光圈:F4\n光比: 屏幕光","notes":"驱动界面截图"},{"num":24,"jingbie":"中近景","yunjing":"固定","desc":"驱动界面中8k回报率参数高亮标注。","vo":"现在的磁轴都是溢出，微星自然也没吝啬","duration":"5s","huazi":"8k回报率","audio":"","lighting":"关闭主辅光 | 屏幕自身发光\n机位:正面 | 焦段:50mm | 光圈:F4\n光比: 屏幕光","notes":"驱动界面，8k高亮"},{"num":25,"jingbie":"[转场:硬切反差]中景","yunjing":"固定","desc":"数据对比弹出，花字展示0.01mmRT和全链延迟数据，视觉冲击。","vo":"什么8k回报率、0.01mmRT，低延迟","duration":"5s","huazi":"8k / 0.01mmRT / 全链延迟0.471 ms","audio":"","lighting":"关闭主辅光 | 屏幕自身发光\n机位:正面 | 焦段:50mm | 光圈:F4\n光比: 屏幕光","notes":"数据弹出，花字显示"},{"num":26,"jingbie":"近景","yunjing":"固定","desc":"驱动界面展示DKS、SOCD等高级功能。","vo":"网页驱动里DKS、SOCD等高级功能也都有","duration":"5s","huazi":"DKS / SOCD","audio":"","lighting":"关闭主辅光 | 屏幕自身发光\n机位:正面 | 焦段:50mm | 光圈:F4\n光比: 屏幕光","notes":"驱动界面，功能高亮"},{"num":27,"jingbie":"中景","yunjing":"摇","desc":"键鼠并排展示，镜头缓慢摇动展示整体搭配效果。","vo":"那整体看来，微星的这套外设还是很完备的","duration":"5s","huazi":"","audio":"","lighting":"主光:右前45°+柔光箱 | 色温:5600K\n机位:正面 | 焦段:50mm | 光圈:F4\n光比: 主:辅≈2:1","notes":"产品并排展示"},{"num":28,"jingbie":"近景","yunjing":"固定","desc":"展示键盘鼠标的细腻做工，微距特写金属边框和按键细节。","vo":"有堆料、模具成熟","duration":"3s","huazi":"","audio":"","lighting":"主光:右前45°+柔光箱 | 色温:5600K\n机位:正面 | 焦段:50mm | 光圈:F2.8\n光比: 主:辅≈3:1","notes":"微距展示细节"},{"num":29,"jingbie":"中景","yunjing":"微推","desc":"展示键盘X元素设计，灯带亮起呼应X主题，花字标注。","vo":"键盘的设计也是下了功夫，且挺契合\"X\"这个主题","duration":"5s","huazi":"X 元素主题设计","audio":"","lighting":"关闭主辅光 | 仅靠键盘RGB发光\n机位:正面 | 焦段:50mm | 光圈:F2.8\n光比: 键盘光","notes":"X元素展示，灯带呼应"},{"num":30,"jingbie":"[转场:回到桌面俯拍]特写","yunjing":"微推","desc":"回到桌面俯拍双产品，镜头微推至键盘logo，渐暗收尾。","vo":"预算合适的话，试试没问题的","duration":"4s","huazi":"","audio":"BGM淡出","lighting":"主光:右前45°+柔光箱 | 色温:5600K\n机位:俯拍45° | 焦段:50mm | 光圈:F4\n光比: 主:辅≈3:1","notes":"回到俯拍，渐暗收尾"}]};
+
+function parseLighting(text) {
+  if (!text) return [];
+  const parts = text.split('\n').filter(p => p.trim());
+  return parts.map(p => {
+    const match = p.match(/^([^:：]+)[:：](.+)/);
+    return match ? { label: match[1].trim(), value: match[2].trim() } : { label: '', value: p.trim() };
+  });
+}
+
+function render() {
+  const grid = document.getElementById('shotGrid');
+  DATA.shots.forEach((s, i) => {
+    const isTransition = s.jingbie.includes('转场');
+    const card = document.createElement('div');
+    card.className = 'shot-card' + (isTransition ? ' transition' : '');
+    if (i === 0) card.classList.add('featured');
+
+    const lightingParts = parseLighting(s.lighting);
+
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="shot-num">${s.num}</div>
+        <div class="shot-tags">
+          <span class="tag jingbie">${s.jingbie}</span>
+          ${s.yunjing ? `<span class="tag yunjing">${s.yunjing}</span>` : ''}
+          <span class="tag duration">${s.duration}</span>
+          ${s.huazi ? `<span class="huazi-badge">📝 ${s.huazi}</span>` : ''}
+          ${s.audio ? `<span class="audio-badge">🔊 ${s.audio}</span>` : ''}
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="visual-desc">${s.desc}</div>
+        ${s.vo ? `<div class="vo-line"><div class="vo-label">VO — 口播</div><div class="vo-text">${s.vo}</div></div>` : ''}
+      </div>
+      <div class="card-footer">
+        ${lightingParts.map(l => `<div class="tech-item"><span class="tech-icon">⚡</span><span>${l.label}</span><span class="tech-val">${l.value}</span></div>`).join('')}
+      </div>
+      ${s.notes ? `<div style="padding:0 18px 10px;"><div class="note-text">${s.notes}</div></div>` : ''}
+    `;
+    grid.appendChild(card);
+  });
+}
+
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "updated_at": "2026-06-11T00:19:13.133297",
+  "extracted_rules": [
+    {
+      "rule_name": "场景分化选题法",
+      "description": "不用'XX产品推荐'做选题，而是按使用场景/用户类型切分。同一个品类，不同用户的需求根本不一样。",
+      "formula": "品类 + 场景A vs 场景B vs 场景C → 各自的配置方案",
+      "trigger_condition": "当品类产品功能同质化严重，但不同用户群体的核心需求差异大时使用",
+      "cross_category_example": "显示器品类：FPS玩家→高刷低延迟 | 设计剪辑→色准色域 | 办公→护眼大屏。标题：'打FPS、做设计、写代码——你的显示器该选哪一台'",
+      "applicable_categories": "ALL",
+      "id": "rule_001",
+      "source": "manual:FPS磁轴选购指南",
+      "created_at": "2026-06-11T00:19:13.122784",
+      "usage_count": 0,
+      "success_rate": null
+    },
+    {
+      "rule_name": "需求冲突揭示",
+      "description": "揭露受众不知道的事实：'你以为它们是一样的，其实根本不同'。制造信息差，打破固有认知。",
+      "formula": "行业现状(产品同质化) → 但你不知道的是(需求其实不同) → 所以你需要(按场景选)",
+      "trigger_condition": "当品类成熟、参数趋同、用户认为'买哪个都差不多'时使用",
+      "cross_category_example": "耳机品类：'电竞耳机都标50mm单元和7.1声道，卷了三年。但打FPS和打MOBA需要的声场完全不一样。'",
+      "applicable_categories": "ALL",
+      "id": "rule_002",
+      "source": "manual:FPS磁轴选购指南",
+      "created_at": "2026-06-11T00:19:13.123786",
+      "usage_count": 0,
+      "success_rate": null
+    },
+    {
+      "rule_name": "具体参数锚定法",
+      "description": "每个场景用具体数值对应，不是形容词堆砌。数字=专业度=可信度=用户决策依据。",
+      "formula": "场景 → 核心指标 + 具体数值阈值 + 为什么是这个值（因果逻辑）",
+      "trigger_condition": "当品类有可量化的性能指标时使用",
+      "cross_category_example": "显示器：CS2→刷新率≥240Hz+响应<1ms | 3A→4K+HDR+色准ΔE<2 | 主机→HDMI2.1+VRR",
+      "applicable_categories": "ALL",
+      "id": "rule_003",
+      "source": "manual:FPS磁轴选购指南",
+      "created_at": "2026-06-11T00:19:13.124787",
+      "usage_count": 0,
+      "success_rate": null
+    },
+    {
+      "rule_name": "对比误区纠正",
+      "description": "指出大众常见错误选择逻辑，给出正确逻辑。先纠错再给方案。",
+      "formula": "大多数人按X选 → 但X是错的/不够的 → 正确方式是按Y选 → 为什么",
+      "trigger_condition": "当品类存在广泛但错误的选择标准时使用",
+      "cross_category_example": "鼠标：'别只看DPI。4000DPI和26000DPI你用不出差别，但模具形状差1mm你手腕就酸。先量手长再挑模具。'",
+      "applicable_categories": "ALL",
+      "id": "rule_004",
+      "source": "manual:FPS磁轴选购指南",
+      "created_at": "2026-06-11T00:19:13.124787",
+      "usage_count": 0,
+      "success_rate": null
+    },
+    {
+      "rule_name": "三段式对比结构",
+      "description": "三个场景/三款产品/三种方案是内容对比的黄金数量。2个太少，4个太多。",
+      "formula": "标题: [场景A]、[场景B]、[场景C]——[共同品类]该选哪一款",
+      "trigger_condition": "当可以清晰划分3类不同用户/场景需求时使用",
+      "cross_category_example": "显卡：'打网游、跑AI、玩3A——你的显卡该选哪一张'",
+      "applicable_categories": "ALL",
+      "id": "rule_005",
+      "source": "manual:FPS磁轴选购指南",
+      "created_at": "2026-06-11T00:19:13.125785",
+      "usage_count": 0,
+      "success_rate": null
+    },
+    {
+      "rule_name": "时效性挂载+深度内容",
+      "description": "选题挂载时效性事件，但核心内容价值必须超过时效本身。",
+      "formula": "时效性事件(入口钩子) → 深度的场景化选购指南(主体) → 超越时效的决策框架(长期价值)",
+      "trigger_condition": "当有明确的消费节点或行业事件时使用",
+      "cross_category_example": "手机：'618换机潮，但别只看降价。先搞清楚你是拍照党、游戏党还是续航党，再看对应机型。'",
+      "applicable_categories": "ALL",
+      "id": "rule_006",
+      "source": "manual:FPS磁轴选购指南",
+      "created_at": "2026-06-11T00:19:13.125785",
+      "usage_count": 0,
+      "success_rate": null
+    }
+  ],
+  "anti_patterns": [
+    {
+      "pattern": "纯价格导向推荐（如：'千元以内最好的XX'）",
+      "source": "manual:FPS磁轴选购指南",
+      "added_at": "2026-06-11T00:19:13.125785"
+    },
+    {
+      "pattern": "无场景差异化的泛推荐（如：'2026年XX推荐'）",
+      "source": "manual:FPS磁轴选购指南",
+      "added_at": "2026-06-11T00:19:13.127290"
+    },
+    {
+      "pattern": "参数堆砌无需求关联（如：参数对比表没有说对不同人意味着什么）",
+      "source": "manual:FPS磁轴选购指南",
+      "added_at": "2026-06-11T00:19:13.127290"
+    },
+    {
+      "pattern": "单产品评测无对比视角",
+      "source": "manual:FPS磁轴选购指南",
+      "added_at": "2026-06-11T00:19:13.128297"
+    },
+    {
+      "pattern": "时效性包装但内容空洞（如：'618必买清单'无深度）",
+      "source": "manual:FPS磁轴选购指南",
+      "added_at": "2026-06-11T00:19:13.128297"
+    },
+    {
+      "pattern": "标题只有品类没有冲突（如：'XX产品推荐'）",
+      "source": "manual:FPS磁轴选购指南",
+      "added_at": "2026-06-11T00:19:13.129295"
+    },
+    {
+      "pattern": "面向所有人的选题（如：'适合所有人的XX'）",
+      "source": "manual:FPS磁轴选购指南",
+      "added_at": "2026-06-11T00:19:13.129295"
+    }
+  ],
+  "quality_checklist": [
+    "选题是否按用户场景/需求做了分化？（至少2-3个场景）",
+    "是否揭示了用户不知道的信息差？",
+    "每个场景是否关联了具体参数/数值阈值？",
+    "是否纠正了一个常见选购误区？",
+    "是否挂载了时效性但内容价值超过时效？",
+    "标题是否三要素齐全：场景+品类+选择焦虑？",
+    "用户看完标题能否立刻判断'这个选题跟我有关'？"
+  ],
+  "category_specific_rules": {},
+  "feedback_log": [],
+  "cross_category_mappings": {}
+}

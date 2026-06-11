@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>数码圈每日热点选题 — 2026-06-12</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#FAF7F2;--ink:#1C1C1C;--ink-light:#5C5C5C;--ink-muted:#999;--accent:#C03A2B;--gold:#B8960C;--divider:#E5E0D8;--card-bg:#FFFFFF;--tag-bg:#F3F0EA;--tag-text:#6B6258;--bar-bg:#EDE9E2;--weibo:#E6162D;--zhihu:#0066FF;--baidu:#2932E1;--douyin:#1E1E1E;--bili:#FB7299}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;background:#EDE8DE;background-image:radial-gradient(ellipse at 20% 0%,rgba(180,160,130,.08) 0%,transparent 60%),radial-gradient(ellipse at 80% 100%,rgba(180,160,130,.05) 0%,transparent 60%);color:var(--ink);line-height:1.6}
+.container{max-width:900px;margin:0 auto;padding:48px 24px 64px}
+.paper{background:var(--card-bg);border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,.04),0 8px 32px rgba(0,0,0,.06);overflow:hidden;position:relative}
+.paper::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--accent) 0%,var(--accent) 40%,var(--gold) 40%,var(--gold) 42%,var(--accent) 42%,var(--accent) 100%)}
+.masthead{padding:44px 48px 28px;border-bottom:2px solid var(--ink)}
+.dateline{font-family:"Noto Serif SC",serif;font-size:12px;font-weight:600;letter-spacing:3px;color:var(--ink-muted);margin-bottom:12px}
+.masthead h1{font-family:"Noto Serif SC",serif;font-size:34px;font-weight:900;letter-spacing:-.5px;line-height:1.2;margin-bottom:8px}
+.subtitle{font-size:14px;color:var(--ink-light);font-weight:300}
+.stats-row{display:flex;gap:32px;margin-top:20px}
+.stat-item{display:flex;flex-direction:column}
+.stat-num{font-family:"Noto Serif SC",serif;font-size:28px;font-weight:900;color:var(--accent);line-height:1}
+.stat-label{font-size:11px;color:var(--ink-muted);letter-spacing:1px;margin-top:2px}
+.content{padding:36px 48px 48px}
+.section-header{display:flex;align-items:center;gap:12px;margin:12px 0 24px}
+.section-header h2{font-family:"Noto Serif SC",serif;font-size:18px;font-weight:700;white-space:nowrap}
+.section-header .rule{flex:1;height:1px;background:var(--divider)}
+.topic-card{border:1px solid var(--divider);border-radius:3px;padding:20px 24px;margin-bottom:14px;transition:box-shadow .2s;opacity:0;animation:fadeIn .4s ease forwards}
+.topic-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.06)}
+@keyframes fadeIn{to{opacity:1}}
+.topic-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:12px}
+.topic-card-left{display:flex;align-items:flex-start;gap:14px;flex:1}
+.topic-rank{font-family:"Noto Serif SC",serif;font-size:26px;font-weight:900;width:36px;text-align:center;color:var(--ink-muted);flex-shrink:0;line-height:1.1}
+.topic-card:nth-child(1) .topic-rank{color:var(--accent)}
+.topic-card:nth-child(2) .topic-rank{color:#D4683A}
+.topic-card:nth-child(3) .topic-rank{color:#C08030}
+.topic-title-main{font-size:16px;font-weight:600;line-height:1.4}
+.topic-meta-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px}
+.platform-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:2px;font-size:10px;font-weight:600;letter-spacing:.5px}
+.platform-badge.weibo{background:#FFF0F0;color:var(--weibo)}
+.platform-badge.zhihu{background:#F0F4FF;color:var(--zhihu)}
+.platform-badge.baidu{background:#F0F1FF;color:var(--baidu)}
+.platform-badge.douyin{background:#F5F5F5;color:var(--douyin)}
+.platform-badge.bili{background:#FFF0F4;color:var(--bili)}
+.score-pill{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:700;color:var(--accent)}
+.score-pill .bar{width:48px;height:4px;background:var(--bar-bg);border-radius:2px;overflow:hidden}
+.score-pill .bar-fill{height:100%;background:var(--accent);border-radius:2px}
+.tag-row{display:flex;gap:8px;flex-wrap:wrap}
+.tag{display:inline-block;padding:3px 10px;border-radius:2px;font-size:10px;font-weight:600;letter-spacing:.5px}
+.tag.format{background:var(--tag-bg);color:var(--tag-text)}
+.tag.urgent-high{background:#FFF0ED;color:var(--accent)}
+.tag.urgent-mid{background:#FFF9ED;color:var(--gold)}
+.tag.diff-low{background:#EDFFF5;color:#10B981}
+.tag.diff-mid{background:#FFF9ED;color:var(--gold)}
+.tag.diff-high{background:#FFF0ED;color:var(--accent)}
+.angles-section{margin-top:14px;padding-top:14px;border-top:1px solid var(--divider)}
+.angles-section .label{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--ink-muted);margin-bottom:8px;text-transform:uppercase}
+.angle-item{display:flex;align-items:flex-start;gap:8px;padding:5px 0;font-size:13px;color:var(--ink-light);line-height:1.5}
+.angle-num{width:20px;height:20px;border-radius:50%;background:var(--tag-bg);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--tag-text);flex-shrink:0}
+.tech-hook{margin-top:10px;padding:10px 14px;background:#FFF9ED;border-radius:3px;border-left:3px solid var(--gold);font-size:12px;color:#8B6914;line-height:1.5}
+.tech-hook strong{color:#6B5010}
+.colophon{margin-top:48px;padding-top:24px;border-top:1px solid var(--divider);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--ink-muted)}
+.colophon a{color:var(--ink-muted);text-decoration:none}
+.colophon a:hover{color:var(--accent)}
+@media(max-width:700px){.container{padding:16px 12px 32px}.masthead{padding:28px 24px 20px}.masthead h1{font-size:24px}.content{padding:24px 20px 32px}.topic-card{padding:16px}.topic-title-main{font-size:14px}.stats-row{gap:16px}}
+</style>
+</head>
+<body>
+<div class="container"><div class="paper">
+<div class="masthead">
+<div class="dateline">2026年6月12日 · 星期五 · 晨间简报</div>
+<h1>数码圈每日热点选题</h1>
+<p class="subtitle">聚合微博/知乎/百度/抖音/B站热搜 · AI筛选 · 多维度评分 · 含切入角度与数码挂钩建议</p>
+<div class="stats-row">
+<div class="stat-item"><span class="stat-num">7</span><span class="stat-label">数码相关话题</span></div>
+<div class="stat-item"><span class="stat-num">5</span><span class="stat-label">数据平台</span></div>
+<div class="stat-item"><span class="stat-num">59.5</span><span class="stat-label">最高评分</span></div>
+</div></div>
+<div class="content">
+<div class="section-header"><h2>热搜话题 · 切入分析</h2><span class="rule"></span></div>
+<div id="topicCards"></div>
+<div class="colophon">
+<span>数据截至今日 · 每日自动更新 · 下周数据自动清理</span>
+<a href="https://deerflow.tech" target="_blank">Deerflow</a>
+</div>
+</div></div></div>
+<script>
+var DATA = {
+  "date": "2026-06-12",
+  "count": 7,
+  "topScore": 59.5,
+  "topics": [
+    {
+      "rank": 1,
+      "title": "超模女球迷爆火后出镜 自证不是AI",
+      "platform": "baidu",
+      "rank_orig": 9,
+      "score": 59.5,
+      "format": "深度解读",
+      "effect": "high",
+      "angles": [
+        "通俗解读：超模女球迷爆火后出镜 自证不是AI到底是怎么做到的",
+        "实际测试：我用超模女球迷爆火后出镜 自证不是做了X件事，结果出乎意料"
+      ],
+      "tech_hook": "AI话题需要翻译——把技术语言变成普通人能懂的比喻",
+      "urgency": "高",
+      "difficulty": "高（需要准确理解技术原理）"
+    },
+    {
+      "rank": 2,
+      "title": "窃贼盯上充电桩里的一元硬币",
+      "platform": "baidu",
+      "rank_orig": 30,
+      "score": 49.0,
+      "format": "热点评论",
+      "effect": "high",
+      "angles": [
+        "热点解读：窃贼盯上充电桩里的一元硬币到底怎么回事",
+        "深度分析：窃贼盯上充电桩里的一元硬币背后的行业逻辑",
+        "观点评论：我对窃贼盯上充电桩里的一元硬币的看法"
+      ],
+      "tech_hook": "需要找到一个数码/科技角度来切入这个话题",
+      "urgency": "中",
+      "difficulty": "中"
+    },
+    {
+      "rank": 3,
+      "title": "高考结束买电脑怎么选",
+      "platform": "bili",
+      "rank_orig": 45,
+      "score": 44.0,
+      "format": "热点评论",
+      "effect": "high",
+      "angles": [
+        "选购指南：高考结束买电脑怎么选怎么选",
+        "长期使用报告：高考结束买电脑怎么选用了一年的真实感受",
+        "对比评测：高考结束买电脑怎么选 vs 同价位竞品"
+      ],
+      "tech_hook": "笔记本选购是常青内容，可以做成系列",
+      "urgency": "中",
+      "difficulty": "中"
+    },
+    {
+      "rank": 4,
+      "title": "电子游戏史上有哪些全世界玩家一起共创的传奇事件？",
+      "platform": "zhihu",
+      "rank_orig": 99,
+      "score": 16.5,
+      "format": "热点评论",
+      "effect": "medium",
+      "angles": [
+        "装备推荐：打电子游戏史上有哪些全用什么外设",
+        "设置优化：电子游戏史上有哪些全职业选手的游戏设置"
+      ],
+      "tech_hook": "游戏内容转外设推荐是自然转化路径",
+      "urgency": "中",
+      "difficulty": "中"
+    },
+    {
+      "rank": 5,
+      "title": "你们都在用AI做什么呢？",
+      "platform": "zhihu",
+      "rank_orig": 99,
+      "score": 16.5,
+      "format": "深度解读",
+      "effect": "medium",
+      "angles": [
+        "通俗解读：你们都在用AI做什么呢？到底是怎么做到的",
+        "实际测试：我用你们都在用AI做什么呢？做了X件事，结果出乎意料"
+      ],
+      "tech_hook": "AI话题需要翻译——把技术语言变成普通人能懂的比喻",
+      "urgency": "高",
+      "difficulty": "高（需要准确理解技术原理）"
+    },
+    {
+      "rank": 6,
+      "title": "名古屋亚运会电竞参赛名单",
+      "platform": "weibo",
+      "rank_orig": 99,
+      "score": 15.5,
+      "format": "热点评论",
+      "effect": "medium",
+      "angles": [
+        "装备推荐：打名古屋亚运会电竞参赛用什么外设",
+        "设置优化：名古屋亚运会电竞参赛职业选手的游戏设置"
+      ],
+      "tech_hook": "游戏内容转外设推荐是自然转化路径",
+      "urgency": "中",
+      "difficulty": "中"
+    },
+    {
+      "rank": 7,
+      "title": "AI短片效果看到起鸡皮疙瘩了",
+      "platform": "weibo",
+      "rank_orig": 99,
+      "score": 15.5,
+      "format": "深度解读",
+      "effect": "medium",
+      "angles": [
+        "通俗解读：AI短片效果看到起鸡皮疙瘩了到底是怎么做到的",
+        "实际测试：我用AI短片效果看到起鸡皮疙瘩了做了X件事，结果出乎意料"
+      ],
+      "tech_hook": "AI话题需要翻译——把技术语言变成普通人能懂的比喻",
+      "urgency": "高",
+      "difficulty": "高（需要准确理解技术原理）"
+    }
+  ]
+};
+var PCN={weibo:"微博",zhihu:"知乎",baidu:"百度",douyin:"抖音",bili:"B站"};
+var URG={"极高":"时效极强","高":"时效强","中":"时效中等"};
+var DIFF={"低":"门槛低","中":"需准备","高":"需深耕"};
+var c=document.getElementById("topicCards");
+DATA.topics.forEach(function(t,i){
+  var d=document.createElement("div");
+  d.className="topic-card";
+  d.style.animationDelay=(i*0.06)+"s";
+  var bw=Math.min(t.score/50*100,100);
+  var uc=t.urgency==="极高"||t.urgency==="高"?"urgent-high":"urgent-mid";
+  var dc=t.difficulty==="低"?"diff-low":(t.difficulty==="高"?"diff-high":"diff-mid");
+  var ah=t.angles.map(function(a,j){return '<div class="angle-item"><span class="angle-num">'+(j+1)+'</span><span>'+a+'</span></div>';}).join("");
+  d.innerHTML='<div class="topic-card-header"><div class="topic-card-left"><span class="topic-rank">'+t.rank+'</span><div><div class="topic-title-main">'+t.title+'</div><div class="topic-meta-row"><span class="platform-badge '+t.platform+'">'+(PCN[t.platform]||t.platform)+'</span><span class="score-pill"><span class="bar"><span class="bar-fill" style="width:'+bw+'%"></span></span>'+t.score+'分</span></div></div></div><div class="tag-row"><span class="tag format">'+t.format+'</span><span class="tag '+uc+'">'+(URG[t.urgency]||t.urgency)+'</span><span class="tag '+dc+'">'+(DIFF[t.difficulty]||t.difficulty)+'</span></div></div><div class="angles-section"><div class="label">切入角度</div>'+ah+'</div><div class="tech-hook"><strong>数码挂钩：</strong>'+t.tech_hook+'</div>';
+  c.appendChild(d);
+});
+</script>
+</body>
+</html>

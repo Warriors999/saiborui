@@ -13,7 +13,38 @@ build/
 
 # Output archives and temp
 output/temp/
+output/archive/
 output/*/archive/
+output/daily/_topic_cache.json
+output/topics/topic_feedback_log.json
+
+# Output — sensitive auth (NEVER commit)
+output/competitive/douyin_auth.json
+output/competitive/douyin_cookies.json
+output/competitive/douyin_captcha.png
+output/competitive/douyin_sessions/
+output/competitive/sessions/
+output/competitive/videos/
+output/competitive/pipeline_progress.json
+
+# Third-party tools
+MediaCrawler/
+.baoyu-skills/
+
+# Generated assets
+cover-image/
+infographic/
+
+# User input files
+inputs/
+
+# Large reference files (external, not project artifacts)
+reference/SD ComfyUI关键词大全.xlsx
+
+# One-off build scripts
+_gen_previews.py
+_make_*.py
+_make_*.js
 
 # IDE
 .vscode/
@@ -24,6 +55,7 @@ node_modules/
 
 # Claude Code local settings
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
 
 # OS
 .DS_Store

@@ -1,0 +1,242 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 2050">
+  <defs>
+    <pattern id="g" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+    </pattern>
+    <linearGradient id="line" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="25%" stop-color="#34d399"/>
+      <stop offset="50%" stop-color="#fbbf24"/>
+      <stop offset="75%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+    <linearGradient id="day1" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#22d3ee" stop-opacity="1"/>
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="#0f172a"/>
+  <rect width="100%" height="100%" fill="url(#g)"/>
+
+  <!-- Title -->
+  <text x="550" y="45" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="22" font-weight="700" text-anchor="middle">赛博瑞 · 从 0 到 1 全记录</text>
+  <text x="550" y="70" fill="#94a3b8" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="11" text-anchor="middle">2026.05.22 22:37 → 05.31 01:43  ·  9天  ·  70次提交  ·  41模块  ·  11,400行</text>
+
+  <!-- Timeline line -->
+  <line x1="200" y1="100" x2="200" y2="2000" stroke="url(#line)" stroke-width="2.5"/>
+
+  <!-- ============================================================ -->
+  <!-- DAY 1: 05.22 起步 -->
+  <!-- ============================================================ -->
+  <rect x="100" y="105" width="50" height="22" rx="11" fill="#22d3ee"/>
+  <text x="125" y="120" fill="#0f172a" font-family="JetBrains Mono,monospace" font-size="9" font-weight="700" text-anchor="middle">D1</text>
+
+  <circle cx="200" cy="145" r="10" fill="#0f172a" stroke="#22d3ee" stroke-width="2.5"/>
+  <circle cx="200" cy="145" r="4" fill="#22d3ee"/>
+  <line x1="210" y1="145" x2="260" y2="145" stroke="#22d3ee" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="270" y="140" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="13" font-weight="600">22:37  初始化项目</text>
+  <text x="270" y="160" fill="#64748b" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">创建 Git 仓库 · 项目名为"赛博涛" · 2025text/ 目录 · 第一行代码</text>
+
+  <!-- ============================================================ -->
+  <!-- DAY 2: 05.23 核心引擎 -->
+  <!-- ============================================================ -->
+  <rect x="100" y="210" width="50" height="22" rx="11" fill="#34d399"/>
+  <text x="125" y="225" fill="#0f172a" font-family="JetBrains Mono,monospace" font-size="9" font-weight="700" text-anchor="middle">D2</text>
+
+  <circle cx="200" cy="250" r="10" fill="#0f172a" stroke="#34d399" stroke-width="2.5"/>
+  <circle cx="200" cy="250" r="4" fill="#34d399"/>
+  <line x1="210" y1="250" x2="260" y2="250" stroke="#34d399" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="270" y="245" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="13" font-weight="600">00:52  用专业标准替换分镜规则</text>
+  <text x="270" y="265" fill="#64748b" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">北电教材 · 景别运镜 · Apple/Manfrotto 商业拍摄规范</text>
+
+  <circle cx="200" cy="300" r="8" fill="#0f172a" stroke="#34d399" stroke-width="2"/>
+  <line x1="208" y1="300" x2="260" y2="300" stroke="#34d399" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="270" y="296" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="13" font-weight="600">00:57  用广告文案理论替换写作规则</text>
+  <text x="270" y="314" fill="#64748b" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">Claude Hopkins + David Ogilvy · 抖音爆款分析 · 10条铁律</text>
+
+  <circle cx="200" cy="345" r="10" fill="#0f172a" stroke="#34d399" stroke-width="2.5"/>
+  <circle cx="200" cy="345" r="4" fill="#34d399"/>
+  <line x1="210" y1="345" x2="260" y2="345" stroke="#34d399" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="270" y="340" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="13" font-weight="600">01:16  构建竞品学习全管线</text>
+  <text x="270" y="360" fill="#64748b" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">B站搜索→下载→转录→分析→报告 · competitive/ 模块诞生</text>
+
+  <!-- ============================================================ -->
+  <!-- DAY 3: 05.24 系统成型 -->
+  <!-- ============================================================ -->
+  <rect x="100" y="410" width="50" height="22" rx="11" fill="#fbbf24"/>
+  <text x="125" y="425" fill="#0f172a" font-family="JetBrains Mono,monospace" font-size="9" font-weight="700" text-anchor="middle">D3</text>
+
+  <circle cx="200" cy="450" r="10" fill="#0f172a" stroke="#fbbf24" stroke-width="2.5"/>
+  <circle cx="200" cy="450" r="4" fill="#fbbf24"/>
+  <line x1="210" y1="450" x2="260" y2="450" stroke="#fbbf24" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="270" y="445" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="13" font-weight="600">10:46  竞品分析双通道输出</text>
+  <text x="270" y="465" fill="#64748b" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">分析结果入向量库 + 专业 docx 报告 · reporter.py</text>
+
+  <circle cx="200" cy="500" r="8" fill="#0f172a" stroke="#fbbf24" stroke-width="2"/>
+  <line x1="208" y1="500" x2="260" y2="500" stroke="#fbbf24" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="270" y="496" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="13" font-weight="600">12:07  新增音频分析模块</text>
+  <text x="270" y="514" fill="#64748b" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">librosa BGM/音效/音量动态 · 竞品管线完整度提升</text>
+
+  <circle cx="200" cy="545" r="10" fill="#0f172a" stroke="#fbbf24" stroke-width="2.5"/>
+  <circle cx="200" cy="545" r="4" fill="#fbbf24"/>
+  <line x1="210" y1="545" x2="260" y2="545" stroke="#fbbf24" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="270" y="540" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="13" font-weight="600">16:42  Karpathy LLM Wiki 知识编译器</text>
+  <text x="270" y="560" fill="#64748b" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">每次分析后自动编译 Wiki · 知识复利增长</text>
+
+  <circle cx="200" cy="590" r="8" fill="#0f172a" stroke="#fbbf24" stroke-width="2"/>
+  <line x1="208" y1="590" x2="260" y2="590" stroke="#fbbf24" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="270" y="586" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="13" font-weight="600">17:33  Whisper + LLM 标点还原</text>
+  <text x="270" y="604" fill="#64748b" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">转录后句式分析：从 0% 短句提升到 12% 短句 / 32% 长句</text>
+
+  <circle cx="200" cy="635" r="10" fill="#0f172a" stroke="#fbbf24" stroke-width="2.5"/>
+  <circle cx="200" cy="635" r="4" fill="#fbbf24"/>
+  <line x1="210" y1="635" x2="260" y2="635" stroke="#fbbf24" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="270" y="630" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="13" font-weight="600">19:40  灯位图切换为 SVG 格式</text>
+  <text x="270" y="650" fill="#64748b" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">白底黑线模板 · 主灯/辅灯/光比标注 · xlsx 引用</text>
+
+  <!-- ============================================================ -->
+  <!-- DAY 4: 05.25 打磨优化 -->
+  <!-- ============================================================ -->
+  <rect x="100" y="695" width="50" height="22" rx="11" fill="#a78bfa"/>
+  <text x="125" y="710" fill="#0f172a" font-family="JetBrains Mono,monospace" font-size="9" font-weight="700" text-anchor="middle">D4</text>
+
+  <circle cx="200" cy="735" r="10" fill="#0f172a" stroke="#a78bfa" stroke-width="2.5"/>
+  <circle cx="200" cy="735" r="4" fill="#a78bfa"/>
+  <line x1="210" y1="735" x2="260" y2="735" stroke="#a78bfa" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="270" y="730" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="13" font-weight="600">22:37  修复 Wiki 注入 bug</text>
+  <text x="270" y="750" fill="#64748b" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">format 后注入 + 验证日志 · 知识注入链路打通</text>
+
+  <circle cx="200" cy="780" r="8" fill="#0f172a" stroke="#a78bfa" stroke-width="2"/>
+  <line x1="208" y1="780" x2="260" y2="780" stroke="#a78bfa" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="270" y="776" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="13" font-weight="600">23:26  全维度优化</text>
+  <text x="270" y="794" fill="#64748b" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">运镜强制分配(固定≤40%/8种) · 句式中等节奏(短22-48%/长20-25%)</text>
+
+  <circle cx="200" cy="825" r="10" fill="#0f172a" stroke="#a78bfa" stroke-width="2.5"/>
+  <circle cx="200" cy="825" r="4" fill="#a78bfa"/>
+  <line x1="210" y1="825" x2="260" y2="825" stroke="#a78bfa" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="270" y="820" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="13" font-weight="600">23:31  知识库 8 品类 24 视频入库</text>
+  <text x="270" y="840" fill="#64748b" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">RAG 检索覆盖 keyboard/mouse/monitor/laptop/phone/gpu/headphone/desk_chair</text>
+
+  <circle cx="200" cy="870" r="8" fill="#0f172a" stroke="#a78bfa" stroke-width="2"/>
+  <line x1="208" y1="870" x2="260" y2="870" stroke="#a78bfa" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="270" y="866" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="13" font-weight="600">23:52  代码审查：删除 220 行死代码</text>
+  <text x="270" y="884" fill="#64748b" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">重构提取共享工具函数 · 消除 3 处重复 · 缓存 buvid3</text>
+
+  <!-- ============================================================ -->
+  <!-- DAY 5: 05.26 v1.0 发布 -->
+  <!-- ============================================================ -->
+  <rect x="100" y="920" width="50" height="22" rx="11" fill="#22d3ee"/>
+  <text x="125" y="935" fill="#0f172a" font-family="JetBrains Mono,monospace" font-size="9" font-weight="700" text-anchor="middle">D5</text>
+
+  <circle cx="200" cy="960" r="12" fill="#0f172a" stroke="#22d3ee" stroke-width="3"/>
+  <circle cx="200" cy="960" r="5" fill="#22d3ee"/>
+  <line x1="212" y1="960" x2="260" y2="960" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <text x="270" y="954" fill="#22d3ee" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="14" font-weight="700">17:48 ★ v1.0.0 正式发布</text>
+  <text x="270" y="975" fill="#94a3b8" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">Skills 集成(pptx+canvas+dashboard+humanizer) · README · Web 控制台 · 7 CLI 命令</text>
+
+  <!-- ============================================================ -->
+  <!-- DAY 7: 05.28 重构爆发 -->
+  <!-- ============================================================ -->
+  <rect x="100" y="1020" width="50" height="22" rx="11" fill="#fbbf24"/>
+  <text x="125" y="1035" fill="#0f172a" font-family="JetBrains Mono,monospace" font-size="9" font-weight="700" text-anchor="middle">D7</text>
+
+  <circle cx="200" cy="1060" r="12" fill="#0f172a" stroke="#fbbf24" stroke-width="3"/>
+  <circle cx="200" cy="1060" r="5" fill="#fbbf24"/>
+  <line x1="212" y1="1060" x2="260" y2="1060" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <text x="270" y="1054" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="14" font-weight="700">17:22  赛博涛 → 赛博瑞</text>
+  <text x="270" y="1075" fill="#94a3b8" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">项目更名 · 8条CLI全命令 · pyproject.toml · GitHub仓库重命名</text>
+
+  <circle cx="200" cy="1110" r="10" fill="#0f172a" stroke="#fbbf24" stroke-width="2.5"/>
+  <circle cx="200" cy="1110" r="4" fill="#fbbf24"/>
+  <line x1="210" y1="1110" x2="260" y2="1110" stroke="#fbbf24" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="270" y="1105" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="13" font-weight="600">20:01  影视飓风工作流落地</text>
+  <text x="270" y="1125" fill="#64748b" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">Brief解析 · Analytics · Cover · Dashboard · 格式适配(--format-ref/--columns/--preview)</text>
+
+  <circle cx="200" cy="1155" r="8" fill="#0f172a" stroke="#fbbf24" stroke-width="2"/>
+  <line x1="208" y1="1155" x2="260" y2="1155" stroke="#fbbf24" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="270" y="1151" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="13" font-weight="600">23:57  格式适配三件套完成</text>
+  <text x="270" y="1169" fill="#64748b" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">--format-ref · --columns · --preview</text>
+
+  <!-- ============================================================ -->
+  <!-- DAY 8: 05.29 产品化 + 修复 (最大工作量) -->
+  <!-- ============================================================ -->
+  <rect x="100" y="1210" width="50" height="22" rx="11" fill="#34d399"/>
+  <text x="125" y="1225" fill="#0f172a" font-family="JetBrains Mono,monospace" font-size="9" font-weight="700" text-anchor="middle">D8</text>
+
+  <circle cx="200" cy="1250" r="12" fill="#0f172a" stroke="#34d399" stroke-width="3"/>
+  <circle cx="200" cy="1250" r="5" fill="#34d399"/>
+  <line x1="212" y1="1250" x2="260" y2="1250" stroke="#34d399" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <text x="270" y="1244" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="14" font-weight="700">00:07  影视飓风方法论文全面落地</text>
+  <text x="270" y="1265" fill="#94a3b8" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">封面前置+视觉对齐+数据反哺 · AI点映团 · HKRR+HAMD · AI双轨制 · 人设×品类矩阵</text>
+
+  <circle cx="200" cy="1300" r="10" fill="#0f172a" stroke="#34d399" stroke-width="2.5"/>
+  <circle cx="200" cy="1300" r="4" fill="#34d399"/>
+  <line x1="210" y1="1300" x2="260" y2="1300" stroke="#34d399" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="270" y="1295" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="13" font-weight="600">00:31  P0 产品化止血</text>
+  <text x="270" y="1315" fill="#64748b" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">输入验证(拼写纠错) · init 向导 · 59 测试 · CI/CD · 柱子哥选题策略(选题日报+观点注入+差异化检测)</text>
+
+  <circle cx="200" cy="1350" r="8" fill="#0f172a" stroke="#34d399" stroke-width="2"/>
+  <line x1="208" y1="1350" x2="260" y2="1350" stroke="#34d399" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="270" y="1346" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="13" font-weight="600">01:31-21:47  管线修复 + quick 新手模式</text>
+  <text x="270" y="1364" fill="#64748b" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">auto-fix 修复循环 · douyin_filter 接入 · 4 个断点修复 · 质量关卡+反回归+友好错误 · quick 三步出稿</text>
+
+  <!-- ============================================================ -->
+  <!-- DAY 9: 05.30 质量体系 -->
+  <!-- ============================================================ -->
+  <rect x="100" y="1405" width="50" height="22" rx="11" fill="#a78bfa"/>
+  <text x="125" y="1420" fill="#0f172a" font-family="JetBrains Mono,monospace" font-size="9" font-weight="700" text-anchor="middle">D9</text>
+
+  <circle cx="200" cy="1445" r="10" fill="#0f172a" stroke="#a78bfa" stroke-width="2.5"/>
+  <circle cx="200" cy="1445" r="4" fill="#a78bfa"/>
+  <line x1="210" y1="1445" x2="260" y2="1445" stroke="#a78bfa" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="270" y="1440" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="13" font-weight="600">22:43  管线架构图 + PPT v1</text>
+  <text x="270" y="1460" fill="#64748b" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">种子数据 · analytics insight · 统一评分卡模块 · PPT v1→v4</text>
+
+  <!-- ============================================================ -->
+  <!-- DAY 10: 05.31 输出系统 -->
+  <!-- ============================================================ -->
+  <rect x="100" y="1505" width="50" height="22" rx="11" fill="#22d3ee"/>
+  <text x="125" y="1520" fill="#0f172a" font-family="JetBrains Mono,monospace" font-size="9" font-weight="700" text-anchor="middle">D10</text>
+
+  <circle cx="200" cy="1545" r="10" fill="#0f172a" stroke="#22d3ee" stroke-width="2.5"/>
+  <circle cx="200" cy="1545" r="4" fill="#22d3ee"/>
+  <line x1="210" y1="1545" x2="260" y2="1545" stroke="#22d3ee" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="270" y="1540" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="13" font-weight="600">00:02  四文案问题修复</text>
+  <text x="270" y="1560" fill="#64748b" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">去签名 · 去"情绪掉帧"meme · "有一说一"降频 · 评分卡接入 CLI</text>
+
+  <circle cx="200" cy="1595" r="10" fill="#0f172a" stroke="#22d3ee" stroke-width="2.5"/>
+  <circle cx="200" cy="1595" r="4" fill="#22d3ee"/>
+  <line x1="210" y1="1595" x2="260" y2="1595" stroke="#22d3ee" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="270" y="1590" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="13" font-weight="600">00:39  输出系统整合</text>
+  <text x="270" y="1610" fill="#64748b" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">项目文件夹(output/日期_产品/) · 三板块质量关卡 · quality gate 不达标不交付</text>
+
+  <circle cx="200" cy="1645" r="12" fill="#0f172a" stroke="#22d3ee" stroke-width="3"/>
+  <circle cx="200" cy="1645" r="5" fill="#22d3ee"/>
+  <line x1="212" y1="1645" x2="260" y2="1645" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <text x="270" y="1639" fill="#22d3ee" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="14" font-weight="700">01:10  PIL 灯位图嵌入 xlsx → 01:34 resvg 高清出图</text>
+  <text x="270" y="1660" fill="#94a3b8" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">3 次迭代：PIL → PIL/openpyxl命名冲突修复 → resvg 纯Rust零依赖</text>
+
+  <circle cx="200" cy="1695" r="8" fill="#0f172a" stroke="#22d3ee" stroke-width="2"/>
+  <line x1="208" y1="1695" x2="260" y2="1695" stroke="#22d3ee" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="270" y="1691" fill="white" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="13" font-weight="600">01:43  管线图+PPT v5 同步</text>
+  <text x="270" y="1709" fill="#64748b" font-family="PingFang SC,Microsoft YaHei,sans-serif" font-size="10">41模块 · 11,400行 · 14CLI · 70提交 · v1.0.0</text>
+
+  <!-- ============================================================ -->
+  <!-- STATS BAR -->
+  <!-- ============================================================ -->
+  <rect x="60" y="1760" width="980" height="40" rx="6" fill="rgba(30,41,59,0.6)" stroke="#334155" stroke-width="0.5"/>
+  <text x="100" y="1785" fill="#e2e8f0" font-family="JetBrains Mono,monospace" font-size="10">10天</text>
+  <text x="190" y="1785" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="10">|</text>
+  <text x="220" y="1785" fill="#e2e8f0" font-family="JetBrains Mono,monospace" font-size="10">70次提交</text>
+  <text x="340" y="1785" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="10">|</text>
+  <text x="370" y="1785" fill="#e2e8f0" font-family="JetBrains Mono,monospace" font-size="10">41模块</text>
+  <text x="470" y="1785" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="10">|</text>
+  <text x="500" y="1785" fill="#e2e8f0" font-family="JetBrains Mono,monospace" font-size="10">11,400行</text>
+  <text x="620" y="1785" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="10">|</text>
+  <text x="650" y="1785" fill="#e2e8f0" font-family="JetBrains Mono,monospace" font-size="10">14 CLI</text>
+  <text x="750" y="1785" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="10">|</text>
+  <text x="780" y="1785" fill="#e2e8f0" font-family="JetBrains Mono,monospace" font-size="10">59测试·CI</text>
+  <text x="900" y="1785" fill="#64748b" font-family="JetBrains Mono,monospace" font-size="10">|</text>
+  <text x="930" y="1785" fill="#e2e8f0" font-family="JetBrains Mono,monospace" font-size="10">v1.0.0</text>
+
+</svg>

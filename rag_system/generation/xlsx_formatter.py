@@ -1,11 +1,11 @@
 """Format storyboard JSON into a professionally styled .xlsx file.
 
-9-column layout optimized for A4 landscape print:
-  A:镜号 B:景别·运镜 C:画面描述 D:口播文案 E:时长 F:花字/特效 G:音效/声画 H:灯光/机位 I:备注
+10-column layout optimized for A4 landscape:
+  A:镜号 B:景别·运镜 C:画面描述 D:AI视觉钩子 E:口播文案
+  F:时长 G:花字/特效 H:音效/声画 I:灯光/机位 J:备注
 
-Design: Swiss Modernism + Executive Dashboard
-  Deep blue #1E40AF header | White + #DBEAFE alternating rows | Slate borders
-  Microsoft YaHei 10pt body | 9pt secondary | 12pt title
+Design: Morandi Sage Green — muted green-gray on warm white, high contrast
+  Embedded lighting SVG diagrams on separate sheet
 """
 
 import math
@@ -23,29 +23,30 @@ from .template_adapter import (
     resolve_field_value,
 )
 
-# ── Design System Colors ──
-PRIMARY = "1E40AF"
-PRIMARY_LIGHT = "DBEAFE"
-BACKGROUND = "FFFFFF"
-SURFACE = "F8FAFC"
-BORDER_COLOR = "CBD5E1"
-TEXT_PRIMARY = "1E293B"
-TEXT_SECONDARY = "64748B"
-TEXT_HEADER = "FFFFFF"
+# ── Design System: Morandi Sage Green v4 ──
+HEADER_BG = "366B4F"
+HEADER_TEXT = "FFFFFF"
+ALT_ROW_BG = "E2EDE0"
+BODY_BG = "FFFEFA"
+SURFACE = "D2E2D6"
+BORDER_COLOR = "B0BDB3"
+TEXT_PRIMARY = "18231C"
+TEXT_SECONDARY = "487A5A"
+ACCENT = "4A8C62"
 
-# ── Shared Styles (module-level, used by all formatters) ──
+# ── Shared Styles ──
 thin_side = Side(style="thin", color=BORDER_COLOR)
 border_all_thin = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
 border_bottom_thick = Border(left=thin_side, right=thin_side, top=thin_side,
-                             bottom=Side(style="medium", color=PRIMARY))
+                             bottom=Side(style="thin", color="8AAA96"))
 font_body = Font(name="微软雅黑", size=10, color=TEXT_PRIMARY)
 font_small = Font(name="微软雅黑", size=9, color=TEXT_SECONDARY)
-font_col_header = Font(name="微软雅黑", size=10, bold=True, color=TEXT_HEADER)
-font_title_header = Font(name="微软雅黑", size=12, bold=True, color=TEXT_HEADER)
-font_shot_number = Font(name="微软雅黑", size=10, bold=True, color=PRIMARY)
-fill_header = PatternFill("solid", fgColor=PRIMARY)
-fill_alt_row = PatternFill("solid", fgColor=PRIMARY_LIGHT)
-fill_white = PatternFill("solid", fgColor=BACKGROUND)
+font_col_header = Font(name="微软雅黑", size=10, bold=True, color=HEADER_TEXT)
+font_title_header = Font(name="微软雅黑", size=12, bold=True, color=HEADER_TEXT)
+font_shot_number = Font(name="微软雅黑", size=10, bold=True, color=ACCENT)
+fill_header = PatternFill("solid", fgColor=HEADER_BG)
+fill_alt_row = PatternFill("solid", fgColor=ALT_ROW_BG)
+fill_white = PatternFill("solid", fgColor=BODY_BG)
 align_center = Alignment(horizontal="center", vertical="center")
 align_center_wrap = Alignment(horizontal="center", vertical="top", wrap_text=True)
 align_left_wrap = Alignment(horizontal="left", vertical="top", wrap_text=True)
@@ -83,36 +84,35 @@ def format_storyboard_to_xlsx(
     metadata = storyboard.get("metadata", {})
     shots = storyboard.get("shots", [])
 
-    # ── Column Widths (9 columns, A4 landscape) ──
+    # ── Column Widths (10 columns, A4 landscape) ──
     col_widths = {
         "A": 5.0,   # 镜号
-        "B": 9.0,   # 景别·运镜
+        "B": 9.5,   # 景别·运镜
         "C": 38,    # 画面描述
-        "D": 48,    # 口播文案
-        "E": 5.0,   # 时长
-        "F": 17,    # 花字/特效
-        "G": 16,    # 音效/声画
-        "H": 28,    # 灯光/机位/光比
-        "I": 20,    # 备注
+        "D": 25,    # AI视觉钩子
+        "E": 50,    # 口播文案
+        "F": 5.0,   # 时长
+        "G": 16,    # 花字/特效
+        "H": 14,    # 音效/声画
+        "I": 28,    # 灯光/机位/光比
+        "J": 17,    # 备注
     }
     for col_letter, width in col_widths.items():
         ws.column_dimensions[col_letter].width = width
 
-    # ── Typography ──
-    font_title = Font(name="微软雅黑", size=12, bold=True, color=TEXT_PRIMARY)
-    font_title_header = Font(name="微软雅黑", size=12, bold=True, color=TEXT_HEADER)
-    font_label_accent = Font(name="微软雅黑", size=10, bold=True, color=PRIMARY)
+    # ── Typography (local) ──
+    font_title = Font(name="微软雅黑", size=12, bold=True, color=HEADER_TEXT)
+    font_title_header = Font(name="微软雅黑", size=12, bold=True, color=HEADER_TEXT)
     font_body = Font(name="微软雅黑", size=10, color=TEXT_PRIMARY)
-    font_body_bold = Font(name="微软雅黑", size=10, bold=True, color=TEXT_PRIMARY)
     font_small = Font(name="微软雅黑", size=9, color=TEXT_SECONDARY)
-    font_col_header = Font(name="微软雅黑", size=10, bold=True, color=TEXT_HEADER)
-    font_shot_number = Font(name="微软雅黑", size=10, bold=True, color=PRIMARY)
+    font_col_header = Font(name="微软雅黑", size=10, bold=True, color=HEADER_TEXT)
+    font_shot_number = Font(name="微软雅黑", size=10, bold=True, color=ACCENT)
     font_framing = Font(name="微软雅黑", size=10, color=TEXT_PRIMARY)
 
-    # ── Fills ──
-    fill_header = PatternFill("solid", fgColor=PRIMARY)
-    fill_alt_row = PatternFill("solid", fgColor=PRIMARY_LIGHT)
-    fill_white = PatternFill("solid", fgColor=BACKGROUND)
+    # ── Fills (local) ──
+    fill_header = PatternFill("solid", fgColor=HEADER_BG)
+    fill_alt_row = PatternFill("solid", fgColor=ALT_ROW_BG)
+    fill_white = PatternFill("solid", fgColor=BODY_BG)
     fill_metadata_bg = PatternFill("solid", fgColor=SURFACE)
 
     # ── Borders ──
@@ -122,7 +122,7 @@ def format_storyboard_to_xlsx(
     )
     border_bottom_thick = Border(
         left=thin_side, right=thin_side, top=thin_side,
-        bottom=Side(style="medium", color=PRIMARY),
+        bottom=Side(style="thin", color="8AAA96"),
     )
 
     # ── Alignments ──
@@ -132,65 +132,59 @@ def format_storyboard_to_xlsx(
     align_left_center = Alignment(horizontal="left", vertical="center")
 
     # ═══════════════════════════════════════════
-    # METADATA HEADER (Rows 1-7)
+    # COMPACT METADATA (Rows 1-2, then header at Row 4)
     # ═══════════════════════════════════════════
-    meta_rows = [
-        (1, "分镜脚本", None, font_title, 32, True),
-        (2, "达人名称", persona, font_body, 24, False),
-        (3, "标题", metadata.get("title", product_name), font_body_bold, 26, False),
-        (4, "必带话题", metadata.get("hashtags", ""), font_small, 22, False),
-        (5, "内容方向", f"测评+种草          |          视频总时长：{metadata.get('total_duration', '60-90s')}", font_body, 22, False),
-        (6, "封面文案", metadata.get("title", product_name), font_small, 22, False),
-        (7, "拍摄版式", "16:9 横版视频", font_body, 22, False),
-    ]
+    title_text = metadata.get("title", product_name)
+    hashtags = metadata.get("hashtags", "")
+    total_dur = metadata.get("total_duration", "60-90s")
 
-    for row_num, label, value, val_font, row_height, is_title in meta_rows:
-        ws.row_dimensions[row_num].height = row_height
-        if is_title:
-            ws.merge_cells(f"A{row_num}:I{row_num}")
-            cell_label = ws.cell(row=row_num, column=1, value=label)
-            cell_label.font = font_title_header
-            cell_label.alignment = align_center
-            cell_label.fill = fill_header
-        else:
-            ws.merge_cells(f"A{row_num}:B{row_num}")
-            cell_label = ws.cell(row=row_num, column=1, value=f"{label}：")
-            cell_label.font = font_label_accent
-            cell_label.alignment = Alignment(horizontal="right", vertical="center")
-            cell_label.fill = fill_metadata_bg
-            ws.merge_cells(f"C{row_num}:I{row_num}")
-            cell_val = ws.cell(row=row_num, column=3, value=value)
-            cell_val.font = val_font
-            cell_val.alignment = align_left_center
-            cell_val.fill = fill_metadata_bg
+    # Row 1: Title bar — product name + persona right-aligned
+    ws.merge_cells("A1:J1")
+    ws.row_dimensions[1].height = 30
+    c1 = ws.cell(row=1, column=1, value=f"{title_text}  ·  {persona}  ·  {total_dur}")
+    c1.font = Font(name="微软雅黑", size=12, bold=True, color=HEADER_TEXT)
+    c1.fill = fill_header
+    c1.alignment = Alignment(horizontal="left", vertical="center")
 
-    # Row 8: Separator
-    ws.row_dimensions[8].height = 8
+    # Row 2: Subtitle — hashtags + format info
+    ws.merge_cells("A2:J2")
+    ws.row_dimensions[2].height = 22
+    sub = f"必带话题: {hashtags}" if hashtags else ""
+    if not sub:
+        sub = "16:9 横版视频  |  拍摄版式: A4横版打印"
+    c2 = ws.cell(row=2, column=1, value=sub)
+    c2.font = Font(name="微软雅黑", size=9, color=TEXT_SECONDARY)
+    c2.fill = PatternFill("solid", fgColor=SURFACE)
+    c2.alignment = Alignment(horizontal="left", vertical="center")
+
+    # Row 3: spacer
+    ws.row_dimensions[3].height = 6
 
     # ═══════════════════════════════════════════
-    # COLUMN HEADERS (Row 9)
+    # COLUMN HEADERS (Row 4)
     # ═══════════════════════════════════════════
     col_headers = [
-        "镜号", "景别·运镜", "画面描述", "口播文案", "时长",
+        "镜号", "景别·运镜", "画面描述", "AI视觉钩子", "口播文案", "时长",
         "花字/特效", "音效/声画", "灯光/机位", "备注",
     ]
-    ws.row_dimensions[9].height = 28
+    ws.row_dimensions[4].height = 28
     for ci, header_text in enumerate(col_headers, 1):
-        cell = ws.cell(row=9, column=ci, value=header_text)
+        cell = ws.cell(row=4, column=ci, value=header_text)
         cell.font = font_col_header
         cell.fill = fill_header
         cell.alignment = align_center
         cell.border = border_all_thin
 
     # ═══════════════════════════════════════════
-    # SHOT DATA ROWS (Row 10+)
+    # SHOT DATA ROWS (Row 5+)
     # ═══════════════════════════════════════════
     for ri, shot in enumerate(shots):
-        row_num = 10 + ri
+        row_num = 5 + ri
         is_alt = ri % 2 == 1
         row_fill = fill_alt_row if is_alt else fill_white
 
         # ── Build each column ──
+        # A: 镜号
         shot_num = str(shot.get("shot_number", ri + 1))
 
         # B: 景别·运镜 (with transition prefix)
@@ -204,19 +198,24 @@ def format_storyboard_to_xlsx(
         # C: 画面描述 — pure visual, no camera prefixes
         visual = shot.get("visual", "")
 
-        # D: 口播
+        # D: AI视觉钩子 — Seedance中文视频提示词, 2-3个关键镜
+        ai_hook = shot.get("ai_hook_prompt", "")
+        if ai_hook and len(ai_hook) > 150:
+            ai_hook = ai_hook[:148] + "…"
+
+        # E: 口播
         voiceover = shot.get("voiceover", "")
 
-        # E: 时长
+        # F: 时长
         duration = shot.get("duration", "")
 
-        # F: 花字
+        # G: 花字
         huazi = shot.get("huazi", "")
 
-        # G: 音效
+        # H: 音效
         audio = shot.get("audio", "")
 
-        # H: 灯光/机位/光比
+        # I: 灯光/机位/光比
         lighting = shot.get("lighting", "")
         camera_setup = shot.get("camera_setup", "")
         light_ratio = _get_light_ratio(shot)
@@ -225,35 +224,36 @@ def format_storyboard_to_xlsx(
             light_parts.append(lighting)
         if camera_setup:
             light_parts.append(camera_setup)
-        # Always include light ratio
         light_parts.append(f"光比: 主:辅≈{light_ratio}")
         light_cam = "\n".join(light_parts)
 
-        # I: 备注 — simple, actionable, ≤20 chars
+        # J: 备注 — simple, actionable, ≤20 chars
         notes = shot.get("notes", "")
         notes = _re.sub(r'\[幕:[^\]]+\]', '', notes)
         notes = _re.sub(r'\[转场:[^\]]+\]', '', notes).strip()
         if len(notes) > 20:
             notes = notes[:18] + "…"
 
-        data = [shot_num, framing, visual, voiceover, duration, huazi, audio, light_cam, notes]
+        data = [shot_num, framing, visual, ai_hook, voiceover, duration, huazi, audio, light_cam, notes]
 
         # ── Calculate row height (column-aware) ──
         col_chars_per_line = {
-            2: 4.5,   # B: ~4.5 Chinese chars/line at width 9
-            3: 19,    # C: ~19 at width 38
-            4: 24,    # D: ~24 at width 48
-            6: 8.5,   # F: ~8.5 at width 17
-            7: 8,     # G: ~8 at width 16
-            8: 14,    # H: ~14 at width 28
-            9: 10,    # I: ~10 at width 20
+            2: 4.5,   # B: 景别·运镜
+            3: 19,    # C: 画面描述
+            4: 28,    # D: AI视觉钩子
+            5: 25,    # E: 口播文案
+            7: 8,     # G: 花字/特效
+            8: 7,     # H: 音效/声画
+            9: 14,    # I: 灯光/机位
+            10: 8,    # J: 备注
         }
         max_lines = 1
         for ci, val in enumerate(data):
-            if ci + 1 in col_chars_per_line and val:
-                lines_needed = max(1, len(str(val)) / col_chars_per_line[ci + 1])
+            col_idx = ci + 1
+            if col_idx in col_chars_per_line and val:
+                lines_needed = max(1, len(str(val)) / col_chars_per_line[col_idx])
                 max_lines = max(max_lines, lines_needed)
-        ws.row_dimensions[row_num].height = max(28, min(140, int(max_lines * 18 + 6)))
+        ws.row_dimensions[row_num].height = max(30, min(140, int(max_lines * 18 + 8)))
 
         # ── Write cells ──
         for ci, value in enumerate(data, 1):
@@ -266,16 +266,16 @@ def format_storyboard_to_xlsx(
             elif ci == 2:  # 景别·运镜
                 cell.font = font_framing
                 cell.alignment = align_center_wrap
-            elif ci == 5:  # 时长
+            elif ci == 6:  # 时长
                 cell.font = font_body
                 cell.alignment = align_center_wrap
-            elif ci in (6, 7):  # 花字, 音效
+            elif ci in (7, 8):  # 花字, 音效
                 cell.font = font_small
                 cell.alignment = align_left_wrap
-            elif ci in (8, 9):  # 灯光/机位, 备注
+            elif ci in (9, 10):  # 灯光/机位, 备注
                 cell.font = font_small
                 cell.alignment = align_left_wrap
-            else:  # 画面描述, 口播
+            else:  # 画面描述, 口播, AI钩子
                 cell.font = font_body
                 cell.alignment = align_left_wrap
 
@@ -292,8 +292,9 @@ def format_storyboard_to_xlsx(
     ws.page_setup.fitToWidth = 1
     ws.page_setup.fitToHeight = 0
     ws.page_setup.paperSize = ws.PAPERSIZE_A4
-    ws.auto_filter.ref = f"A9:I{9 + len(shots)}"
-    ws.freeze_panes = "A10"
+    last_col = get_column_letter(len(col_headers))
+    ws.auto_filter.ref = f"A4:{last_col}{4 + len(shots)}"
+    ws.freeze_panes = "A5"
 
     # ═══════════════════════════════════════════
     # LIGHTING DIAGRAM SHEET — per-shot top-down

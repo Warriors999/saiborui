@@ -24,7 +24,8 @@ def save_analysis(result: AnalysisResult) -> Path:
         except json.JSONDecodeError:
             existing = []
 
-    # Serialize
+    # Serialize — include deep analysis for report generation
+    deep_text = getattr(result, '_deep_analysis', '')
     entry = {
         "video_id": result.video.video_id,
         "title": result.video.title,
@@ -39,6 +40,8 @@ def save_analysis(result: AnalysisResult) -> Path:
         "attitude_density": round(result.attitude_density, 2),
         "short_sentence_pct": round(result.short_sentence_pct, 1),
         "standout_patterns": result.standout_patterns,
+        "deep_analysis": deep_text,
+        "transcript_preview": result.transcript[:500] if result.transcript else "",
         "analyzed_at": result.analyzed_at,
     }
 

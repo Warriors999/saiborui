@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>赛博瑞 · 工程架构思维导图</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+:root[data-theme="dark"] {
+  --color-bg: #0f172a; --color-surface: #1e293b; --color-text: #e2e8f0;
+  --color-text-muted: #94a3b8; --color-accent: #f59e0b; --color-border: #334155;
+}
+:root[data-theme="light"] {
+  --color-bg: #f8fafc; --color-surface: #fff; --color-text: #1e293b;
+  --color-text-muted: #64748b; --color-accent: #d97706; --color-border: #e2e8f0;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:var(--color-bg);color:var(--color-text);
+  min-height:100vh;transition:background .3s,color .3s;
+  font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.theme-toggle{
+  position:fixed;top:1rem;right:1rem;z-index:1000;
+  background:var(--color-surface);border:1px solid var(--color-border);
+  border-radius:8px;padding:.5rem .75rem;cursor:pointer;
+  color:var(--color-text);font-size:1.1rem;transition:background .2s,border-color .2s;
+}
+.theme-toggle:hover{border-color:var(--color-accent)}
+.theme-toggle:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
+.header{padding:20px 24px 0;text-align:center}
+.header h1{font-size:24px;font-weight:900;margin-bottom:4px}
+.header p{font-size:13px;color:var(--color-text-muted)}
+.container{max-width:1400px;margin:0 auto;padding:16px 8px}
+.mermaid{display:flex;justify-content:center;overflow-x:auto}
+.legend{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;padding:12px 24px 20px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--color-text-muted)}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+</style>
+</head>
+<body>
+<button class="theme-toggle" aria-label="Toggle theme"><span class="theme-icon">🌙</span></button>
+
+<div class="header">
+  <h1>赛博瑞 · AI内容工厂 架构图</h1>
+  <p>管线节点 · 数据闭环 · 选题框架 — 点击节点展开/收起</p>
+</div>
+
+<div class="container">
+<div class="mermaid">
+mindmap
+  root((赛博瑞 AI内容工厂))
+    选题系统
+      每日选题日报
+        微博热搜
+        知乎热榜
+        百度热搜
+        抖音热点
+        B站热门
+      选题评分
+        AI筛选数码话题
+        多维度评分排序
+        切入角度建议
+      选题框架
+        科普类
+          ::icon(fa fa-book)
+          不提品牌 建立专业信任
+          磁轴原理 参数扫盲
+        干货类
+          ::icon(fa fa-wrench)
+          价格分3档 一句话优缺点
+          新机开荒 同价位对比
+        咨询解读类
+          ::icon(fa fa-newspaper)
+          数码圈新词解读
+          COMPUTEX趋势 行业事件
+        消费向导类
+          ::icon(fa fa-shopping-cart)
+          用户需求→盘点→总结
+          618 双11 开学季 年货节
+    竞品学习
+      B站视频分析
+        下载视频
+        Whisper转录
+        GLM-4V视觉分析
+      ::icon(fa fa-chart-line)
+      抖音独立管线
+        竖屏画面分析
+        ASR语音识别
+      知识沉淀
+        43个Wiki页面
+        9个品类覆盖
+        8份竞品报告
+      钩子模式
+        五段式结构
+        四段式结构
+        类比简化句式
+        数字锚定技巧
+    文案生成
+      Brief输入
+        docx脚本
+        txt纯文本
+        飞书链接
+      DeepSeek API
+        RAG检索 568chunks
+        Wiki注入 25000字
+        类别画像
+      格式输出
+        4种人设
+        5种脚本格式
+        热点自动挂钩
+    质检系统
+      12项审计
+        内容质量
+        结构规范
+        合规安全
+      AutoFix 3轮
+        结构修复
+        LLM修复
+        回归检测
+      合规过滤
+        表演式口语检测
+        违禁词自动替换
+        抖音平台规范
+    分镜系统
+      脚本拆解
+        33镜自动生成
+        景别运镜分配
+      ::icon(fa fa-table)
+      xlsx输出
+        10列布局
+        莫兰迪绿配色
+        灯位SVG嵌入
+      AI提示词
+        Seedance中文格式
+        最多3镜
+        智能运镜映射
+    数据闭环
+      播放反馈
+        5s完播率
+        2s流失率
+        平均观看时长
+      性能追踪
+        脚本匹配
+        品类排名
+        钩子效果对比
+      自动学习
+        5次生成→编译wiki
+        审计失败→改进建议
+        analytics反哺
+    选题闭环
+      选题日报→现在发什么
+      竞品wiki→怎么写最好
+      播放数据→上次哪个好
+      下次优化→调整品类配比
+</div>
+</div>
+
+<div class="legend">
+  <span class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>选题系统</span>
+  <span class="legend-item"><span class="legend-dot" style="background:#a78bfa"></span>竞品学习</span>
+  <span class="legend-item"><span class="legend-dot" style="background:#60a5fa"></span>文案生成</span>
+  <span class="legend-item"><span class="legend-dot" style="background:#f97316"></span>质检系统</span>
+  <span class="legend-item"><span class="legend-dot" style="background:#34d399"></span>分镜系统</span>
+  <span class="legend-item"><span class="legend-dot" style="background:#fb7185"></span>数据闭环</span>
+</div>
+
+<script>
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'dark',
+  mindmap: { useMaxWidth: true, padding: 20 },
+  securityLevel: 'loose',
+});
+
+document.querySelector('.theme-toggle').addEventListener('click', () => {
+  const html = document.documentElement;
+  const isDark = html.dataset.theme === 'dark';
+  html.dataset.theme = isDark ? 'light' : 'dark';
+  document.querySelector('.theme-icon').textContent = isDark ? '☀️' : '🌙';
+  // Re-render mermaid with new theme
+  const theme = isDark ? 'default' : 'dark';
+  mermaid.initialize({ theme, mindmap:{useMaxWidth:true,padding:20}, securityLevel:'loose' });
+  location.reload();
+});
+</script>
+</body>
+</html>

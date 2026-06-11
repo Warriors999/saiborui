@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>赛博瑞 Saiborui · AI驱动的内容工厂</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,900;1,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Noto+Serif+SC:wght@500;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream: #F6F2EC;
+  --cream-dark: #EBE4D8;
+  --charcoal: #2C2621;
+  --charcoal-light: #5C5248;
+  --terracotta: #C2704A;
+  --terracotta-light: #E8C8B4;
+  --terracotta-bg: #FDF3EC;
+  --sage: #8AAA98;
+  --sage-light: #D4E5DC;
+  --sage-bg: #F0F6F2;
+  --sand: #E8DFD0;
+  --stone: #A09888;
+  --white: #FFFCF8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; scroll-snap-type: y proximity; }
+
+body {
+  font-family: 'Noto Sans SC', 'DM Sans', sans-serif;
+  background: var(--cream);
+  color: var(--charcoal);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Section base ── */
+.section {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 80px 6vw;
+  position: relative;
+  scroll-snap-align: start;
+}
+
+.section-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.section-tag {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--terracotta);
+  margin-bottom: 16px;
+}
+
+.section-heading {
+  font-family: 'Noto Serif SC', 'Playfair Display', serif;
+  font-size: clamp(28px, 3.5vw, 44px);
+  font-weight: 900;
+  color: var(--charcoal);
+  line-height: 1.25;
+  margin-bottom: 20px;
+  letter-spacing: -0.5px;
+}
+
+.section-sub {
+  font-size: 16px;
+  color: var(--charcoal-light);
+  max-width: 560px;
+  line-height: 1.7;
+}
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 0 8vw;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -30%;
+  right: -15%;
+  width: 55%;
+  height: 160%;
+  background: var(--terracotta-bg);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: 10%;
+  left: 5%;
+  width: 180px;
+  height: 180px;
+  border: 1.5px solid var(--sage-light);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.hero-content { position: relative; z-index: 1; max-width: 900px; }
+
+.hero .overline {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: var(--terracotta);
+  margin-bottom: 28px;
+}
+
+.hero h1 {
+  font-family: 'Noto Serif SC', 'Playfair Display', serif;
+  font-size: clamp(48px, 7vw, 88px);
+  font-weight: 900;
+  color: var(--charcoal);
+  line-height: 1.08;
+  letter-spacing: -1px;
+  margin-bottom: 20px;
+}
+
+.hero h1 em {
+  font-style: italic;
+  color: var(--terracotta);
+}
+
+.hero h2 {
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: clamp(18px, 2.2vw, 26px);
+  font-weight: 400;
+  color: var(--charcoal-light);
+  margin-bottom: 12px;
+}
+
+.hero p {
+  font-size: 16px;
+  color: var(--stone);
+  max-width: 520px;
+  line-height: 1.8;
+  margin-bottom: 40px;
+}
+
+.hero .meta {
+  font-size: 12px;
+  color: var(--stone);
+  letter-spacing: 1px;
+}
+
+/* ── STATS BAR ── */
+.stats-bar {
+  background: var(--charcoal);
+  padding: 36px 6vw;
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 0 32px;
+  border-right: 1px solid rgba(255,255,255,0.12);
+}
+
+.stat-item:last-child { border-right: none; }
+
+.stat-value {
+  font-family: 'Noto Serif SC', 'Playfair Display', serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--stone);
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+
+/* ── PIPELINE FLOW ── */
+.pipeline-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  margin-top: 40px;
+}
+
+.pipe-step {
+  background: var(--white);
+  padding: 28px 16px;
+  text-align: center;
+  border-radius: 4px;
+  position: relative;
+  transition: transform 0.25s, box-shadow 0.25s;
+}
+
+.pipe-step:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(44,38,33,0.08);
+}
+
+.pipe-step .step-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 36px;
+  font-weight: 900;
+  color: var(--terracotta-light);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.pipe-step .step-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--charcoal);
+  margin-bottom: 4px;
+}
+
+.pipe-step .step-desc {
+  font-size: 11px;
+  color: var(--stone);
+  line-height: 1.5;
+}
+
+.pipe-step.alt { background: var(--sage-bg); }
+.pipe-step.alt .step-num { color: var(--sage-light); }
+
+/* ── MODULE CARDS ── */
+.modules-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-top: 40px;
+}
+
+.module-card {
+  background: var(--white);
+  padding: 32px 24px;
+  border-radius: 4px;
+  transition: transform 0.25s;
+  border-top: 3px solid transparent;
+}
+
+.module-card:hover { transform: translateY(-3px); }
+
+.module-card:nth-child(1) { border-top-color: var(--terracotta); }
+.module-card:nth-child(2) { border-top-color: var(--sage); }
+.module-card:nth-child(3) { border-top-color: var(--terracotta); }
+.module-card:nth-child(4) { border-top-color: var(--sage); }
+.module-card:nth-child(5) { border-top-color: var(--terracotta); }
+.module-card:nth-child(6) { border-top-color: var(--sage); }
+.module-card:nth-child(7) { border-top-color: var(--terracotta); }
+.module-card:nth-child(8) { border-top-color: var(--sage); }
+
+.module-card .mod-icon {
+  font-size: 24px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.module-card h4 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--charcoal);
+  margin-bottom: 6px;
+}
+
+.module-card p {
+  font-size: 13px;
+  color: var(--charcoal-light);
+  line-height: 1.6;
+}
+
+/* ── ANALYTICS DEEP DIVE ── */
+.analytics-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-top: 40px;
+}
+
+.analytics-col {
+  background: var(--white);
+  padding: 40px;
+  border-radius: 4px;
+}
+
+.analytics-col h4 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: var(--charcoal);
+}
+
+.flow-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--cream-dark);
+}
+
+.flow-step:last-child { border-bottom: none; }
+
+.flow-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--terracotta-bg);
+  color: var(--terracotta);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.flow-step:nth-child(2) .flow-num { background: var(--sage-bg); color: var(--sage); }
+.flow-step:nth-child(3) .flow-num { background: var(--sage-bg); color: var(--sage); }
+.flow-step:nth-child(4) .flow-num { background: var(--sage-bg); color: var(--sage); }
+
+.flow-step h5 { font-size: 13px; font-weight: 700; color: var(--charcoal); margin-bottom: 2px; }
+.flow-step span { font-size: 12px; color: var(--charcoal-light); }
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  font-size: 13px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-dot.done { background: var(--sage); }
+.status-dot.wip { background: var(--terracotta); }
+
+/* ── TECH + ROADMAP ── */
+.tech-roadmap {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 40px;
+  margin-top: 40px;
+}
+
+.tech-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-content: flex-start;
+}
+
+.tech-tag {
+  padding: 8px 18px;
+  background: var(--white);
+  font-size: 13px;
+  color: var(--charcoal);
+  border-radius: 2px;
+  font-weight: 500;
+}
+
+.tech-tag.highlight {
+  background: var(--terracotta);
+  color: var(--white);
+}
+
+.roadmap-col h4 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+.roadmap-phase {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--sand);
+}
+
+.roadmap-phase:last-child { border-bottom: none; }
+
+.phase-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--terracotta);
+  margin-bottom: 4px;
+}
+
+.phase-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--charcoal);
+  margin-bottom: 4px;
+}
+
+.phase-desc {
+  font-size: 12px;
+  color: var(--charcoal-light);
+  line-height: 1.5;
+}
+
+/* ── FOOTER ── */
+.footer {
+  text-align: center;
+  padding: 60px 6vw;
+  border-top: 1px solid var(--sand);
+}
+
+.footer p { font-size: 12px; color: var(--stone); margin-bottom: 8px; }
+
+.footer .brand {
+  color: var(--charcoal-light);
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.footer .brand:hover { color: var(--terracotta); }
+
+/* ── Animations ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .pipeline-grid { grid-template-columns: repeat(3, 1fr); }
+  .modules-grid { grid-template-columns: repeat(2, 1fr); }
+  .analytics-split { grid-template-columns: 1fr; }
+  .tech-roadmap { grid-template-columns: 1fr; }
+  .stat-item { padding: 0 16px; }
+  .section { padding: 60px 5vw; }
+  .hero { padding: 0 5vw; }
+}
+
+@media (max-width: 500px) {
+  .pipeline-grid { grid-template-columns: repeat(2, 1fr); }
+  .modules-grid { grid-template-columns: 1fr; }
+}
+
+@media print {
+  .section { min-height: auto; padding: 40px 20px; page-break-inside: avoid; }
+  .stats-bar { position: static; background: var(--charcoal); -webkit-print-color-adjust: exact; }
+  .hero { min-height: auto; padding: 60px 20px; }
+  body { font-size: 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<section class="hero">
+  <div class="hero-content reveal">
+    <div class="overline">Internal Technical Report</div>
+    <h1>赛博瑞<br><em>Saiborui</em></h1>
+    <h2>AI驱动的内容工厂</h2>
+    <p>从产品Brief到成品分镜表，全流程AI自动化。让一个创作者拥有一个专业视频团队的产出能力。</p>
+    <div class="meta">内部技术汇报 &nbsp;·&nbsp; 2026年6月</div>
+  </div>
+</section>
+
+<!-- ═══════════════ STATS BAR ═══════════════ -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-value">40+</div>
+    <div class="stat-label">Python 模块</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value">10,732</div>
+    <div class="stat-label">行代码</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value">569</div>
+    <div class="stat-label">知识库 chunks</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value">10</div>
+    <div class="stat-label">产品品类</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value">59/59</div>
+    <div class="stat-label">测试通过</div>
+  </div>
+</div>
+
+<!-- ═══════════════ PIPELINE ═══════════════ -->
+<section class="section">
+  <div class="section-inner reveal">
+    <div class="section-tag">Pipeline Overview</div>
+    <h3 class="section-heading">端到端管线全景</h3>
+    <p class="section-sub">7大模块协作，从需求输入到成品交付的全链路自动化</p>
+
+    <div class="pipeline-grid">
+      <div class="pipe-step">
+        <div class="step-num">01</div>
+        <div class="step-title">输入与意图</div>
+        <div class="step-desc">Brief解析<br>选题日报<br>产品信息提取</div>
+      </div>
+      <div class="pipe-step alt">
+        <div class="step-num">02</div>
+        <div class="step-title">知识检索</div>
+        <div class="step-desc">向量语义搜索<br>Wiki知识注入<br>数据反哺</div>
+      </div>
+      <div class="pipe-step">
+        <div class="step-num">03</div>
+        <div class="step-title">脚本生成</div>
+        <div class="step-desc">4风格×5格式<br>×10品类<br>12条铁律内置</div>
+      </div>
+      <div class="pipe-step alt">
+        <div class="step-num">04</div>
+        <div class="step-title">质量关卡</div>
+        <div class="step-desc">14项审计<br>AutoFix 3轮<br>不合格不交付</div>
+      </div>
+      <div class="pipe-step">
+        <div class="step-num">05</div>
+        <div class="step-title">分镜输出</div>
+        <div class="step-desc">10列xlsx分镜表<br>SVG灯位图<br>产品归档</div>
+      </div>
+      <div class="pipe-step alt">
+        <div class="step-num">06</div>
+        <div class="step-title">竞品学习</div>
+        <div class="step-desc">B站+抖音双平台<br>Wiki自动编译<br>知识复利增长</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ MODULES ═══════════════ -->
+<section class="section" style="background:var(--white);">
+  <div class="section-inner reveal">
+    <div class="section-tag">Core Modules</div>
+    <h3 class="section-heading">8大核心模块</h3>
+    <p class="section-sub">每个模块独立可运行，通过CLI和API串联为完整流水线</p>
+
+    <div class="modules-grid">
+      <div class="module-card">
+        <span class="mod-icon">&#x1F4CB;</span>
+        <h4>输入解析</h4>
+        <p>Brief自然语言→结构化编辑指令。自动识别产品名、品类、核心卖点。</p>
+      </div>
+      <div class="module-card">
+        <span class="mod-icon">&#x1F50D;</span>
+        <h4>知识检索 RAG</h4>
+        <p>170篇历史脚本 · 43篇Wiki · 568向量chunk。语义检索 + 智能去重 + 版本优先。</p>
+      </div>
+      <div class="module-card">
+        <span class="mod-icon">&#x270D;</span>
+        <h4>脚本生成引擎</h4>
+        <p>DeepSeek LLM驱动。4种写作风格×5种脚本格式×9大品类。12条写作铁律全内置。</p>
+      </div>
+      <div class="module-card">
+        <span class="mod-icon">&#x2714;</span>
+        <h4>质量关卡</h4>
+        <p>14项自动审计 · AutoFix 3轮自修复 · 三板块评分卡 · AI模拟观众点映。不合格不交付。</p>
+      </div>
+      <div class="module-card">
+        <span class="mod-icon">&#x1F3AC;</span>
+        <h4>分镜输出</h4>
+        <p>10列xlsx专业分镜表 · SVG灯位示意图 · 运镜占比强制约束(固定≤40%) · 自动归档。</p>
+      </div>
+      <div class="module-card">
+        <span class="mod-icon">&#x1F4CA;</span>
+        <h4>竞品学习闭环</h4>
+        <p>B站+抖音双平台 → 全云端分析 → Wiki自动编译 → 知识复利增长。支持全量/轻量双模式。</p>
+      </div>
+      <div class="module-card">
+        <span class="mod-icon">&#x1F4C8;</span>
+        <h4>数据分析体系</h4>
+        <p>管线事件追踪 · 视频表现导入 · 脚本↔视频智能匹配 · Direction-B多维加权评分。</p>
+      </div>
+      <div class="module-card">
+        <span class="mod-icon">&#x2699;</span>
+        <h4>全栈工程技术</h4>
+        <p>Python 3.12+ · DeepSeek API · ChromaDB · 14个CLI命令 · HTML Dashboard · 59项自动测试。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ ANALYTICS DEEP DIVE ═══════════════ -->
+<section class="section">
+  <div class="section-inner reveal">
+    <div class="section-tag">Data System</div>
+    <h3 class="section-heading">数据分析体系</h3>
+    <p class="section-sub">从管线事件采集到真实播放数据驱动的策略优化，完整闭环</p>
+
+    <div class="analytics-split">
+      <div class="analytics-col" style="background:var(--sage-bg);">
+        <h4>数据驱动优化闭环</h4>
+        <div class="flow-step">
+          <div class="flow-num">1</div>
+          <div><h5>管线事件自动采集</h5><span>每次generate/audit/storyboard自动记日志至 analytics_events.jsonl</span></div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">2</div>
+          <div><h5>视频表现数据导入</h5><span>支持抖音创作者后台xlsx直接导入。31条视频已入库。</span></div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">3</div>
+          <div><h5>脚本↔视频智能匹配</h5><span>产品名+时间窗口自动关联，三级匹配策略(自动/模糊/手动)。</span></div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">4</div>
+          <div><h5>Direction-B多维评分</h5><span>reach+retention+engagement+hook四维综合评分。支持权重学习。</span></div>
+        </div>
+      </div>
+      <div class="analytics-col" style="background:var(--terracotta-bg);">
+        <h4>当前状态</h4>
+        <div class="status-item"><span class="status-dot done"></span>数据导入和评分工具体系已完成</div>
+        <div class="status-item"><span class="status-dot done"></span>品类画像规则已注入 System Prompt</div>
+        <div class="status-item"><span class="status-dot done"></span>31条历史视频数据已入库分析</div>
+        <div class="status-item"><span class="status-dot wip"></span>待积累管线配对数据以启用权重学习</div>
+        <div class="status-item"><span class="status-dot wip"></span>目标: ≥20对匹配后，品类画像从静态规则升级为动态模型</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ TECH + ROADMAP ═══════════════ -->
+<section class="section" style="background:var(--white);">
+  <div class="section-inner reveal">
+    <div class="section-tag">Stack & Roadmap</div>
+    <h3 class="section-heading">技术栈与后续规划</h3>
+
+    <div class="tech-roadmap">
+      <div>
+        <div class="tech-cloud">
+          <span class="tech-tag highlight">Python 3.12+</span>
+          <span class="tech-tag">DeepSeek API</span>
+          <span class="tech-tag">ChromaDB</span>
+          <span class="tech-tag">BGE-Large-Zh</span>
+          <span class="tech-tag">python-docx</span>
+          <span class="tech-tag">openpyxl</span>
+          <span class="tech-tag">Click CLI</span>
+          <span class="tech-tag">Whisper / Gemini</span>
+          <span class="tech-tag">OpenCV / GLM-4V</span>
+          <span class="tech-tag">librosa / ffmpeg</span>
+          <span class="tech-tag">pptxgenjs</span>
+          <span class="tech-tag">markitdown</span>
+          <span class="tech-tag highlight">14 个 CLI 命令</span>
+          <span class="tech-tag">HTML Dashboard</span>
+          <span class="tech-tag">59 项自动测试</span>
+        </div>
+      </div>
+      <div class="roadmap-col">
+        <h4>2026 Q3 规划</h4>
+        <div class="roadmap-phase">
+          <div class="phase-label">Phase 1</div>
+          <div class="phase-title">数据积累</div>
+          <div class="phase-desc">管线配对≥20对 → Direction-B权重学习启用。品类画像从静态规则升级为动态统计模型。</div>
+        </div>
+        <div class="roadmap-phase">
+          <div class="phase-label">Phase 2</div>
+          <div class="phase-title">知识完善</div>
+          <div class="phase-desc">writing/和shooting/知识域Wiki填充。抖音竞品管线完成开发并接入闭环。</div>
+        </div>
+        <div class="roadmap-phase">
+          <div class="phase-label">Phase 3</div>
+          <div class="phase-title">闭环优化</div>
+          <div class="phase-desc">视频表现 vs 脚本特征的因果分析报告。基于ROI数据自动调整生成策略权重。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="footer">
+  <p>赛博瑞 Saiborui v1.0.0 &nbsp;·&nbsp; 71 commits &nbsp;·&nbsp; 43 wiki pages &nbsp;·&nbsp; 59 tests &nbsp;·&nbsp; 10,732 lines Python</p>
+  <a href="https://deerflow.tech" target="_blank" class="brand">Deerflow</a>
+</footer>
+
+<script>
+// Scroll reveal
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.15 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// Stats bar count-up
+const statsObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.querySelectorAll('.stat-value').forEach(el => {
+        const text = el.textContent;
+        if (text.includes('/') || text.includes('+')) return;
+        const target = parseInt(text.replace(/,/g, ''));
+        if (isNaN(target)) return;
+        let current = 0;
+        const step = Math.ceil(target / 40);
+        const timer = setInterval(() => {
+          current = Math.min(current + step, target);
+          el.textContent = current.toLocaleString();
+          if (current >= target) clearInterval(timer);
+        }, 30);
+        el.dataset.animated = 'true';
+      });
+    }
+  });
+}, { threshold: 0.5 });
+document.querySelectorAll('.stats-bar').forEach(el => statsObserver.observe(el));
+</script>
+
+</body>
+</html>

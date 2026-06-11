@@ -1,0 +1,211 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 880">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+    </pattern>
+    <style>
+      text { font-family: 'PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="#0f172a"/>
+  <rect width="100%" height="100%" fill="url(#grid)"/>
+
+  <!-- Title -->
+  <text x="600" y="36" fill="white" font-size="22" font-weight="700" text-anchor="middle">选题框架 — 数码账号内容策略</text>
+  <text x="600" y="58" fill="#64748b" font-size="11" text-anchor="middle">月更22条 · 周更5条 · 全数码覆盖(笔记本+显示器为主) · 站在用户角度 · 简单实用 · 无广告痕迹</text>
+
+  <!-- ═══════════ FOUR CONTENT TYPES ═══════════ -->
+  <text x="600" y="92" fill="#fbbf24" font-size="13" font-weight="700" text-anchor="middle">四 大 内 容 类 型</text>
+
+  <!-- Column 1: 科普 -->
+  <rect x="30" y="110" width="270" height="340" rx="8" fill="#0f172a"/>
+  <rect x="30" y="110" width="270" height="340" rx="8" fill="rgba(34,211,238,0.08)" stroke="#22d3ee" stroke-width="1.5"/>
+  <rect x="30" y="110" width="270" height="36" rx="8" fill="rgba(34,211,238,0.2)"/>
+  <text x="165" y="134" fill="#22d3ee" font-size="15" font-weight="700" text-anchor="middle">科普类</text>
+  <text x="50" y="170" fill="#94a3b8" font-size="10">目的：建立专业信任</text>
+  <text x="50" y="194" fill="#94a3b8" font-size="10">品牌：不提品牌</text>
+
+  <rect x="50" y="212" width="230" height="1" fill="#334155"/>
+  <text x="50" y="234" fill="#64748b" font-size="9">举例</text>
+  <text x="50" y="256" fill="#e2e8f0" font-size="11">· 磁轴和机械轴到底差在哪</text>
+  <text x="50" y="280" fill="#e2e8f0" font-size="11">· 显示器参数扫盲</text>
+  <text x="50" y="304" fill="#e2e8f0" font-size="11">· RT、回报率是什么意思</text>
+
+  <rect x="50" y="326" width="230" height="1" fill="#334155"/>
+  <text x="50" y="348" fill="#64748b" font-size="9">使用场景</text>
+  <rect x="50" y="360" width="88" height="22" rx="4" fill="rgba(34,211,238,0.15)" stroke="#22d3ee" stroke-width="0.5"/>
+  <text x="94" y="375" fill="#22d3ee" font-size="10" font-weight="600" text-anchor="middle">平时日常</text>
+
+  <text x="50" y="408" fill="#64748b" font-size="9">价值</text>
+  <text x="50" y="428" fill="#94a3b8" font-size="10">观众信任你懂行</text>
+  <text x="50" y="446" fill="#94a3b8" font-size="10">长期积累粉丝粘性</text>
+
+  <!-- Column 2: 干货 -->
+  <rect x="320" y="110" width="270" height="340" rx="8" fill="#0f172a"/>
+  <rect x="320" y="110" width="270" height="340" rx="8" fill="rgba(52,211,153,0.08)" stroke="#34d399" stroke-width="1.5"/>
+  <rect x="320" y="110" width="270" height="36" rx="8" fill="rgba(52,211,153,0.2)"/>
+  <text x="455" y="134" fill="#34d399" font-size="15" font-weight="700" text-anchor="middle">干货类</text>
+  <text x="340" y="170" fill="#94a3b8" font-size="10">目的：实操价值</text>
+  <text x="340" y="194" fill="#94a3b8" font-size="10">品牌：可提(同价位对比)</text>
+
+  <rect x="340" y="212" width="230" height="1" fill="#334155"/>
+  <text x="340" y="234" fill="#64748b" font-size="9">举例</text>
+  <text x="340" y="256" fill="#e2e8f0" font-size="11">· 新机开荒设置（教你用）</text>
+  <text x="340" y="280" fill="#e2e8f0" font-size="11">· 新品同价位优劣分析</text>
+  <text x="340" y="304" fill="#e2e8f0" font-size="11">· 实用配件推荐</text>
+
+  <rect x="340" y="326" width="230" height="1" fill="#334155"/>
+  <text x="340" y="348" fill="#64748b" font-size="9">展现形式</text>
+  <text x="340" y="368" fill="#e2e8f0" font-size="10">价格分3档 · 每产品一句话优/缺点</text>
+  <text x="340" y="388" fill="#e2e8f0" font-size="10">雷达图对比 · 排名(夯→拉)</text>
+
+  <text x="340" y="412" fill="#64748b" font-size="9">使用场景</text>
+  <rect x="340" y="418" width="88" height="22" rx="4" fill="rgba(52,211,153,0.15)" stroke="#34d399" stroke-width="0.5"/>
+  <text x="384" y="433" fill="#34d399" font-size="10" font-weight="600" text-anchor="middle">平时+促销季后</text>
+
+  <!-- Column 3: 咨询解读 -->
+  <rect x="610" y="110" width="270" height="340" rx="8" fill="#0f172a"/>
+  <rect x="610" y="110" width="270" height="340" rx="8" fill="rgba(167,139,250,0.08)" stroke="#a78bfa" stroke-width="1.5"/>
+  <rect x="610" y="110" width="270" height="36" rx="8" fill="rgba(167,139,250,0.2)"/>
+  <text x="745" y="134" fill="#a78bfa" font-size="15" font-weight="700" text-anchor="middle">咨询解读类</text>
+  <text x="630" y="170" fill="#94a3b8" font-size="10">目的：热点跟进</text>
+  <text x="630" y="194" fill="#94a3b8" font-size="10">品牌：看情况</text>
+
+  <rect x="630" y="212" width="230" height="1" fill="#334155"/>
+  <text x="630" y="234" fill="#64748b" font-size="9">举例</text>
+  <text x="630" y="256" fill="#e2e8f0" font-size="11">· 数码圈新词解读</text>
+  <text x="630" y="280" fill="#e2e8f0" font-size="11">· COMPUTEX趋势分析</text>
+  <text x="630" y="304" fill="#e2e8f0" font-size="11">· 行业大事件解读</text>
+
+  <rect x="630" y="326" width="230" height="1" fill="#334155"/>
+  <text x="630" y="348" fill="#64748b" font-size="9">使用场景</text>
+  <rect x="630" y="360" width="88" height="22" rx="4" fill="rgba(167,139,250,0.15)" stroke="#a78bfa" stroke-width="0.5"/>
+  <text x="674" y="375" fill="#a78bfa" font-size="10" font-weight="600" text-anchor="middle">平时日常</text>
+
+  <text x="630" y="408" fill="#64748b" font-size="9">价值</text>
+  <text x="630" y="428" fill="#94a3b8" font-size="10">蹭热点获取流量</text>
+  <text x="630" y="446" fill="#94a3b8" font-size="10">建立"懂行"人设</text>
+
+  <!-- Column 4: 消费向导 -->
+  <rect x="900" y="110" width="270" height="340" rx="8" fill="#0f172a"/>
+  <rect x="900" y="110" width="270" height="340" rx="8" fill="rgba(251,191,36,0.08)" stroke="#fbbf24" stroke-width="1.5"/>
+  <rect x="900" y="110" width="270" height="36" rx="8" fill="rgba(251,191,36,0.2)"/>
+  <text x="1035" y="134" fill="#fbbf24" font-size="15" font-weight="700" text-anchor="middle">消费向导类</text>
+  <text x="920" y="170" fill="#94a3b8" font-size="10">目的：促成购买决策</text>
+  <text x="920" y="194" fill="#94a3b8" font-size="10">品牌：提(甲方/推荐) 但无广告痕迹</text>
+
+  <rect x="920" y="212" width="230" height="1" fill="#334155"/>
+  <text x="920" y="234" fill="#64748b" font-size="9">标准结构</text>
+  <text x="920" y="256" fill="#fbbf24" font-size="11">用户痛点 → 内容导向</text>
+  <text x="920" y="278" fill="#fbbf24" font-size="11">→ 简单盘点 → 一句话总结</text>
+
+  <rect x="920" y="294" width="230" height="1" fill="#334155"/>
+  <text x="920" y="316" fill="#64748b" font-size="9">展现形式</text>
+  <text x="920" y="336" fill="#e2e8f0" font-size="10">价格分3档·每产品一句话优缺点</text>
+  <text x="920" y="356" fill="#e2e8f0" font-size="10">不能有广告痕迹，自然推荐</text>
+
+  <text x="920" y="382" fill="#64748b" font-size="9">使用场景</text>
+  <rect x="920" y="392" width="230" height="22" rx="4" fill="rgba(251,191,36,0.15)" stroke="#fbbf24" stroke-width="0.5"/>
+  <text x="1035" y="407" fill="#fbbf24" font-size="10" font-weight="600" text-anchor="middle">618/双11/双12/开学季/年货节</text>
+
+  <text x="920" y="432" fill="#64748b" font-size="9">价值</text>
+  <text x="920" y="448" fill="#94a3b8" font-size="10">直接带来商单转化</text>
+
+  <!-- ═══════════ TIMELINE ═══════════ -->
+  <rect x="30" y="470" width="1140" height="170" rx="8" fill="rgba(30,41,59,0.5)" stroke="#334155" stroke-width="1"/>
+  <text x="60" y="498" fill="#fbbf24" font-size="13" font-weight="700">时间节奏 — 什么时候发什么</text>
+
+  <!-- Timeline bar -->
+  <rect x="60" y="520" width="1080" height="6" rx="3" fill="#334155"/>
+
+  <!-- Jan -->
+  <text x="60" y="562" fill="#64748b" font-size="9" text-anchor="middle">1月</text>
+  <rect x="40" y="528" width="40" height="18" rx="3" fill="rgba(167,139,250,0.15)" stroke="#a78bfa" stroke-width="0.5"/>
+  <text x="60" y="541" fill="#a78bfa" font-size="8" text-anchor="middle">平时</text>
+
+  <!-- Feb: 年货节 -->
+  <text x="130" y="562" fill="#64748b" font-size="9" text-anchor="middle">2月</text>
+  <rect x="105" y="528" width="50" height="18" rx="3" fill="rgba(251,191,36,0.2)" stroke="#fbbf24" stroke-width="0.6"/>
+  <text x="130" y="541" fill="#fbbf24" font-size="8" font-weight="600" text-anchor="middle">年货节</text>
+
+  <!-- Mar-Aug: 平时 -->
+  <text x="200" y="562" fill="#64748b" font-size="9" text-anchor="middle">3-4月</text>
+  <rect x="180" y="528" width="40" height="18" rx="3" fill="rgba(167,139,250,0.15)" stroke="#a78bfa" stroke-width="0.5"/>
+  <text x="200" y="541" fill="#a78bfa" font-size="8" text-anchor="middle">平时</text>
+
+  <!-- May: 618前 -->
+  <text x="270" y="562" fill="#64748b" font-size="9" text-anchor="middle">5-6月</text>
+  <rect x="245" y="528" width="50" height="18" rx="3" fill="rgba(251,191,36,0.2)" stroke="#fbbf24" stroke-width="0.6"/>
+  <text x="270" y="541" fill="#fbbf24" font-size="8" font-weight="600" text-anchor="middle">618</text>
+
+  <!-- Jul: 618后干货 -->
+  <text x="340" y="562" fill="#64748b" font-size="9" text-anchor="middle">6月中-7月</text>
+  <rect x="315" y="528" width="50" height="18" rx="3" fill="rgba(52,211,153,0.2)" stroke="#34d399" stroke-width="0.6"/>
+  <text x="340" y="541" fill="#34d399" font-size="8" font-weight="600" text-anchor="middle">干货期</text>
+
+  <!-- Aug: 开学季 -->
+  <text x="420" y="562" fill="#64748b" font-size="9" text-anchor="middle">8-9月</text>
+  <rect x="390" y="528" width="60" height="18" rx="3" fill="rgba(251,191,36,0.2)" stroke="#fbbf24" stroke-width="0.6"/>
+  <text x="420" y="541" fill="#fbbf24" font-size="8" font-weight="600" text-anchor="middle">开学季+开学后干货</text>
+
+  <!-- Oct-Nov: 平时+双11 -->
+  <text x="520" y="562" fill="#64748b" font-size="9" text-anchor="middle">10月</text>
+  <rect x="500" y="528" width="40" height="18" rx="3" fill="rgba(167,139,250,0.15)" stroke="#a78bfa" stroke-width="0.5"/>
+  <text x="520" y="541" fill="#a78bfa" font-size="8" text-anchor="middle">平时</text>
+
+  <text x="600" y="562" fill="#64748b" font-size="9" text-anchor="middle">11月</text>
+  <rect x="570" y="528" width="60" height="18" rx="3" fill="rgba(251,191,36,0.2)" stroke="#fbbf24" stroke-width="0.6"/>
+  <text x="600" y="541" fill="#fbbf24" font-size="8" font-weight="600" text-anchor="middle">双11+干货</text>
+
+  <!-- Dec: 双12+年货节 -->
+  <text x="690" y="562" fill="#64748b" font-size="9" text-anchor="middle">12月</text>
+  <rect x="660" y="528" width="60" height="18" rx="3" fill="rgba(251,191,36,0.2)" stroke="#fbbf24" stroke-width="0.6"/>
+  <text x="690" y="541" fill="#fbbf24" font-size="8" font-weight="600" text-anchor="middle">双12</text>
+
+  <!-- Legend -->
+  <rect x="780" y="528" width="12" height="12" rx="2" fill="rgba(251,191,36,0.3)" stroke="#fbbf24" stroke-width="0.5"/>
+  <text x="798" y="538" fill="#94a3b8" font-size="9">消费向导</text>
+  <rect x="870" y="528" width="12" height="12" rx="2" fill="rgba(52,211,153,0.3)" stroke="#34d399" stroke-width="0.5"/>
+  <text x="888" y="538" fill="#94a3b8" font-size="9">干货</text>
+  <rect x="940" y="528" width="12" height="12" rx="2" fill="rgba(167,139,250,0.3)" stroke="#a78bfa" stroke-width="0.5"/>
+  <text x="958" y="538" fill="#94a3b8" font-size="9">科普+咨询</text>
+
+  <!-- ═══════════ 消费向导结构 ═══════════ -->
+  <rect x="30" y="660" width="1140" height="60" rx="8" fill="rgba(251,191,36,0.06)" stroke="#fbbf24" stroke-width="1" stroke-dasharray="8,4"/>
+  <text x="60" y="685" fill="#fbbf24" font-size="12" font-weight="700">消费向导标准结构：</text>
+
+  <rect x="250" y="668" width="170" height="36" rx="6" fill="rgba(251,191,36,0.1)" stroke="#fbbf24" stroke-width="0.8"/>
+  <text x="335" y="692" fill="#fbbf24" font-size="12" font-weight="600" text-anchor="middle">① 用户需求(痛点)</text>
+
+  <text x="440" y="692" fill="#64748b" font-size="16" text-anchor="middle">→</text>
+
+  <rect x="470" y="668" width="170" height="36" rx="6" fill="rgba(251,191,36,0.1)" stroke="#fbbf24" stroke-width="0.8"/>
+  <text x="555" y="692" fill="#fbbf24" font-size="12" font-weight="600" text-anchor="middle">② 内容导向</text>
+
+  <text x="660" y="692" fill="#64748b" font-size="16" text-anchor="middle">→</text>
+
+  <rect x="690" y="668" width="170" height="36" rx="6" fill="rgba(251,191,36,0.1)" stroke="#fbbf24" stroke-width="0.8"/>
+  <text x="775" y="692" fill="#fbbf24" font-size="12" font-weight="600" text-anchor="middle">③ 简单盘点</text>
+
+  <text x="880" y="692" fill="#64748b" font-size="16" text-anchor="middle">→</text>
+
+  <rect x="910" y="668" width="190" height="36" rx="6" fill="rgba(251,191,36,0.1)" stroke="#fbbf24" stroke-width="0.8"/>
+  <text x="1005" y="692" fill="#fbbf24" font-size="12" font-weight="600" text-anchor="middle">④ 一句话总结</text>
+
+  <!-- ═══════════ BOTTOM STATS ═══════════ -->
+  <rect x="30" y="740" width="1140" height="40" rx="6" fill="rgba(30,41,59,0.6)" stroke="#334155" stroke-width="0.5"/>
+  <text x="60" y="765" fill="#e2e8f0" font-size="10">展现形式</text>
+  <text x="160" y="765" fill="#64748b" font-size="10">|</text>
+  <text x="185" y="765" fill="#94a3b8" font-size="10">价格分3档(低/中/高)</text>
+  <text x="365" y="765" fill="#64748b" font-size="10">|</text>
+  <text x="390" y="765" fill="#94a3b8" font-size="10">每产品一句话优点+一句话缺点</text>
+  <text x="650" y="765" fill="#64748b" font-size="10">|</text>
+  <text x="675" y="765" fill="#94a3b8" font-size="10">雷达图对比</text>
+  <text x="810" y="765" fill="#64748b" font-size="10">|</text>
+  <text x="835" y="765" fill="#94a3b8" font-size="10">排名(夯→拉)</text>
+  <text x="965" y="765" fill="#64748b" font-size="10">|</text>
+  <text x="990" y="765" fill="#fbbf24" font-size="10" font-weight="600">禁止广告痕迹</text>
+
+</svg>

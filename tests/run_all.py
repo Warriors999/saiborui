@@ -1,16 +1,35 @@
 """Run all project tests and report pass/fail summary.
 
 Usage:
-    python tests/run_all.py          # from project root
-    python run_all.py                # from within tests/
+    py -3.12 tests/run_all.py       # Windows (use py launcher, not 'python')
+    python3 tests/run_all.py        # macOS/Linux
+
+Note: On Windows, 'python' may resolve to the Microsoft Store stub which
+produces exit code 49. Use 'py -3.12' or the full Python 3.12 path instead.
 """
 
 import sys
+import os
 import traceback
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
+
+
+def _check_python_not_stub():
+    """Warn if running under a Windows Store Python stub (exit code 49 issue)."""
+    exe = sys.executable.lower()
+    if "windowsapps" in exe:
+        print("WARNING: Running under Windows Store Python stub!")
+        print(f"  Current: {sys.executable}")
+        print("  This stub silently fails. Use one of:")
+        print("    py -3.12 tests/run_all.py")
+        print("    (full path to Python312)\\python.exe tests/run_all.py")
+        print()
+        return False
+    return True
+
 
 from tests import test_config
 from tests import test_template_adapter
@@ -33,6 +52,7 @@ def discover_test_functions(module):
 
 
 def run_all():
+    _check_python_not_stub()
     total = passed = failed = 0
     errors = []
 

@@ -79,11 +79,11 @@ def _get_client() -> OpenAI:
 # Topic scraping
 # ============================================================
 
-def scrape_hot_topics(seed_file: str | Path = "output/topics_seed.txt") -> list[dict]:
+def scrape_hot_topics(seed_file: str | Path = "output/daily/topics_seed.txt") -> list[dict]:
     """Scrape hot topics from multiple accessible sources.
 
     Priority order:
-      1. User-maintained seed file (output/topics_seed.txt)
+      1. User-maintained seed file (output/daily/topics_seed.txt)
       2. Hardcoded SEED_TOPICS as fallback
 
     Each returned dict has: title, source, url, summary

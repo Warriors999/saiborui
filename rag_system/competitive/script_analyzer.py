@@ -121,72 +121,148 @@ def _find_patterns(transcript: str, category: str) -> list[str]:
     return patterns
 
 
-def deep_analyze(transcript: str, category: str, video_title: str, hook_type: str, visual: dict = None) -> dict:
-    """Use LLM to extract actionable creative learnings from a competitor script.
+def deep_analyze(transcript: str, category: str, video_title: str, hook_type: str,
+                 visual: dict = None, visual_frames_analysis: str = "",
+                 audio: dict = None) -> dict:
+    """Four-dimension deep analysis: script + visual composition + editing + VFX.
 
-    Returns structured insights a content creator can directly apply.
+    Accepts data from all pipeline stages and produces an integrated learning report
+    covering what a content creator needs: copywriting, cinematography, editing, and
+    post-production techniques.
     """
     if not DEEPSEEK_API_KEY:
         return {"error": "DeepSeek API key not configured"}
 
     client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
 
+    # ── Build comprehensive context ──
+
+    # Shot data
     visual_context = ""
     if visual and not visual.get("error"):
+        transitions = visual.get("transitions", {})
         visual_context = f"""
-视频视觉/剪辑数据:
-- 检测到镜头数: {visual.get('shot_count', 'N/A')}
+【剪辑数据】
+- 镜头数: {visual.get('shot_count', 'N/A')}
 - 视频时长: {visual.get('duration_sec', 'N/A')}秒
 - 平均镜头时长: {visual.get('avg_shot_sec', 'N/A')}秒
 - 剪辑频率: {visual.get('cuts_per_minute', 'N/A')}次/分钟
 - 短镜头(≤2s)占比: {visual.get('short_shots_pct', 'N/A')}%
 - 中镜头(2-5s)占比: {visual.get('medium_shots_pct', 'N/A')}%
 - 长镜头(>5s)占比: {visual.get('long_shots_pct', 'N/A')}%
+- 剪辑节奏类型: {transitions.get('dominant', 'N/A')}
 """
 
-    prompt = f"""你是一位顶级短视频创作分析师，精通文案和视觉两方面的拆解。请深度分析以下竞品视频，提取可操作的创作学习点。
+    # Frame-level visual analysis
+    frames_context = ""
+    if visual_frames_analysis and "失败" not in visual_frames_analysis:
+        frames_context = f"""
+【画面构图分析（基于关键帧）】
+{visual_frames_analysis}
+"""
 
-视频: {video_title} | 品类: {category} | 检测到的钩子类型: {hook_type}
+    # Audio data
+    audio_context = ""
+    if audio and not audio.get("error"):
+        audio_context = f"""
+【音频数据】
+- BGM变化次数: {audio.get('bgm_changes', 'N/A')}
+- 音效估计: ~{audio.get('sfx_estimated', 'N/A')}个
+- 静音占比: {audio.get('silent_ratio', 'N/A')}%
+- 平均音量: {audio.get('avg_volume_db', 'N/A')}dB
+"""
 
-口播脚本:
+    prompt = f"""你是顶级短视频战略分析师，专门从"爆款归因"角度拆解竞品。你的核心任务不是描述"这个视频做了什么"，而是回答"它为什么能爆？解决了用户什么需求？我选题时能学到什么？"
+
+视频: {video_title}
+品类: {category}
+钩子类型: {hook_type}
+
+【口播脚本】
 {transcript[:3000]}
 
 {visual_context}
-请从以下7个维度输出结构化的学习要点（每点1-3句话，直接可用）:
+{frames_context}
+{audio_context}
 
-1. 脚本结构拆解
-   - 这个脚本分几段？每段讲什么？时间占比大概多少？
+═══════════════════════════════════════
+零、爆款归因与选题策略 ⚠️ 最重要
+═══════════════════════════════════════
 
-2. 开场钩子分析
-   - 为什么这个开头能让观众不划走？（具体的心理机制）
-   - D先生如果写同品类开头，可以怎么借鉴？
+1. 爆款原因归因 — 这条视频为什么能火？
+   - 不要浮于表面（"因为标题党"），要追溯到用户心理底层机制
+   - 具体到这个视频：是制造了信息差？身份认同？情感共鸣？损失厌恶？社交货币？
+   - 播放量/互动数据背后，到底是什么心理驱动了传播？
 
-3. 值得学习的句式/技巧（带原文摘录）
-   - 找出3-5个具体的句子或过渡手法，解释为什么有效
-   - 标注是哪种技巧（数字锚定/类比简化/痛点共鸣/权威背书/等等）
+2. 核心用户需求 — 它解决了什么深层需求？
+   - 不是"用户想买XX产品"这种表面需求
+   - 而是：选择焦虑需要一个确定答案？价格敏感需要"占了便宜"的确认感？信息过载需要一个简洁决策依据？身份焦虑需要"看懂参数"的安全感？
+   - 具体到这个品类、这个价位段，用户真实痛点是什么？视频怎么精准戳中？
 
-4. 改编建议
-   - 如果D先生（硬核技术流数码博主，口语化极强，常用"兄弟们""我滴妈""有一说一"）
-   - 来写同品类产品脚本，应该怎么改编这个脚本的结构和风格？
+3. 内容解决方案 — 它用什么方式满足了需求？
+   - 内容结构+表达手法+信息节奏，每个维度为什么有效？
+   - 换一种方式（比如纯参数罗列/纯情感渲染）为什么不行？
+   - 关键说服逻辑是怎样层层递进的？
 
-5. 可复制模式
-   - 这个创作者有什么可以被系统化复制的创作模式？
-6. 视觉与剪辑节奏分析
-   - 根据剪辑数据（如果提供了），分析这个视频的视觉节奏
-   - 快慢切是如何配合口播内容的？哪个段落节奏最快/最慢？
-   - 如果D先生做同品类分镜，应该用什么样的镜头节奏？
-7. 拍摄手法推断
-   - 从口播内容推断可能的拍摄手法（比如念到材质时可能是微距特写，念到尺寸对比时可能是俯拍桌面对比）
-   - 推测画面与口播的对应关系
+4. 选题策略启示 — 我能学到什么？
+   - 时机选择：为什么在这个时间点发？跟品类周期/产品发布/消费节点/平台趋势有什么关系？
+   - 角度选择：同类选题有无数切入点，为什么这个角度能赢？差异化在哪？
+   - 受众选择：瞄准哪类用户？新手/进阶/极客/价格敏感/颜值党/参数党？
+   - 冲突设计：有没有设计认知冲突或信息差？冲突的张力是什么？
 
-请直接输出中文，每条前用数字+标题标注。不要写"分析结论"之类的套话。"""
+5. 选题优秀点 — 多维度评分（每项1-10分，附一句话理由）
+   - 选题角度独特性：
+   - 用户需求匹配度：
+   - 信息增量价值：
+   - 情绪张力/传播力：
+   - 可复制性/可系列化：
+   - 时效性窗口把握：
+
+6. D先生选题改编方案：
+   - 基于这个选题策略，D先生用什么角度重新切入？（不是模仿原视频！）
+   - 提取选题策略本质，用更专业、更高信息密度、更有技术说服力的方式重做
+   - 示例：如果原选题是"XX价位最值得买的显卡"，D先生可以做成"XX价位显卡为什么只有它能做到这三点——供应链逻辑拆解"
+
+═══════════════════════════════════════
+一、文案拆解 — 怎么说的
+═══════════════════════════════════════
+1. 脚本结构: 分几段？每段分别讲什么？（这条视频的实际段落，不是通用模板）
+2. 开场钩子: 第一句话/第一个画面为什么让人不划走？（心理机制：信息差/身份代入/反常识/损失厌恶/社交货币？）
+3. 句式技巧: 摘录3-5个原文句子，标注技巧类型（数字锚定/类比简化/痛点共鸣/权威背书/认知反差/身份代入/悬念前置等），解释为什么在这个视频语境下有效
+4. D先生改编方案
+
+═══════════════════════════════════════
+二、视觉构图 — 怎么拍的
+═══════════════════════════════════════
+1. 产品呈现方式: 居中桌拍/手持/场景化/拆解特写/对比排列？段落间变化？
+2. 灯光方案: 硬光/柔光？RGB氛围灯？色温？
+3. 拍摄角度序列
+4. D先生可复用拍摄模板
+
+═══════════════════════════════════════
+三、剪辑节奏 — 怎么切的
+═══════════════════════════════════════
+1. 整体节奏与口播配合
+2. 转场手法与剪辑点设计
+3. 段落节奏分布
+4. D先生分镜节奏建议
+
+═══════════════════════════════════════
+四、特效包装 — 怎么包装的
+═══════════════════════════════════════
+1. 花字/文字叠加的样式、位置、时机
+2. 动画效果
+3. 音效卡点与BGM配合
+4. D先生可复用包装模板
+
+直接输出中文分析。每个维度之间用═══分隔。不写"分析结论""总结"套话。每个观点必须基于本条视频具体内容，禁止套通用模板。"""
 
     try:
         response = client.chat.completions.create(
             model=DEEPSEEK_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7,
-            max_tokens=2000,
+            max_tokens=2500,
         )
         text = response.choices[0].message.content.strip()
         return {"deep_analysis": text, "status": "ok"}

@@ -1,5 +1,11 @@
 {
+  "name": "saiborui",
+  "version": "1.0.0",
+  "description": "赛博瑞 · 数据驱动内容工厂 — AI全栈短视频创作工具",
   "dependencies": {
-    "pptxgenjs": "^4.0.1"
+    "adm-zip": "^0.5.17",
+    "docx": "^9.7.1",
+    "pptxgenjs": "^4.0.1",
+    "sharp": "^0.34.5"
   }
 }

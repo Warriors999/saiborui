@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>赛博瑞 · AI内容工厂</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Noto+Serif+SC:wght@500;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0F0F0F;--paper:#FCFAF7;--gold:#C4953A;--gold-light:#F5E6CC;--muted:#78716C;--divider:#E7E5E0;--card:#FFF;--tag-bg:#F5F2EC;--navy:#0C1A2B;--green:#059669;--red:#DC2626;--blue:#2563EB;--purple:#7C3AED}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;color:var(--ink);background:var(--paper);-webkit-font-smoothing:antialiased}
+.section{padding:80px 6vw}
+.section-inner{max-width:1100px;margin:0 auto}
+.section-label{font-family:'DM Sans',sans-serif;font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:12px}
+.section-title{font-family:'Noto Serif SC',serif;font-size:clamp(28px,3.5vw,40px);font-weight:900;line-height:1.2;letter-spacing:-.5px;margin-bottom:16px}
+.section-sub{font-size:15px;color:var(--muted);max-width:600px;line-height:1.6}
+
+/* HERO */
+.hero{background:var(--navy);color:#FFF;padding:100px 6vw 80px}
+.hero .section-inner{display:flex;flex-direction:column;align-items:flex-start}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:100px;border:1px solid rgba(255,255,255,.15);font-size:12px;margin-bottom:28px}
+.hero-badge .dot{width:8px;height:8px;border-radius:50%;background:var(--gold);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hero h1{font-family:'Noto Serif SC',serif;font-size:clamp(34px,5.5vw,64px);font-weight:900;line-height:1.1;letter-spacing:-1px;margin-bottom:20px;max-width:850px}
+.hero h1 em{font-style:normal;color:var(--gold)}
+.hero-sub{font-size:18px;color:rgba(255,255,255,.6);max-width:560px;margin-bottom:32px;line-height:1.7}
+.hero-stats{display:flex;gap:40px;flex-wrap:wrap}
+.hero-stat .num{font-family:'DM Sans',sans-serif;font-size:38px;font-weight:700;color:var(--gold);line-height:1}
+.hero-stat .lbl{font-size:11px;color:rgba(255,255,255,.4);margin-top:4px}
+
+/* STEPS */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:32px}
+.step{background:var(--card);border-radius:12px;padding:32px 24px;border:1px solid var(--divider);position:relative;transition:box-shadow .3s}
+.step:hover{box-shadow:0 8px 32px rgba(0,0,0,.06)}
+.step-num{font-family:'DM Sans',sans-serif;font-size:48px;font-weight:700;color:var(--gold);opacity:.2;position:absolute;top:10px;right:18px}
+.step-icon{font-size:28px;margin-bottom:14px}
+.step h3{font-family:'Noto Serif SC',serif;font-size:17px;font-weight:700;margin-bottom:6px}
+.step p{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* CAPABILITY CARDS */
+.cap-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:32px}
+.cap-card{background:var(--card);border-radius:12px;padding:28px;border:1px solid var(--divider);border-top:3px solid;transition:transform .2s,box-shadow .2s}
+.cap-card:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.06)}
+.cap-card .cap-icon{font-size:24px;margin-bottom:8px}
+.cap-card h3{font-size:16px;font-weight:700;margin-bottom:4px}
+.cap-card p{font-size:12px;color:var(--muted);line-height:1.6}
+.cap-card .cap-tags{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
+.cap-card .cap-tag{padding:2px 8px;border-radius:3px;font-size:10px;font-weight:600;background:var(--tag-bg);color:var(--muted)}
+
+/* SHOWCASE */
+.showcase{background:var(--navy);color:#FFF}
+.showcase .section-title{color:#FFF}
+.showcase .section-sub{color:rgba(255,255,255,.5)}
+.showcase-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:36px}
+.showcase-before,.showcase-after{border-radius:12px;overflow:hidden}
+.showcase-before .hdr,.showcase-after .hdr{padding:12px 18px;font-size:11px;font-weight:700;letter-spacing:1px}
+.showcase-before .hdr{background:#451A03;color:#F59E0B}
+.showcase-after .hdr{background:#022C22;color:#34D399}
+.showcase-before .body,.showcase-after .body{padding:18px 22px;font-size:13px;line-height:1.85}
+.showcase-before .body{background:#1C0E06;color:rgba(255,255,255,.55)}
+.showcase-after .body{background:#041C15;color:rgba(255,255,255,.85)}
+.showcase-after .body strong{color:#34D399}
+.file-tag{display:inline-block;padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.5px;margin-left:6px}
+.file-tag.docx{background:rgba(59,130,246,.18);color:#60A5FA}
+.file-tag.xlsx{background:rgba(16,185,129,.18);color:#34D399}
+.file-tag.html{background:rgba(196,149,58,.18);color:var(--gold)}
+
+/* METRICS */
+.metrics{background:var(--card);border-radius:16px;border:1px solid var(--divider);overflow:hidden}
+.metric-row{display:flex;align-items:center;padding:18px 24px;border-bottom:1px solid var(--divider);transition:background .2s}
+.metric-row:last-child{border-bottom:none}
+.metric-row:hover{background:var(--tag-bg)}
+.metric-label{flex:1;font-size:14px;font-weight:600}
+.metric-before{width:100px;font-size:13px;color:var(--red);text-decoration:line-through}
+.metric-arrow{width:30px;text-align:center;color:var(--gold);font-weight:700}
+.metric-after{width:100px;font-size:13px;color:var(--green);font-weight:600}
+.metric-save{width:130px;text-align:right;font-size:12px;color:var(--gold);font-weight:600}
+
+/* CTA */
+.cta{background:var(--navy);color:#FFF;text-align:center;padding:80px 6vw}
+.cta h2{font-family:'Noto Serif SC',serif;font-size:clamp(26px,3.5vw,38px);font-weight:900;margin-bottom:14px}
+.cta p{font-size:14px;color:rgba(255,255,255,.5);margin-bottom:28px}
+.cta-tags{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.cta-tag{padding:7px 16px;border-radius:100px;border:1px solid rgba(255,255,255,.12);font-size:11px;color:rgba(255,255,255,.55)}
+
+/* FOOTER */
+.footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.06);padding:24px 6vw;text-align:center;font-size:10px;color:rgba(255,255,255,.25)}
+.footer a{color:rgba(255,255,255,.25)}
+
+.deerflow{position:fixed;bottom:20px;right:24px;z-index:100;font-size:10px;color:rgba(255,255,255,.3);text-decoration:none;opacity:.5;transition:opacity .3s}
+.deerflow:hover{opacity:1}
+
+@media(max-width:768px){.steps,.cap-grid,.showcase-grid{grid-template-columns:1fr}.hero-stats{gap:16px}.metric-row{flex-wrap:wrap;gap:6px}.metric-save{width:100%;text-align:left}}
+</style>
+</head>
+<body>
+
+<a href="https://deerflow.tech" target="_blank" class="deerflow">✦ Deerflow</a>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero"><div class="section-inner">
+<div class="hero-badge"><span class="dot"></span>AI驱动的内容工厂</div>
+<h1>给一份Brief<em>，</em><br>出一套片子</h1>
+<p class="hero-sub">从选题到成片——热点监控、竞品学习、脚本撰写、分镜拆解、质量审计，全链路自动化。一个人 + 赛博瑞 = 一个小型内容团队的产能。</p>
+<div class="hero-stats">
+  <div class="hero-stat"><div class="num">9</div><div class="lbl">覆盖品类</div></div>
+  <div class="hero-stat"><div class="num">4</div><div class="lbl">写作人设</div></div>
+  <div class="hero-stat"><div class="num">&lt;60s</div><div class="lbl">出稿速度</div></div>
+  <div class="hero-stat"><div class="num">5</div><div class="lbl">平台热点监控</div></div>
+</div>
+</div></section>
+
+<!-- ═══ WHAT IT DOES ═══ -->
+<section class="section"><div class="section-inner">
+<div class="section-label">Full capabilities</div>
+<div class="section-title">它到底能做什么</div>
+<div class="section-sub">不只是"写脚本"——是从选题发现到分镜交付的完整生产线</div>
+
+<div class="cap-grid">
+  <div class="cap-card" style="border-top-color:var(--gold)">
+    <div class="cap-icon">&#128240;</div>
+    <h3>每日热点选题</h3>
+    <p>微博、知乎、百度、抖音、B站 5平台实时热搜。AI自动筛选数码话题，多维度评分排序。每个话题给出3个切入角度+数码挂钩方式。每天早上自动生成，打开浏览器就能看。</p>
+    <div class="cap-tags"><span class="cap-tag">5平台</span><span class="cap-tag">自动评分</span><span class="cap-tag">每日更新</span><span class="cap-tag">HTML看板</span></div>
+  </div>
+  <div class="cap-card" style="border-top-color:var(--purple)">
+    <div class="cap-icon">&#128269;</div>
+    <h3>竞品深度学习</h3>
+    <p>自动分析抖音和B站上的数码视频。提取钩子模式、脚本结构、剪辑节奏、声音设计。25条视频的分析结果沉淀为43个知识页面，每次生成时自动注入最相关的创作方法。</p>
+    <div class="cap-tags"><span class="cap-tag">25条视频</span><span class="cap-tag">43个wiki页</span><span class="cap-tag">8份报告</span><span class="cap-tag">持续积累</span></div>
+  </div>
+  <div class="cap-card" style="border-top-color:var(--blue)">
+    <div class="cap-icon">&#128221;</div>
+    <h3>口播脚本生成</h3>
+    <p>给定产品Brief，自动生成抖音短平快口播脚本。450-500字黄金篇幅。4种人设风格、5种脚本格式自由切换。每个参数自动翻译成使用感受。花字标注、格式化排版，甲方可直接用。</p>
+    <div class="cap-tags"><span class="cap-tag">4人设</span><span class="cap-tag">5格式</span><span class="cap-tag">.docx</span><span class="cap-tag">450-500字</span></div>
+  </div>
+  <div class="cap-card" style="border-top-color:var(--green)">
+    <div class="cap-icon">&#9989;</div>
+    <h3>12项自动审计</h3>
+    <p>每篇脚本在输出前经过多层质检。口语化程度、态度密度、长短句节奏、卖点覆盖、信息搬运检测、表演式口语检测。3轮自动修复循环。抖音平台违禁词自动替换。不合格就打回重来。</p>
+    <div class="cap-tags"><span class="cap-tag">12项检查</span><span class="cap-tag">3轮修复</span><span class="cap-tag">违禁词过滤</span></div>
+  </div>
+  <div class="cap-card" style="border-top-color:var(--gold)">
+    <div class="cap-icon">&#128202;</div>
+    <h3>拍摄分镜表</h3>
+    <p>脚本自动拆解为逐镜拍摄清单。10列专业布局：镜号、景别运镜、画面描述、AI视觉钩子、口播文案、灯光机位。灯位示意图自动嵌入xlsx。Seedance中文AI视频提示词。A4横版打印。</p>
+    <div class="cap-tags"><span class="cap-tag">10列布局</span><span class="cap-tag">灯位SVG</span><span class="cap-tag">.xlsx</span><span class="cap-tag">A4打印</span></div>
+  </div>
+  <div class="cap-card" style="border-top-color:var(--red)">
+    <div class="cap-icon">&#128200;</div>
+    <h3>账号数据分析</h3>
+    <p>导入你的账号播放数据，自动分析。哪个品类的视频表现最好？哪种开场钩子5秒完播率最高？哪天的发布效果更佳？31条视频的全维度对比，给出具体改进建议。</p>
+    <div class="cap-tags"><span class="cap-tag">31条分析</span><span class="cap-tag">钩子对比</span><span class="cap-tag">品类排名</span><span class="cap-tag">改进建议</span></div>
+  </div>
+</div>
+</div></section>
+
+<!-- ═══ SHOWCASE ═══ -->
+<section class="section showcase"><div class="section-inner">
+<div class="section-label" style="color:var(--gold)">Real output · no editing</div>
+<div class="section-title">同一个产品，系统生成 vs 人工大纲</div>
+<div class="section-sub">没有任何人工润色。左边是原始大纲，右边是系统60秒出的成品。</div>
+
+<div class="showcase-grid">
+  <div class="showcase-before">
+    <div class="hdr">人工大纲</div>
+    <div class="body">
+      "开头：为什么大家都在说买显示器就得选大厂。引入产品：就拿这台海信大圣G5 Pro+来举例。单看参数这些好像很难留下印象。（讲解Demura自研算法）（扩展讲述好处）总结：一千出头还是挺香的。"<br><br>
+      问题：括号占位符 · 像说明书 · 观点密度零
+    </div>
+  </div>
+  <div class="showcase-after">
+    <div class="hdr">系统生成 <span class="file-tag docx">.docx</span></div>
+    <div class="body">
+      "<strong>1099。海信给的不是价格战。是白纸黑字的无坏点协议。</strong>特挑IPS面板，出厂一台一台挑。坏了？半年内师傅上门换。<br><br><strong>原生260Hz，超频稳在275。不是标260实际240那种文字游戏。</strong>1ms GTG。拖影？没有。<br><br><strong>Demura逐台校色——这本来是万元OLED电视才用的算法。</strong>千元档，海信把它下放了。不用抽奖。"
+    </div>
+  </div>
+</div>
+
+<div class="showcase-grid" style="margin-top:14px">
+  <div class="showcase-before">
+    <div class="hdr">人工大纲</div>
+    <div class="body">
+      "养龙虾都玩到AI小龙虾了，兄弟们！今年数码圈是真热闹啊。但今天不聊虾，咱聊聊微星新出的X68K磁轴键盘。好家伙，说实话，完全不像微星能干出来的事！"<br><br>
+      问题：过期热点硬蹭 · 填充词"说实话""好家伙""兄弟们" · 表演式口语
+    </div>
+  </div>
+  <div class="showcase-after">
+    <div class="hdr">系统生成 <span class="file-tag docx">.docx</span></div>
+    <div class="body">
+      "<strong>磁轴键盘卷到五百块了。微星说：我卷点别的。</strong>全铝CNC。1.8公斤。不是贴皮。放桌上急停猛按，纹丝不动。Gasket加六层填充。不是空腔声，是类石子闷响。<br><br><strong>0.01mm RT。全链0.471毫秒。</strong>打瓦急停，手指刚抬，人已经定住了。鼠标X7M。48克。拿起来第一反应——空的？<br><br><strong>微星这套，不是价格战。是体验上来了。</strong>"
+    </div>
+  </div>
+</div>
+</div></section>
+
+<!-- ═══ THE WHOLE PROCESS ═══ -->
+<section class="section"><div class="section-inner">
+<div class="section-label">The full picture</div>
+<div class="section-title">它不只是"写"——它知道写什么、怎么写、写得好不好</div>
+<div class="steps">
+  <div class="step"><span class="step-num">01</span><div class="step-icon">&#128269;</div><h3>知道写什么</h3><p>5平台热搜实时监控。竞品视频深度拆解。43个知识页面持续积累。不需要自己刷手机找灵感。</p></div>
+  <div class="step"><span class="step-num">02</span><div class="step-icon">&#9997;</div><h3>写出好东西</h3><p>给定Brief，60秒生成。4种人设风格切换。每个参数翻译成使用感受。热点自动挂钩。不是念参数，是真人在聊产品。</p></div>
+  <div class="step"><span class="step-num">03</span><div class="step-icon">&#9989;</div><h3>确保质量</h3><p>12项自动审计。表演式口语检测。抖音违禁词过滤。3轮自动修复。不合格不发出去。每篇都保证能发。</p></div>
+</div>
+</div></section>
+
+<!-- ═══ METRICS ═══ -->
+<section class="section"><div class="section-inner">
+<div class="section-label">Business impact</div>
+<div class="section-title">省的不只是时间，是创作带宽</div>
+<div class="section-sub" style="margin-bottom:24px">以一个数码创作者每天产出一条视频的工作量计算</div>
+<div class="metrics">
+  <div class="metric-row"><span class="metric-label">选题发现 & 竞品研究</span><span class="metric-before">30-60分钟</span><span class="metric-arrow">→</span><span class="metric-after">自动完成</span><span class="metric-save">节省 100%</span></div>
+  <div class="metric-row"><span class="metric-label">口播脚本撰写</span><span class="metric-before">2-4小时</span><span class="metric-arrow">→</span><span class="metric-after">20分钟（审+改）</span><span class="metric-save">节省 75%</span></div>
+  <div class="metric-row"><span class="metric-label">分镜表制作</span><span class="metric-before">1-2小时</span><span class="metric-arrow">→</span><span class="metric-after">10分钟（检查）</span><span class="metric-save">节省 85%</span></div>
+  <div class="metric-row"><span class="metric-label">质量把关 & 合规检查</span><span class="metric-before">15-30分钟</span><span class="metric-arrow">→</span><span class="metric-after">自动完成</span><span class="metric-save">节省 100%</span></div>
+  <div class="metric-row" style="background:var(--tag-bg);font-weight:700"><span class="metric-label">每天合计</span><span class="metric-before" style="text-decoration:none;font-weight:700">4-7小时</span><span class="metric-arrow">→</span><span class="metric-after" style="font-weight:700">约30分钟</span><span class="metric-save" style="font-size:14px">每年多出700-1000小时</span></div>
+</div>
+</div></section>
+
+<!-- ═══ CTA ═══ -->
+<section class="cta"><div class="section-inner">
+<h2>9个品类，4种人设，系统就绪</h2>
+<p>键盘 · 鼠标 · 显示器 · GPU · 笔记本 · 耳机 · 手机 · 音箱 · 电竞椅</p>
+<div class="cta-tags">
+  <span class="cta-tag">热点自动监控</span><span class="cta-tag">竞品持续学习</span><span class="cta-tag">12项自动审计</span>
+  <span class="cta-tag">抖音合规过滤</span><span class="cta-tag">.docx + .xlsx 交付</span><span class="cta-tag">每日选题看板</span>
+</div>
+</div></section>
+
+<div class="footer"><a href="https://deerflow.tech" target="_blank">Deerflow</a></div>
+
+</body>
+</html>

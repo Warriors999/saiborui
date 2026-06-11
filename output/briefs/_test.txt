@@ -1,0 +1,5 @@
+Product: 微星 X 系列键鼠
+SPs: 2
+  [9] 微星X68K 数字键盘 (35%) deep=True
+  [9] 微星X7M 轻量化鼠标 (35%) deep=True
+Cover: ''

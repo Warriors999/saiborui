@@ -7,6 +7,7 @@ Commands:
   audit                 Audit script text or storyboard JSON for quality
   search                Semantic search the knowledge base
   stats                 Knowledge base statistics
+  daily-topics          Fetch trending tech topics, score, generate report
   competitive search    Search Bilibili and run full competitive video analysis
   competitive report    Generate formatted .docx competitive analysis report
 """
@@ -105,7 +106,7 @@ def cli():
 @click.option("--perspective", default="",
               help="个人观点注入 — 你对产品的真实体验，如：这个传感器暗光下提升明显")
 @click.option("--temperature", default=0.8, type=float, help="LLM 温度 (默认: 0.8)")
-@click.option("--output", "-o", default=None, type=click.Path(dir_okay=False), help="输出文件路径 (.txt)")
+@click.option("--output", "-o", default=None, type=click.Path(dir_okay=False), help="输出文件路径 (.txt 或 .docx)")
 def generate(product, category, key_points, brief, persona, price, competitors,
              duration, script_format, mode, perspective, temperature, output):
     """Generate video script from product brief using RAG-enhanced LLM.
@@ -245,6 +246,16 @@ def generate(product, category, key_points, brief, persona, price, competitors,
         if parts:
             analytics_context = "\n".join(parts)
             click.echo(f"Analytics: {len(relevant)} refs, {len(audit_events)} audit records")
+
+        # Inject category performance profile rules (data-driven feedback)
+        try:
+            from rag_system.generation.category_profiles import build_rule_context
+            rule_ctx = build_rule_context(category)
+            if rule_ctx:
+                analytics_context = (analytics_context or "") + rule_ctx
+                click.echo(f"Category profile: {category} rules injected")
+        except Exception:
+            pass
     except Exception as e:
         logger.warning("Non-critical error: %s", e)
 
@@ -335,7 +346,7 @@ def generate(product, category, key_points, brief, persona, price, competitors,
         logger.warning("Non-critical error: %s", e)
 
     # Audit + auto-fix loop with quality gate + anti-regression
-    QUALITY_THRESHOLD = 8  # minimum passed/total ratio
+    QUALITY_THRESHOLD = 10  # minimum passed/total ratio
     MAX_RETRIES = 5
     try:
         from rag_system.generation.auditor import audit_script
@@ -343,12 +354,12 @@ def generate(product, category, key_points, brief, persona, price, competitors,
             "口播时长": "精简口播，删掉冗余修饰词，每镜VO不超过铁律D上限",
             "口语化程度": "多用短句和语气词（吧、啊、呢），每句不超过25字，像在跟朋友聊天",
             "电商味": "避免'限时抢购''手慢无''全网最低'等电商促使用语，用体验描述代替",
-            "态度密度": "每段至少1处明确态度——'有一说一''说实话''我个人觉得'",
+            "态度密度": "每段至少1处明确的体验结论——给出具体的好坏判断（如「暗光下终于不糊了」），不是加口头禅",
             "禁用词": "检查禁用词清单，替换为口语化表达",
             "流水账检测": "避免'首先/然后/接着/最后'的流水账结构，每段用钩子开场",
             "长短句节奏": "长短句交替——长句讲道理(≤25字)，短句给结论(≤10字)，比例约2:1",
             "卖点覆盖": "确保每个核心卖点都有对应口播段落，不遗漏",
-            "信息搬运检测": "每个产品段至少1处个人观点（有一说一/我用下来/说实话），参数翻译成体验",
+            "信息搬运检测": "每个产品段至少1处具体体验结论（如「这传感器暗光不糊了」），参数必须翻译成体验感受",
         }
         STRUCTURAL_CHECKS = {"长短句节奏", "口播时长", "电商味", "态度密度"}
 
@@ -695,10 +706,10 @@ def _fix_attitude_density(script: str) -> str:
 
 @cli.command("quick")
 @click.option("--brief", "-b", required=True, type=click.Path(exists=True),
-              help="Brief文档路径 (.txt 或 .pdf)")
+              help="Brief文档路径 (.txt)")
 @click.option("--persona", "-p", default="折腾到吐", help="人设名称 (默认: 折腾到吐)")
 @click.option("--output", "-o", default=None, type=click.Path(dir_okay=False),
-              help="输出路径 (默认: output/scripts/{产品}-{人设}.docx)")
+              help="输出路径 (默认: output/{日期}_{产品}/文案_{产品}.docx)")
 def quick(brief, persona, output):
     """新手模式 — 三步出脚本：上传Brief → 选人设 → 拿到成品。
 
@@ -759,7 +770,7 @@ def quick(brief, persona, output):
     )
 
     # Auto-fix with quality gate + anti-regression (same as generate)
-    QUALITY_THRESHOLD = 8
+    QUALITY_THRESHOLD = 10
     MAX_RETRIES = 5
     best_script = script
     best_score = 0
@@ -838,12 +849,14 @@ def quick(brief, persona, output):
 @click.option("--format-ref", default=None, type=click.Path(exists=True),
               help="甲方参考xlsx文件，自动匹配列格式输出")
 @click.option("--columns", default=None,
-              help="逗号分隔的列名，如：镜头,时间,画面描述,口播,备注")
+              help="逗号分隔的列名，如：镜号,景别·运镜,画面描述,AI视觉钩子,口播,时长,花字,音效,灯光,备注")
 @click.option("--preview", is_flag=True, default=False,
               help="仅预览列映射和样例行，不调LLM生成")
+@click.option("--output-dir", "-o", default=None, type=click.Path(file_okay=False),
+              help="输出目录 (默认: output/storyboards)")
 def generate_storyboard(script: str, product: str, persona: str,
                         format_ref: str | None = None, columns: str | None = None,
-                        preview: bool = False):
+                        preview: bool = False, output_dir: str | None = None):
     """Convert finalized .docx script into a shot-by-shot storyboard .xlsx.
 
     Pipeline: parse .docx → LLM shot breakdown → audit → auto-fix → save.
@@ -857,10 +870,10 @@ def generate_storyboard(script: str, product: str, persona: str,
         python -m rag_system generate-storyboard output/scripts/ROG.docx "ROG龙鳞ACE MINI"
 
         python -m rag_system generate-storyboard output/scripts/ROG.docx "ROG" \\
-            --columns "镜头,时间,画面描述,口播,备注"
+            --columns "镜号,景别·运镜,画面描述,AI视觉钩子,口播文案,时长,花字/特效,音效/声画,灯光/机位,备注"
 
         python -m rag_system generate-storyboard output/scripts/ROG.docx "ROG" \\
-            --columns "镜头,时间,画面描述,口播,备注" --preview
+            --columns "镜号,景别·运镜,画面描述,AI视觉钩子,口播,时长,花字,音效,灯光,备注" --preview
 
         python -m rag_system generate-storyboard output/scripts/ROG.docx "ROG" \\
             --format-ref 甲方参考.xlsx --preview
@@ -894,9 +907,9 @@ def generate_storyboard(script: str, product: str, persona: str,
                 click.echo("参考文件不是xlsx格式，无法预览列映射", err=True)
                 return
         elif not col_list:
-            col_list = ["镜号", "景别·运镜", "画面描述", "口播文案", "时长",
+            col_list = ["镜号", "景别·运镜", "画面描述", "AI视觉钩子", "口播文案", "时长",
                        "花字/特效", "音效/声画", "灯光/机位", "备注"]
-            click.echo("使用默认9列格式")
+            click.echo("使用默认10列格式 (含AI视频提示词)")
 
         # Parse script for sample VO
         script_data = parse_docx_script(Path(script))
@@ -912,9 +925,10 @@ def generate_storyboard(script: str, product: str, persona: str,
         return
 
     click.echo(f"Generating storyboard for: {product}")
+    out_dir = Path(output_dir) if output_dir else Path("output/storyboards")
     result = storyboard_pipeline(Path(script), product, persona,
                                  reference_path=ref_path, columns=col_list,
-                                 output_dir=Path(script).parent)
+                                 output_dir=out_dir)
     click.echo(f"Done: {result}")
     click.echo("  分镜质检: 请在 xlsx 中查看灯位图sheet和审核结果")
     click.echo("  质量门槛: 分镜审核>=8/14达标, 不可拍镜数=0为合格")
@@ -944,7 +958,7 @@ def generate_storyboard(script: str, product: str, persona: str,
 @click.option("--format-ref", default=None, type=click.Path(exists=True),
               help="甲方参考xlsx文件，自动匹配列格式输出")
 @click.option("--columns", default=None,
-              help="逗号分隔的列名，如：镜头,时间,画面描述,口播,备注")
+              help="逗号分隔的列名，如：镜号,景别·运镜,画面描述,AI视觉钩子,口播,时长,花字,音效,灯光,备注")
 @click.option("--preview", is_flag=True, default=False,
               help="仅预览列映射，不调LLM生成")
 def storyboard(product, category, key_points, persona, price, competitors,
@@ -997,9 +1011,9 @@ def storyboard(product, category, key_points, persona, price, competitors,
                 click.echo("参考文件不是xlsx格式，无法预览列映射", err=True)
                 return
         elif not col_list:
-            col_list = ["镜号", "景别·运镜", "画面描述", "口播文案", "时长",
+            col_list = ["镜号", "景别·运镜", "画面描述", "AI视觉钩子", "口播文案", "时长",
                        "花字/特效", "音效/声画", "灯光/机位", "备注"]
-            click.echo("使用默认9列格式")
+            click.echo("使用默认10列格式 (含AI视频提示词)")
 
         sample_shot = {
             "shot_number": 1, "duration": "3", "visual": "产品主图+外观特写",
@@ -1303,6 +1317,61 @@ def stats():
 
 
 # ============================================================
+# daily-topics — Fetch trending tech topics for content pipeline
+# ============================================================
+
+@cli.command("daily-topics")
+@click.option("--json", "output_json", is_flag=True, help="JSON output format")
+@click.option("--top", "-t", default=15, type=int, help="Show top N topics (default: 15)")
+def daily_topics_cmd(output_json, top):
+    """Fetch trending tech topics from Chinese social platforms.
+
+    Pulls real-time hot searches from Weibo, Zhihu, Baidu, and Douyin,
+    filters for digital/tech relevance, scores by content potential,
+    and generates a structured report + updates the topic seed file.
+
+    The seed file is used by the meme engine for script opening hooks.
+
+    Examples:
+        python -m rag_system daily-topics
+        python -m rag_system daily-topics --json
+        python -m rag_system daily-topics --top 20
+    """
+    from rag_system.generation.daily_topics import run_daily_pipeline
+
+    click.echo("Fetching trending topics from 5 platforms...")
+    result = run_daily_pipeline()
+
+    if output_json:
+        import json
+        topics_out = []
+        for t in result["topics"][:top]:
+            topics_out.append({
+                "title": t.get("title", ""),
+                "platform": t.get("_platform", ""),
+                "rank": t.get("rank", 0),
+                "score": t.get("_score", 0),
+                "format": _suggest_format(t.get("title", "")),
+            })
+        click.echo(json.dumps({"count": result["count"], "topics": topics_out}, ensure_ascii=False, indent=2))
+    else:
+        click.echo(f"\n{'='*50}")
+        click.echo(f"  数码圈每日热点选题 — {datetime.now().strftime('%Y-%m-%d')}")
+        click.echo(f"  {result['count']} 条数码相关话题")
+        click.echo(f"{'='*50}")
+        from datetime import datetime; from rag_system.generation.daily_topics import _suggest_format
+        for i, t in enumerate(result["topics"][:top], 1):
+            score = t.get("_score", 0)
+            title = t.get("title", "")[:50]
+            platform = t.get("_platform", "")
+            fmt = _suggest_format(title)
+            click.echo(f"  {i:2}. [{score:.0f}分] [{platform}] {title}")
+            click.echo(f"      → {fmt}")
+        click.echo(f"\n  报告: {result['report_path']}")
+        click.echo(f"  种子: {result['seed_path']}")
+
+
+# ============================================================
 # init — First-run setup wizard
 # ============================================================
 
@@ -1343,28 +1412,25 @@ def competitive():
 @click.option("--category", "-c", required=True,
               help="品类：keyboard / mouse / monitor / laptop / phone / gpu / headphone / desk_chair")
 @click.option("--top-n", "-n", default=3, type=int, help="分析的视频数量 (默认: 3)")
-@click.option("--skip-download/--no-skip-download", default=False, help="跳过视频下载，使用缓存的音频/转录")
-def competitive_search(category, top_n, skip_download):
-    """Search Bilibili and run full competitive analysis pipeline.
+@click.option("--no-resume/--resume", default=True, help="禁用断点续传 (默认: 开启)")
+def competitive_search(category, top_n, no_resume):
+    """CPU-friendly competitive analysis — B站CC字幕替代Whisper，关键帧替代全帧扫描。
 
-    Downloads top videos by category, transcribes audio (Whisper),
-    analyzes script hooks, spoken density, attitude patterns, and
-    visual rhythm. Results are indexed into the knowledge base for
-    RAG retrieval during script generation.
+    Downloads CC subtitles (no Whisper), 720p video, extracts keyframes,
+    runs 4-dimension deep analysis (script/visual/editing/VFX).
 
     Examples:
 
         python -m rag_system competitive search -c keyboard -n 5
 
-        python -m rag_system competitive search -c mouse --skip-download
+        python -m rag_system competitive search -c mouse --no-resume
     """
     from rag_system.competitive.pipeline import run_pipeline
 
-    click.echo(f"Starting competitive analysis: {category} (top {top_n})")
-    if skip_download:
-        click.echo("Download skipped — using cached data if available")
+    click.echo(f"Starting lightweight competitive analysis: {category} (top {top_n})")
+    click.echo("Mode: CC字幕优先 + 720p + 关键帧 + 四维度分析")
 
-    results = run_pipeline(category=category, top_n=top_n, skip_download=skip_download)
+    results = run_pipeline(category=category, top_n=top_n, resume=not no_resume)
 
     if not results:
         click.echo("No results. Check network connectivity or try a different category.")
@@ -1374,6 +1440,47 @@ def competitive_search(category, top_n, skip_download):
     for r in results:
         click.echo(f"  [{r.get('hook_type', 'N/A')}] {r['title'][:60]}")
         click.echo(f"       {r['creator']}  |  {r['views']:,} views")
+
+
+@competitive.command("run-all")
+@click.option("--no-resume/--resume", default=True, help="禁用断点续传 (默认: 开启)")
+@click.option("--no-report/--report", default=False, help="跳过周报生成")
+def competitive_run_all(no_resume, no_report):
+    """Run competitive analysis for ALL 8 categories sequentially.
+
+    Processes keyboard, mouse, monitor, laptop, phone, GPU, headphone,
+    and desk_chair one-by-one with progress tracking and resume support.
+    Generates a weekly .docx report when complete.
+
+    Examples:
+
+        python -m rag_system competitive run-all
+
+        python -m rag_system competitive run-all --no-resume
+    """
+    from rag_system.competitive.scheduler import run_all_categories
+
+    click.echo("Starting ALL 8 categories competitive analysis...")
+    click.echo(f"Mode: CC字幕优先 + 720p + 关键帧 + 四维度分析")
+    click.echo(f"Resume: {not no_resume} | Report: {not no_report}")
+    click.echo(f"Categories: keyboard, mouse, monitor, laptop, phone, gpu, headphone, desk_chair")
+
+    summary = run_all_categories(resume=not no_resume, generate_report=not no_report)
+
+    click.echo(f"\n{'='*50}")
+    click.echo(f"  全品类竞品分析完成")
+    click.echo(f"  成功: {summary['total_videos_success']}/{summary['total_videos_attempted']}")
+    click.echo(f"  耗时: {summary['duration_minutes']} 分钟")
+    if summary['failed_categories']:
+        click.echo(f"  失败品类: {', '.join(summary['failed_categories'])}")
+    if summary['report_path']:
+        click.echo(f"  周报: {summary['report_path']}")
+    click.echo(f"{'='*50}")
+
+    # Per-category breakdown
+    for cat, count in summary['per_category'].items():
+        status = "[OK]" if count > 0 else "[FAIL]"
+        click.echo(f"  {status} {cat}: {count} videos")
 
 
 @competitive.command("report")
@@ -1576,6 +1683,158 @@ def cover(product, category, persona, from_brief, suggestion, description,
 
 
 # ============================================================
+# topics — 自成长选题系统
+# ============================================================
+
+@cli.group("topics")
+def topics():
+    """自成长选题系统 —— 从选题笔记学习规则，跨品类生成选题建议。
+
+    支持从 .docx 选题笔记中提取规则，结合竞品学习和热点数据，
+    生成符合D先生标准的选题建议。规则库会在每次反馈后自我完善。
+    """
+
+
+@topics.command("learn")
+@click.option("--docx", "-d", required=True, type=click.Path(exists=True),
+              help="选题笔记 .docx 文件路径")
+def topics_learn(docx):
+    """从选题笔记中学习选题规则。
+
+    读取 .docx 格式的选题笔记，用 DeepSeek 提炼可跨品类复用的选题规则，
+    存入规则库供选题生成时调用。
+
+    Example:
+        python -m rag_system topics learn -d "FPS磁轴选购指南.docx"
+    """
+    from rag_system.topics.learner import RuleLearner
+
+    learner = RuleLearner()
+    rule_ids = learner.learn_from_document(docx)
+
+    click.echo(f"\n学习完成！从 {docx} 中提取了 {len(rule_ids)} 条选题规则")
+    click.echo(f"规则已存入选题规则库，下次生成选题时生效。")
+
+
+@topics.command("generate")
+@click.option("--category", "-c", default=None,
+              help="品类 (keyboard/mouse/monitor/laptop/phone/gpu/headphone/desk_chair)")
+@click.option("--all", "all_categories", is_flag=True, default=False,
+              help="为全部8个品类生成选题")
+@click.option("--n", "-n", "count", default=3, help="每品类选题数 (默认: 3)")
+@click.option("--output", "-o", default=None, type=click.Path(dir_okay=False),
+              help="输出路径 (.md)")
+def topics_generate(category, all_categories, count, output):
+    """基于选题规则库生成选题建议。
+
+    使用已学习的规则+竞品洞察+热点数据，生成符合D先生标准的选题。
+
+    Example:
+        python -m rag_system topics generate -c gpu -n 3
+        python -m rag_system topics generate --all -n 2 -o output/topics_20260611.md
+    """
+    from rag_system.topics.selector import TopicSelector
+
+    selector = TopicSelector()
+
+    if all_categories:
+        topics = selector.generate_all_categories(n=count)
+        click.echo(f"\n选题生成完成！{len(topics)}个品类")
+    elif category:
+        topics = {category: selector.generate_for_category(category, n=count)}
+    else:
+        raise click.UsageError("请指定 --category 或 --all")
+
+    # Format output
+    lines = [f"# D先生选题建议 — {__import__('datetime').datetime.now().strftime('%Y-%m-%d')}\n"]
+    from rag_system.topics.rules_store import TopicRulesStore
+    store = TopicRulesStore()
+    lines.append(f"> 规则库: {store.get_stats()['total_rules']}条 | 反例: {store.get_stats()['total_anti_patterns']}条\n")
+
+    for cat, cat_topics in topics.items():
+        lines.append(f"## {cat}\n")
+        for i, t in enumerate(cat_topics):
+            lines.append(f"### {i+1}. {t.get('title', '?')}\n")
+            lines.append(f"- **角度**: {t.get('angle', '')}")
+            lines.append(f"- **场景**: {', '.join(t.get('target_scenes', []))}")
+            lines.append(f"- **冲突**: {t.get('core_conflict', '')}")
+            lines.append(f"- **时效**: {t.get('timeliness_hook', '')}")
+            lines.append(f"- **规则**: {', '.join(t.get('applied_rules', []))}")
+            lines.append(f"- **为什么火**: {t.get('why_it_works', '')}")
+            lines.append("")
+
+    report = "\n".join(lines)
+
+    if output:
+        from pathlib import Path
+        Path(output).write_text(report, encoding="utf-8")
+        click.echo(f"\n已保存: {output}")
+    else:
+        out_path = f"output/topic_reports/topics_{__import__('datetime').datetime.now().strftime('%Y%m%d')}.md"
+        from pathlib import Path
+        Path(out_path).parent.mkdir(parents=True, exist_ok=True)
+        Path(out_path).write_text(report, encoding="utf-8")
+        click.echo(f"\n已保存: {out_path}")
+
+    click.echo(report[:2000])
+
+
+@topics.command("feedback")
+@click.option("--title", "-t", required=True, help="选题标题")
+@click.option("--category", "-c", required=True, help="品类")
+@click.option("--feedback", "-f", required=True, help="反馈内容")
+@click.option("--rating", "-r", type=int, default=0,
+              help="评分 (-1=差, 0=中性, 1=好)")
+def topics_feedback(title, category, feedback, rating):
+    """提交选题反馈，帮助系统自我完善。
+
+    对生成的选题给出评价和修正意见，系统会自动提取规律并更新规则库。
+
+    Example:
+        python -m rag_system topics feedback -t "选题标题" -c gpu \\
+            -f "选题角度没问题但缺少具体参数锚定" -r -1
+    """
+    from rag_system.topics.learner import RuleLearner
+
+    learner = RuleLearner()
+    insight = learner.learn_from_feedback(title, category, feedback, rating)
+
+    click.echo(f"反馈已记录。提炼洞察: {insight}")
+
+
+@topics.command("rules")
+def topics_rules():
+    """查看当前选题规则库。
+
+    列出所有已学习的选题规则、反例和质量检查清单。
+    """
+    from rag_system.topics.rules_store import TopicRulesStore
+
+    store = TopicRulesStore()
+    stats = store.get_stats()
+
+    click.echo(f"\n选题规则库 — {stats['total_rules']}条规则 | "
+               f"{stats['total_anti_patterns']}条反例 | "
+               f"{stats['total_feedback_entries']}条反馈\n")
+
+    click.echo("=" * 50)
+    click.echo("选题规则:")
+    for r in store.get_all_rules():
+        click.echo(f"  [{r['id']}] {r['rule_name']}")
+        click.echo(f"       {r.get('description', '')[:100]}")
+
+    click.echo("\n" + "=" * 50)
+    click.echo("避免的选题陷阱:")
+    for ap in store.get_anti_patterns():
+        click.echo(f"  ✗ {ap[:100]}")
+
+    click.echo("\n" + "=" * 50)
+    click.echo("选题自检清单:")
+    for cl in store.get_checklist():
+        click.echo(f"  ☐ {cl}")
+
+
+# ============================================================
 # dashboard — Dynamic dashboard generator (数据中台)
 # ============================================================
 
@@ -1711,6 +1970,127 @@ def outputs(output_type, product, latest, limit):
     for e in entries:
         click.echo(f"[{e['ts'][:19]}] {e['type']:<10} {e.get('product', ''):<20} {e['path']}")
     click.echo(f"\n{len(entries)} outputs shown.")
+
+
+# ═══════════════════════════════════════════════════════════════
+# Performance tracking commands
+# ═══════════════════════════════════════════════════════════════
+
+@cli.command("match")
+@click.option("--yes/-y", is_flag=True, default=False, help="Auto-confirm all fuzzy matches")
+def match_cmd(yes):
+    """Match pipeline-generated scripts to published videos.
+
+    Three-level matching: auto-match product names within time windows,
+    fuzzy match by category + keywords (with confirmation), and unmatched
+    separation for manual review.
+
+    Examples:
+
+        python -m rag_system match
+
+        python -m rag_system match --yes
+    """
+    from rag_system.generation.performance_tracker import run_match
+
+    result = run_match(interactive=not yes)
+
+    click.echo()
+    click.secho("=" * 55, fg="cyan", bold=True)
+    click.secho("  脚本→视频 匹配结果", fg="cyan", bold=True)
+    click.secho("=" * 55, fg="cyan", bold=True)
+    click.echo(f"  自动匹配 (L1):    {result['auto_matched']}")
+    click.echo(f"  确认匹配 (L2):    {result['fuzzy_confirmed']}")
+    click.echo(f"  未匹配视频:       {result['unmatched_performances']}")
+    click.echo(f"  未匹配脚本:       {result['unmatched_scripts']}")
+    click.echo(f"  总计配对:         {len(result['matches'])}")
+    click.secho("=" * 55, fg="cyan", bold=True)
+
+    if result["unmatched_performances"] > 0 or result["unmatched_scripts"] > 0:
+        click.echo()
+        click.echo("提示: 未匹配不代表问题——视频可能是非管线产出的，脚本也可能还没发布。")
+
+
+@cli.group("performance")
+def performance():
+    """Video performance data management — import, analyze, learn."""
+    pass
+
+
+@performance.command("import")
+@click.argument("path", type=click.Path(exists=True))
+def perf_import(path):
+    """Import video performance data from Excel (.xlsx).
+
+    Expected columns: 视频标题, 发布时间, 播放量, 5s完播率, 2s跳出率, 平均播放时长
+
+    Example:
+
+        python -m rag_system performance import "data (1).xlsx"
+    """
+    from rag_system.generation.performance_tracker import import_from_xlsx
+
+    count = import_from_xlsx(path)
+    click.echo(f"Imported {count} new video records.")
+
+
+@performance.command("analyze")
+def perf_analyze():
+    """Show Direction-B multi-dimensional effectiveness report.
+
+    Computes composite scores from real video performance data
+    using weighted formula: 0.25*reach + 0.35*retention + 0.25*engagement + 0.15*hook
+
+    Example:
+
+        python -m rag_system performance analyze
+    """
+    from rag_system.generation.performance_tracker import generate_effectiveness_report
+    click.echo(generate_effectiveness_report())
+
+
+@performance.command("learn")
+def perf_learn():
+    """Learn optimal Direction-B weights from matched script-video pairs.
+
+    Uses grid search to maximize correlation between audit scores
+    and real-world video performance. Requires >= 3 matched pairs.
+
+    Example:
+
+        python -m rag_system performance learn
+    """
+    from rag_system.generation.performance_tracker import learn_weights, get_learned_weights
+    weights = learn_weights()
+    click.echo(f"Learned weights: {weights}")
+    click.echo("Saved to output/performance/learned_weights.json")
+
+
+@cli.command("profiles")
+@click.option("--update", is_flag=True, default=False, help="Recompute from latest video data")
+def profiles_cmd(update):
+    """Show category performance profiles — data-driven creation rules.
+
+    Each profile contains: effective hooks, ineffective hooks,
+    pacing rules, and best publishing days — all derived from
+    real video performance data.
+
+    Profiles are automatically injected into the generator's
+    system prompt during script generation.
+
+    Examples:
+
+        python -m rag_system profiles
+
+        python -m rag_system profiles --update
+    """
+    if update:
+        from rag_system.generation.category_profiles import update_profiles_from_data
+        update_profiles_from_data()
+        click.echo("Profiles updated from latest video data.")
+
+    from rag_system.generation.category_profiles import format_profiles_report
+    click.echo(format_profiles_report())
 
 
 if __name__ == "__main__":

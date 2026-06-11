@@ -53,12 +53,23 @@ ECOMMERCE_SMELL = [
     "赋能", "极致", "沉浸式", "全方位", "一站式",
 ]
 
+# Positive spoken markers: genuine conversational Chinese, not fillers
 SPOKEN_MARKERS = [
-    "说白了", "简单来说", "懂的都懂", "不吹不黑", "有一说一",
-    "你别说", "我跟你说", "兄弟们", "彦祖们", "大伙儿",
-    "你品", "你细品", "这就很离谱", "真就", "啧啧",
-    "闭眼入", "没谁了", "血赚", "香疯了", "顶", "到位", "靠谱",
-    "掀桌", "简直了", "我跟你说", "包不后悔",
+    "说白了", "简单来说", "这么说吧",
+    "你别说", "我跟你说",
+    "血赚", "香疯了", "顶", "到位", "靠谱",
+]
+
+# Negative markers: fake-casual filler that signals LOW quality
+# These are the "表演式口语" that the competitive wiki marks as 应避免的低级套路
+FAKE_CASUAL_MARKERS = [
+    "有一说一", "不吹不黑", "说实话", "懂的都懂",
+    "兄弟们", "彦祖们", "大伙儿",
+    "你品", "你细品", "这就很离谱", "啧啧",
+    "闭眼入", "掀桌", "简直了", "包不后悔",
+    "我滴妈", "好家伙", "你敢信", "没看错吧",
+    "真就绝了", "没谁了", "你自己品",
+    "稳得一批", "真的顶", "很顶", "太顶了",
 ]
 
 # Sentence-final spoken particles
@@ -75,8 +86,7 @@ ATTITUDE_PATTERNS = {
     "体验判断": [r"(?:我个人|我实测|我用了|我用过|坐上去|一上手)",
               r"(?:没毛病|有问题|不赖|拉胯|顶|到位|靠谱|离谱)",
               r"(?:好(?:在|用|使|拿|按|听|看)|差(?:在|劲))"],
-    "确定性表达": [r"懂的都懂", r"有一说一", r"不吹不黑", r"你自己品",
-               r"这就很", r"没谁了", r"真就", r"简直了"],
+    "确定性表达": [r"这就很", r"没谁了", r"真就", r"简直了", r"说白了就一句话"],
     "分级判断": [r"T\d", r"毕业", r"退烧", r"一步到位", r"天花板", r"标杆"],
 }
 
@@ -356,12 +366,12 @@ def audit_script(text: str, key_points: str = "", duration_minutes: float = 2.0)
     # ── Check 5: Attitude density ──
     attitude_total, att_categories = _count_attitudes(body)
     att_density = attitude_total / (total_chars / 200)
-    att_ok = att_density >= 2.0
+    att_ok = att_density >= 3.0
     cat_detail = ", ".join(f"{k}:{v}" for k, v in att_categories.items() if v > 0)
     checks.append({
         "name": "态度密度",
         "passed": att_ok,
-        "detail": f"{attitude_total}个主观判断, 密度={att_density:.1f}/200字 (阈值2.0) | {cat_detail}",
+        "detail": f"{attitude_total}个主观判断, 密度={att_density:.1f}/200字 (阈值3.0) | {cat_detail}",
     })
     if att_density < 1.0:
         warnings.append("严重缺乏主观态度——读起来像产品参数表，不像兄弟推荐")
@@ -427,9 +437,9 @@ def audit_script(text: str, key_points: str = "", duration_minutes: float = 2.0)
 
     # ── 信息搬运检测（柱子哥方法论：信息不值钱，观点值钱）──
     perspective_markers = [
-        "有一说一", "说实话", "我个人", "我觉得", "我感觉", "我用下来",
-        "实测", "亲测", "上手", "体验下来", "对比下来", "坦白说",
-        "不吹不黑", "真的", "确实", "明显", "出乎意料", "没想到",
+        "我个人", "我觉得", "我感觉", "我用下来",
+        "实测", "亲测", "上手", "体验下来", "对比下来",
+        "出乎意料", "没想到", "有意思的是", "关键是",
     ]
     total_sentences = len(_split_sentences(text))
     opinion_sentences = sum(
@@ -437,7 +447,7 @@ def audit_script(text: str, key_points: str = "", duration_minutes: float = 2.0)
         if any(m in s for m in perspective_markers)
     )
     opinion_ratio = opinion_sentences / max(total_sentences, 1)
-    info_dump_ok = opinion_ratio >= 0.15  # at least 15% of sentences have perspective markers
+    info_dump_ok = opinion_ratio >= 0.25  # at least 15% of sentences have perspective markers
 
     checks.append({
         "name": "信息搬运检测",
@@ -448,7 +458,7 @@ def audit_script(text: str, key_points: str = "", duration_minutes: float = 2.0)
         ),
     })
     if not info_dump_ok:
-        warnings.append("脚本缺乏个人观点，读起来像百度百科。增加'有一说一''我用下来'等个人视角表述")
+        warnings.append("脚本缺乏个人观点，读起来像百度百科。增加具体的体验结论和判断，不是加口头禅——要说「这个传感器暗光不糊了」而不是「有一说一这个挺好」")
         suggestions.append(
             "柱子哥方法论：AI时代信息不值钱，观点值钱。"
             "每个产品段落至少1处个人态度，参数翻译成体验判断。"
@@ -656,7 +666,22 @@ def audit_storyboard(storyboard: dict, key_points: str = "", duration_minutes: f
             "detail": f"{att_total}个主观判断, 密度={att_dens:.1f}/200字",
         })
 
-        # Lighting/camera completeness (soft check)
+        
+    # ── 表演式口语检测 ──
+    fake_count = sum(all_vo.count(m) for m in FAKE_CASUAL_MARKERS)
+    fake_density = fake_count / max(len(all_vo), 1) * 100
+    fake_ok = fake_count <= 1
+
+    checks.append({
+        "name": "表演式口语检测",
+        "passed": fake_ok,
+        "detail": f"{fake_count}个假老铁填充词 (密度{fake_density:.1f}/百字, 阈值≤1个) | {'合格' if fake_ok else '过多——去掉「说实话」「有一说一」「好家伙」等表演式口语'}",
+    })
+    if not fake_ok:
+        warnings.append(f"脚本含{fake_count}个填充式口头禅——这些词不传递信息，让文案听起来像在努力装熟而非认真讲解")
+        suggestions.append("去掉所有填充式表达。用数据和对比取代语气词。读者要的是信息，不是你的情绪表演。")
+
+# Lighting/camera completeness (soft check)
         light_count = sum(1 for s in shots if s.get("lighting", "").strip())
         cam_count = sum(1 for s in shots if s.get("camera_setup", "").strip())
         light_cam_ok = light_count >= 3 and cam_count >= 3

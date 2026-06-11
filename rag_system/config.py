@@ -19,6 +19,11 @@ DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 
+# ---- Image Generation (PinAI / gpt-image-2) ----
+IMAGE_GEN_API_KEY = os.getenv("IMAGE_GEN_API_KEY", "")
+IMAGE_GEN_BASE_URL = os.getenv("IMAGE_GEN_BASE_URL", "https://us.pinai-cn.com/v1")
+IMAGE_GEN_MODEL = os.getenv("IMAGE_GEN_MODEL", "gpt-image-2")
+
 # ---- Embedding ----
 EMBEDDING_MODEL = os.getenv("RAG_EMBEDDING_MODEL", "BAAI/bge-large-zh-v1.5")
 EMBEDDING_DEVICE = os.getenv("RAG_EMBEDDING_DEVICE", "cpu")
@@ -50,5 +55,5 @@ CATEGORY_KEYWORDS = {
               "转转", "两千价位", "性价比神机"],
     "desk_chair": ["桌椅", "电竞椅", "人体工学", "升降桌", "骁骑", "黑白调"],
     "speaker": ["音箱", "音响", "电竞音箱", "迈从K20"],
-    "other": [],
+    "other": ["数码", "电竞", "外设", "装备", "开箱", "测评", "推荐", "性价比", "入门", "旗舰"],
 }

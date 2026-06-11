@@ -18,7 +18,7 @@ from rag_system.retrieval.retriever import RetrievedChunk
 from rag_system.generation.meme_engine import (
     pick_best_meme, meme_opening_prompt, no_meme_opening_prompt,
 )
-from rag_system.generation.douyin_filter import filter_prohibited
+from rag_system.generation.douyin_filter import filter_prohibited, reduce_filler_phrases
 from rag_system.utils import logger
 
 
@@ -56,9 +56,9 @@ class Generator:
         wiki_context = ""
         try:
             from rag_system.competitive.wiki_compiler import load_wiki_context
-            wiki_context = load_wiki_context(category)
-        except Exception:
-            pass
+            wiki_context = load_wiki_context(category, product_features=key_points)
+        except Exception as e:
+            logger.warning("Wiki context load failed for category=%s: %s", category, e)
 
         # Format-specific instructions
         format_instruction = ""
@@ -111,7 +111,33 @@ class Generator:
         )
         # Inject wiki context + format instructions after format (avoids {} conflicts)
         if wiki_context:
-            system += "\n\n## 竞品学习知识库（Wiki编译结果，可直接参考）\n" + wiki_context
+            system += f"""
+
+## 竞品学习方法论 — 这是指令，不是参考资料
+
+以下是从大量{category}品类竞品视频中蒸馏出的创作模式。你必须直接使用这些结构，而不是仅仅"了解"它们。
+
+### 必须使用的结构模式
+从wiki中提取以下模式，选择一个最适合当前产品的，直接套用其结构骨架：
+- 如果wiki中有「X段式结构」或「脚本模板」，用它来组织你的段落顺序和时间分配
+- 如果wiki中有「句式与技巧」，从中选2-3个句式直接套用到参数翻译中
+- 如果wiki中有「类比简化」的案例，用同样的手法处理当前产品的复杂参数
+
+### 必须避免的表达（违反即不合格）
+- 情绪嚎叫式开头：\"我滴妈\"\"好家伙\"\"你敢信\"\"没看错吧\"
+- 填充式口头禅：\"有一说一\"\"不吹不黑\"\"说实话\"\"懂的都懂\"\"你品\"\"你细品\"
+- 模板收束：\"闭眼入\"\"包不后悔的\"\"真就绝了\"\"没谁了\"
+- 滥用\"兄弟们\"——只在结尾CTA用一次
+- 任何让观众觉得\"你在演\"而非\"你真懂\"的夸张表演
+
+### 正确的表达方式
+- 用具体数据和对比制造冲击力，不用感叹词制造冲击力
+- 每个参数后面跟\"这意味着...\"的人话翻译
+- 态度通过具体的批评/表扬来表达，不是通过\"好家伙\"\"稳得一批\"来表达
+- 短句是信息炸弹，不是语气词的容器
+
+{wiki_context}
+"""
             logger.info("Wiki injected: %d chars for category=%s", len(wiki_context), category)
         if cover_direction:
             system += "\n\n## 封面方向（封面前置 — 文案必须围绕封面展开）\n" + cover_direction
@@ -163,7 +189,13 @@ class Generator:
         filtered, changes = filter_prohibited(raw)
         if changes:
             logger.info("Douyin filter: %d replacement(s) — %s", len(changes), changes[:5])
-        return filtered
+
+        # Apply filler phrase density reduction
+        filtered2, filler_removals = reduce_filler_phrases(filtered)
+        if filler_removals:
+            logger.info("Filler reduction: %d removal(s)", filler_removals)
+
+        return filtered2
 
 
 def _auto_learn(product: str, category: str, persona: str, script: str, wiki_used: str):
@@ -172,14 +204,17 @@ def _auto_learn(product: str, category: str, persona: str, script: str, wiki_use
     from pathlib import Path
     wiki_had = "有" if wiki_used else "无"
     entry = f"- {datetime.now().strftime('%Y-%m-%d %H:%M')} | generate | {product} | {persona} | {category} | Wiki:{wiki_had} | {len(script)}字\n"
-    log_file = Path("wiki/log.md")
+    from rag_system.config import PROJECT_ROOT as _PRJ
+    log_file = _PRJ / "wiki" / "log.md"
     if log_file.exists():
         content = log_file.read_text(encoding="utf-8")
-        log_file.write_text(content + entry, encoding="utf-8")
-        # Count events for this category
-        cat_count = sum(1 for line in content.split(chr(10)) if category in line and '| generate |' in line)
-        # Auto-compile wiki insights every 5 events for a category
-        if cat_count > 0 and cat_count % 5 == 0:
+    else:
+        content = "# 操作日志\n\n"
+    log_file.write_text(content + entry, encoding="utf-8")
+    # Count events for this category (including the one just written)
+    cat_count = sum(1 for line in (content + entry).split("\n") if category in line and '| generate |' in line)
+    # Auto-compile wiki insights every 5 events for a category
+    if cat_count > 0 and cat_count % 5 == 0:
             logger.info(f'Auto-learning: {category} has {cat_count} events → compiling wiki')
             try:
                 from rag_system.competitive.wiki_compiler import _update_log, WIKI_DIR

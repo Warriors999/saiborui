@@ -29,7 +29,13 @@ PROHIBITED_PHRASES: dict[str, str] = {
     "顶级配置": "旗舰配置",
     "最强性能": "旗舰性能",
     "唯一": "独有",
+    "独有": "特有",
+    "独一份": "少见",
     "独一无二": "独具特色",
+    "天花板": "顶级水准",
+    "封神": "出色",
+    "毕业级": "一步到位级",
+    "毕业": "一步到位",
     "独家": "特有",
     "绝无仅有": "少见",
     "史无前例": "前所未有",
@@ -131,3 +137,87 @@ def validate_no_prohibited(text: str) -> list[str]:
         if phrase in text:
             violations.append(phrase)
     return violations
+
+
+# ── Filler phrase density reducer ──
+# These are "口头禅" that the competitive wiki marks as 应避免的低级套路.
+# They add no information and make the speaker sound uncertain.
+# Strategy: remove standalone instances, reduce consecutive clusters to at most 1.
+
+FILLER_PHRASES = [
+    "说实话", "有一说一", "不吹不黑", "懂的都懂",
+    "我个人觉得", "我个人感觉", "你品", "你细品",
+    "真就绝了", "没谁了", "你自己品",
+]
+
+# Patterns where a filler is the ENTIRE sentence (just the filler + optional punctuation)
+FILLER_STANDALONE = re.compile(
+    r'(?:^|\n)(' + '|'.join(re.escape(f) for f in FILLER_PHRASES) + r')(?:[。！？，,\.\s]*(?:\n|$))',
+    re.MULTILINE,
+)
+
+# Filler clusters: 2+ fillers in a row (with optional whitespace/punctuation between)
+FILLER_CLUSTER = re.compile(
+    r'(' + '|'.join(re.escape(f) for f in FILLER_PHRASES) + r')'
+    r'(?:[。！？，,\s]{0,4}'
+    r'(' + '|'.join(re.escape(f) for f in FILLER_PHRASES) + r'))+',
+)
+
+# "我用下来" / "我用下来发现" — keep at most 1 per paragraph.
+# First pass: mark paragraphs, then limit to 1 instance per paragraph.
+OVERUSED_I_USED = re.compile(r'我用下来[发现]?[。，]?')
+
+
+def reduce_filler_phrases(text: str) -> tuple[str, int]:
+    """Reduce filler phrase density in generated scripts.
+
+    Competitive wiki analysis shows that phrases like 说实话/有一说一/不吹不黑
+    are the #2 most common quality issue in tech review scripts (72% violation rate).
+
+    Returns (filtered_text, number_of_removals).
+    """
+    removals = 0
+    result = text
+
+    # Step 1: Remove standalone filler "sentences" (filler + period + newline)
+    new_result = FILLER_STANDALONE.sub('', result)
+    removals += len(result) - len(new_result)
+    result = new_result
+
+    # Step 2: Collapse filler clusters to single instance
+    def _collapse_cluster(m):
+        nonlocal removals
+        # Keep only the first filler in the cluster
+        parts = m.group(0).split()
+        removals += 1
+        return m.group(1)  # just the first filler
+
+    # Don't auto-collapse — just remove redundant fillers in obvious clusters
+    for filler in FILLER_PHRASES:
+        # Remove filler when it appears right before another filler
+        for other in FILLER_PHRASES:
+            if filler != other:
+                pattern = re.escape(filler) + r'[。！？，,\s]{0,4}' + re.escape(other)
+                if re.search(pattern, result):
+                    result = re.sub(pattern, other, result)
+                    removals += 1
+
+    # Step 3: Limit "我用下来" to once per paragraph
+    paragraphs = result.split('\n\n')
+    cleaned_paras = []
+    for para in paragraphs:
+        matches = list(OVERUSED_I_USED.finditer(para))
+        if len(matches) > 1:
+            # Keep first, remove rest
+            for m in matches[1:]:
+                para = para[:m.start()] + para[m.end():]
+                removals += 1
+        cleaned_paras.append(para)
+    result = '\n\n'.join(cleaned_paras)
+
+    # Step 4: Clean up double punctuation from removals
+    result = re.sub(r'[。！？]{2,}', '。', result)
+    result = re.sub(r'\n{3,}', '\n\n', result)
+    result = re.sub(r'  +', ' ', result)
+
+    return result, removals

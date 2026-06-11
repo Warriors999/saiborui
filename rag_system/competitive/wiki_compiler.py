@@ -13,7 +13,8 @@ from openai import OpenAI
 from rag_system.config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, DEEPSEEK_MODEL
 from rag_system.utils import logger
 
-WIKI_DIR = Path("wiki")
+from rag_system.config import PROJECT_ROOT as _PRJ
+WIKI_DIR = _PRJ / "wiki"
 
 # ── Wiki page templates for each category ──
 WIKI_PAGES = {
@@ -55,7 +56,7 @@ def compile_to_wiki(session_dir: Path, category: str):
         page_file = WIKI_DIR / page_path
         existing = page_file.read_text(encoding="utf-8") if page_file.exists() else "（新页面，暂无内容）"
 
-        prompt = f"""你是赛博瑞知识库的维护者。你需要根据最新竞品分析结果，更新知识库Wiki页面。
+        prompt = f"""你是赛博瑞知识库的高级策展人。你的任务不是搬运信息，而是做知识蒸馏——从竞品分析中提取【可以内化进工程的创作方法论】，同时标记【应该避免的低级套路】。
 
 ## 当前Wiki页面内容
 {existing[:2000]}
@@ -69,16 +70,33 @@ def compile_to_wiki(session_dir: Path, category: str):
 ## 音频数据
 {audio[:500]}
 
-## 任务
-请更新上面的Wiki页面 "{page_name}"。要求：
-1. 保留原有内容中仍然有效的部分
-2. 添加新发现的知识点
-3. 如果新发现与旧知识冲突，标注出来（不要删除旧内容，用 [⚠️ 待验证: ...] 标记）
-4. 每个知识点注明来源（创作者名+视频标题+日期）
-5. 用Markdown格式，保持简洁
-6. 如果是"新页面，暂无内容"，则从头创建
+## 任务 — 知识蒸馏，不是信息搬运
 
-直接输出更新后的完整Wiki页面内容，不要加解释。"""
+请更新Wiki页面 "{page_name}"，严格按照以下结构：
+
+### ✅ 可内化的高级技巧
+从新分析中提取【真正有价值】的创作方法。标准：
+- 结构层面的创新（分段逻辑、信息密度设计、节奏控制）
+- 视觉层面的具体手法（构图模式、灯光方案、镜头序列）
+- 剪辑层面的规律（快慢切分布、转场时机、段落节奏）
+- 排除以下低级内容：情绪宣泄式开头（我滴妈/好家伙）、空洞的称呼套近乎（兄弟们）、廉价的"有一说一"口头禅
+- 每条注明来源（创作者+视频+日期）
+
+### ⚠️ 应避免的低级套路
+从竞品中识别出【不应模仿】的模式，并解释为什么：
+- 情绪宣泄式开头——短期吸睛但损害专业人设
+- 空洞口头禅填充——暴露内容密度不足
+- 过度夸张的标题党——提高跳出率
+- 任何让观众觉得"你在演"而不是"你真懂"的表达方式
+
+### 📐 可复用的结构模板
+提取可跨品类复用的内容结构模板（如：价格锚定开场→分类递进→实测验证→购买建议）
+每个模板一句话描述+适用品类
+
+### 🔗 与其他Wiki页面的交叉引用
+标注这个知识点和哪些其他Wiki页面有关联
+
+直接输出更新后的完整Wiki页面。"""
 
         try:
             response = client.chat.completions.create(
@@ -139,26 +157,110 @@ def _update_index(category: str):
     pass
 
 
-def load_wiki_context(category: str) -> str:
+def load_wiki_context(category: str, product_features: str = "") -> str:
     """Load relevant wiki pages as context for script/storyboard generation.
 
     Returns concatenated wiki knowledge for the given category.
+    Uses section-level extraction: keeps sections that match the product features,
+    plus always keeps structural templates and anti-patterns.
     """
     pages = _get_pages_for_category(category)
     context_parts = ["## Wiki知识库（编译后的竞品学习成果）\n"]
+
+    # Extract feature keywords for relevance matching
+    feature_kw = set()
+    if product_features:
+        feature_kw = set(
+            w.strip() for w in product_features.replace(",", " ").replace("，", " ").split()
+            if len(w.strip()) >= 2
+        )
 
     for page_name, page_path in pages.items():
         page_file = WIKI_DIR / page_path
         if page_file.exists():
             content = page_file.read_text(encoding="utf-8")
-            # Truncate to most relevant parts
-            if len(content) > 1500:
-                content = content[:1500] + "\n\n...(truncated, see full page)"
-            context_parts.append(f"### {page_name}\n{content}\n")
+            # Extract the most relevant sections instead of blind truncation
+            extracted = _extract_relevant_sections(content, feature_kw, max_chars=5000)
+            context_parts.append(f"### {page_name}\n{extracted}\n")
 
-    # Add competitor patterns
+    # Add competitor patterns — full content, this is core competitive intelligence
     comp_file = WIKI_DIR / WIKI_PAGES["竞品创作者模式"]
     if comp_file.exists():
-        context_parts.append(f"### 竞品创作者模式\n{comp_file.read_text(encoding='utf-8')[:1000]}\n")
+        comp_content = comp_file.read_text(encoding="utf-8")
+        context_parts.append(f"### 竞品创作者模式\n{comp_content[:4000]}\n")
+
+    # Cross-category techniques
+    cross_file = WIKI_DIR / WIKI_PAGES.get("跨品类通用技巧", "")
+    if cross_file and cross_file.exists():
+        cross_content = cross_file.read_text(encoding="utf-8")
+        context_parts.append(f"### 跨品类通用技巧\n{cross_content[:2000]}\n")
 
     return "\n---\n".join(context_parts)
+
+
+def _extract_relevant_sections(content: str, feature_kw: set, max_chars: int = 5000) -> str:
+    """Extract wiki sections most relevant to the product features.
+
+    Strategy:
+      - Always include the first section (overview/概述)
+      - Sections with matching keywords get full inclusion
+      - Sections without matches get truncated to their heading + first 2 lines
+      - If total exceeds max_chars, trim non-matching sections first
+    """
+    import re
+
+    # Split content by markdown headings (## or ###)
+    sections = re.split(r'\n(?=#{2,3}\s)', content)
+
+    if len(sections) <= 1:
+        # Short page, no section splitting needed
+        return content[:max_chars]
+
+    scored = []
+    for sec in sections:
+        heading = sec.split('\n')[0] if sec else ''
+        body = '\n'.join(sec.split('\n')[1:]) if '\n' in sec else ''
+
+        # Score by keyword overlap with product features
+        score = 0
+        if feature_kw:
+            sec_lower = sec.lower()
+            score = sum(1 for kw in feature_kw if kw.lower() in sec_lower)
+
+        # Always boost structural templates and anti-patterns
+        if any(tag in heading for tag in ['模板', '结构', '应避免', '可内化', '句式', '钩子']):
+            score += 2
+
+        scored.append((score, sec, heading, body))
+
+    # Sort: high score first (most relevant)
+    scored.sort(key=lambda x: x[0], reverse=True)
+
+    result_parts = []
+    total_chars = 0
+
+    for score, sec, heading, body in scored:
+        if score >= 2:
+            # High relevance: include full section
+            result_parts.append(sec.strip())
+            total_chars += len(sec)
+        elif score >= 1:
+            # Medium relevance: include heading + first 300 chars of body
+            snippet = heading + '\n' + body[:300].strip()
+            if len(body) > 300:
+                snippet += '\n...(省略，详见wiki完整版)'
+            result_parts.append(snippet)
+            total_chars += len(snippet)
+        else:
+            # Low relevance: heading only + 1-line summary
+            first_line = body.strip().split('\n')[0][:100] if body.strip() else ''
+            snippet = heading + '\n' + first_line
+            if len(body) > 100:
+                snippet += '\n...(省略)'
+            result_parts.append(snippet)
+            total_chars += len(snippet)
+
+        if total_chars >= max_chars:
+            break
+
+    return '\n\n'.join(result_parts)

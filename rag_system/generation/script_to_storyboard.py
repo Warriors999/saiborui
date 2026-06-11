@@ -119,24 +119,27 @@ def _parse_and_repair_json(raw: str) -> dict | list:
     try:
         return _json.loads(raw)
     except _json.JSONDecodeError:
-        pass
+        logger.warning("JSON parse failed (len=%d), attempting repair 1 (missing commas)...", len(raw))
 
     # Repair attempt 1: objects missing commas between them in arrays
     # Fix pattern: }\s*\n\s*{ → },{
     repaired = re.sub(r'\}\s*\n\s*\{', '},\n    {', raw)
-    # Fix pattern: "value"\s*\n\s*" → "value",\n    "
-    repaired = re.sub(r'"\s*\n\s*\n\s*"', '",\n    "', repaired)
+    # Fix pattern: "value"\n"next" → "value",\n"next" (missing comma between strings)
+    repaired = re.sub(r'"\s*\n\s*"', '",\n    "', repaired)
     # Fix trailing comma before ]
     repaired = re.sub(r',\s*\]', ']', repaired)
     # Fix trailing comma before }
     repaired = re.sub(r',\s*\}', '}', repaired)
 
     try:
-        return _json.loads(repaired)
+        result = _json.loads(repaired)
+        logger.info("JSON repair 1 succeeded")
+        return result
     except _json.JSONDecodeError:
         pass
 
     # Repair attempt 2: use regex to extract the shots array
+    logger.warning("JSON repair 1 failed, attempting repair 2 (regex shot extraction)...")
     shots_match = re.search(r'"shots"\s*:\s*\[', raw)
     if shots_match:
         # Try to extract each shot object individually
@@ -149,6 +152,7 @@ def _parse_and_repair_json(raw: str) -> dict | list:
                 except _json.JSONDecodeError:
                     continue
             if shots:
+                logger.info("JSON repair 2 succeeded: extracted %d shots via regex", len(shots))
                 md_match = re.search(r'"metadata"\s*:\s*(\{[^{}]*\})', raw, re.DOTALL)
                 metadata = _json.loads(md_match.group(1)) if md_match else {}
                 return {"metadata": metadata, "shots": shots}
@@ -235,21 +239,10 @@ def generate_storyboard(script_data: dict, product_name: str, persona: str) -> d
                 shot["huazi"] = m.group(1)
                 shot["voiceover"] = re.sub(r"（花字：[^）]+）", "", vo).strip()
 
-    # Generate visual concept prompts for key shots (视觉对齐)
-    # — pure string templating from existing shot data, no LLM call.
-    # Gives the crew an English-format prompt they can paste into
-    # Midjourney / DALL-E for visual reference before shooting.
-    for shot in shots:
-        if shot.get("act", "") in ("hook", "reveal", "deep_dive"):
-            visual = shot.get("visual", "")
-            jingbie = shot.get("jingbie", "")
-            yunjing = shot.get("yunjing", "")
-            shot["visual_prompt"] = (
-                f"{visual}. {jingbie} shot, {yunjing} movement. "
-                f"Cinematic lighting, 16:9, photorealistic."
-            )
-        else:
-            shot["visual_prompt"] = ""
+    # ── AI Visual Hook Prompts (TikTok-optimized) ──
+    # Infer category from product name keywords as fallback
+    _cat = _infer_category_from_product(product_name)
+    _generate_ai_hook_prompts(shots, product_name, persona, _cat)
 
     # Merge LLM metadata with defaults
     final_metadata = {
@@ -355,6 +348,298 @@ def _parse_dur(dur_str: str) -> int:
         return 0
 
 
+def _infer_category_from_product(product_name: str) -> str:
+    """Infer product category from product name keywords."""
+    kw_map = {
+        "keyboard": ["键盘", "键帽", "轴体", "磁轴", "客制化", "机械键盘"],
+        "monitor": ["显示器", "高刷", "刷新率", "IPS", "HDR", "面板"],
+        "mouse": ["鼠标", "轻量化", "传感器", "DPI", "回报率", "无线鼠"],
+        "gpu": ["显卡", "RTX", "GTX", "5060", "5070", "5080", "5090", "DLSS"],
+        "laptop": ["笔记本", "游戏本", "轻薄本", "全能本"],
+        "headphone": ["耳机", "电竞耳机", "头戴式", "降噪"],
+        "phone": ["手机", "iPhone", "安卓", "旗舰"],
+        "desk_chair": ["电竞椅", "人体工学", "升降桌", "座椅", "S9Game"],
+        "speaker": ["音箱", "音响", "电竞音箱"],
+    }
+    for cat, kws in kw_map.items():
+        if any(kw in product_name for kw in kws):
+            return cat
+    return "keyboard"  # default fallback
+
+
+def _generate_ai_hook_prompts(shots: list[dict], product_name: str, persona: str, category: str):
+    """Generate Chinese Seedance video prompts for 2-3 key shots only.
+
+    Strategy — AI video only where it wins over real footage:
+      - Opening hook (shot 1 or 2): 2-second impossible visual to stop the scroll
+      - Product hero (best mid-video showcase): cinematic product reveal
+      - Optional special: extreme macro, X-ray, or assembly that can't be filmed
+
+    Prompt structure (Chinese, Seedance-optimized):
+      [景别]，[运镜方式]，[机位角度]，[主体描述]，[动态/特效]，[光影]，[氛围]，[风格词]
+    """
+
+    # ══════════════════════════════════════════════════
+    # Chinese Terminology Bank — Seedance Professional
+    # ══════════════════════════════════════════════════
+
+    # 景别 shot size — what fills the frame
+    JINGBIE_MAP = {
+        "大特写": "大特写镜头",
+        "特写": "特写镜头",
+        "近景": "近景",
+        "中景": "中景",
+        "全景": "全景镜头",
+    }
+
+    # 运镜 camera movement — how the camera moves
+    YUNJING_POOL = {
+        "hook": [
+            "镜头从虚空中缓缓推进，主体从暗处浮现",
+            "镜头极速推近，画面从模糊到锐利",
+            "慢动作镜头推进，时间仿佛凝滞",
+            "镜头自下而上缓缓升起，主体庄严显现",
+        ],
+        "hero": [
+            "镜头环绕主体缓慢旋转，360度全方位展示",
+            "希区柯克变焦，背景急剧压缩主体不动",
+            "镜头从远到近匀速推进，焦点始终锁定产品",
+            "平滑横移镜头，产品细节依次掠过画面",
+        ],
+        "macro": [
+            "微距镜头极慢推进，表面纹理纤毫毕现",
+            "焦点在微观表面游走，从一处细节滑向另一处",
+            "超微距推近，仿佛穿越产品表面进入内部",
+        ],
+    }
+
+    # 光影 lighting — light quality and direction
+    LIGHT_POOL = [
+        "侧逆光勾出产品轮廓，边缘泛着冷冽的金属光泽",
+        "柔和的伦勃朗光从右上方45度洒落，暗部保留丰富细节",
+        "单一顶光源，产品从上方被照亮，周围渐隐入黑暗",
+        "漫反射柔光均匀包裹产品，无影棚拍质感",
+        "RGB灯带从产品底部向上漫射，营造赛博氛围",
+        "暖金色背光穿透主体，光晕向四周扩散",
+    ]
+
+    # 风格 style — overall visual aesthetic
+    STYLE_POOL = [
+        "电影感，浅景深虚化背景，F1.4大光圈效果",
+        "产品广告质感，干净极简，8K超写实",
+        "暗调奢华，低调光比，杂志封面质感",
+        "微距摄影风格，超写实质感，每一处纹理都清晰可见",
+        "慢动作电影感，动态模糊自然，画面如丝般顺滑",
+    ]
+
+    # ══════════════════════════════════════════════════
+    # Category-Specific Chinese Descriptors
+    # ══════════════════════════════════════════════════
+
+    CAT_DESC = {
+        "keyboard": {
+            "material": "铝合金机身，RGB背光灯带，PBT键帽表面微纹理",
+            "scene": "暗调极简桌面，键帽悬浮于半空缓慢自转",
+            "mood": "暗黑电竞氛围，RGB光污染低吟律动",
+        },
+        "mouse": {
+            "material": "磨砂外壳，蜂巢镂空结构，超轻量骨架",
+            "scene": "纯白桌面，鼠标从碳纤维粉尘中凝聚成形",
+            "mood": "极简干净，清晨柔光从百叶窗洒入",
+        },
+        "monitor": {
+            "material": "四边窄边框，IPS雾面面板，铝合金支架",
+            "scene": "暗室中屏幕点亮，像素从中心向外炸开",
+            "mood": "暗室氛围，屏幕光芒是唯一光源",
+        },
+        "gpu": {
+            "material": "金属背板，散热鳍片阵列，三风扇结构",
+            "scene": "显卡从浓烟中缓缓升起，风扇逐一转动",
+            "mood": "重工业暗黑风，戏剧性轮廓光从侧后方打出",
+        },
+        "laptop": {
+            "material": "铝合金一体化机身，极薄侧面剪影，背光键盘",
+            "scene": "笔记本从平整金属板中折叠立起",
+            "mood": "现代简约工作室，暖日光穿过百叶窗",
+        },
+        "headphone": {
+            "material": "皮质耳罩，金属头梁，哑光外壳",
+            "scene": "耳机悬浮于声波涟漪中心，部件逐一组装",
+            "mood": "暗调录音棚，可视化声波在空间中扩散",
+        },
+        "phone": {
+            "material": "玻璃背板，金属中框，摄像头模组阵列",
+            "scene": "手机从液态金属池中升起",
+            "mood": "纯白无限背景，干净到不真实",
+        },
+        "desk_chair": {
+            "material": "透气网布，铝合金椅脚，PU皮面纹理",
+            "scene": "椅身部件在空中自动组装卡合",
+            "mood": "温暖居家办公，黄金时刻的暖光斜照",
+        },
+        "speaker": {
+            "material": "金属网罩，哑光箱体，驱动单元振膜",
+            "scene": "3D声波圆环从音箱向外层层扩散",
+            "mood": "暗室中脉冲LED光圈律动，声波可见",
+        },
+    }
+    desc = CAT_DESC.get(category, CAT_DESC["keyboard"])
+
+    # ══════════════════════════════════════════════════
+    # Shot Selection — max 3 key shots
+    # ══════════════════════════════════════════════════
+    total = len(shots)
+    selected_indices = set()
+
+    # 1) Opening hook: shot 1 or 2 (whichever has a stronger visual)
+    opening_candidates = [i for i in range(min(2, total))]
+    best_opening = opening_candidates[0]
+    for i in opening_candidates:
+        if shots[i].get("visual", ""):
+            best_opening = i
+            break
+    selected_indices.add(best_opening)
+
+    # 2) Product hero: best reveal or deep_dive shot in mid section (40%-80%)
+    mid_start = max(int(total * 0.4), 2)
+    mid_end = min(int(total * 0.8), total)
+    hero_candidates = []
+    for i in range(mid_start, mid_end):
+        act = shots[i].get("act", "")
+        jingbie = shots[i].get("jingbie", "")
+        visual = shots[i].get("visual", "")
+        if act in ("reveal", "deep_dive") and visual:
+            hero_candidates.append(i)
+        elif jingbie in ("特写", "大特写") and visual:
+            hero_candidates.append(i)
+
+    if hero_candidates:
+        # Prefer the candidate with the longest visual description (richest content)
+        best_hero = max(hero_candidates, key=lambda i: len(shots[i].get("visual", "")))
+        if best_hero not in selected_indices:
+            selected_indices.add(best_hero)
+
+    # 3) Optional special: a shot that's impossible to film (extreme macro, assembly, particle)
+    #    Pick from remaining shots — prioritize long visual, "大特写" or "微距" jingbie
+    if len(selected_indices) < 3 and total > 4:
+        special_candidates = []
+        for i in range(total):
+            if i in selected_indices:
+                continue
+            jingbie = shots[i].get("jingbie", "")
+            visual = shots[i].get("visual", "")
+            voiceover = shots[i].get("voiceover", "")
+            # Prefer macro/extreme close-up or product detail shots
+            if jingbie in ("大特写", "微距") and visual:
+                special_candidates.append((i, 3))
+            elif len(visual) > 20:
+                special_candidates.append((i, 1))
+            elif len(voiceover) < 15:  # pure visual shot (little or no VO)
+                special_candidates.append((i, 2))
+        if special_candidates:
+            special_candidates.sort(key=lambda x: x[1], reverse=True)
+            selected_indices.add(special_candidates[0][0])
+
+    # ══════════════════════════════════════════════════
+    # Build Chinese Seedance Prompts
+    # ══════════════════════════════════════════════════
+    for i, shot in enumerate(shots):
+        if i not in selected_indices:
+            shot["ai_hook_prompt"] = ""
+            continue
+
+        visual = shot.get("visual", "")
+        jingbie = shot.get("jingbie", "")
+        yunjing = shot.get("yunjing", "")
+        act = shot.get("act", "")
+        sn = i + 1
+
+        # --- Pick components ---
+        jingbie_cn = JINGBIE_MAP.get(jingbie, JINGBIE_MAP.get("特写", "特写镜头"))
+
+        # Camera movement: match shot's yunjing, support compound values (e.g. "滑轨推", "摇镜")
+        yunjing_map_cn = [
+            ("滑轨推", "滑轨缓推，镜头匀速向前"),
+            ("滑轨拉", "滑轨缓拉，镜头匀速后撤"),
+            ("滑轨横移", "滑轨横向平移，画面平稳掠过"),
+            ("推", "镜头缓慢推进"),
+            ("拉", "镜头匀速后拉"),
+            ("摇镜", "云台匀速摇摄"),
+            ("摇", "云台匀速摇摄"),
+            ("移", "镜头平滑横移"),
+            ("跟", "焦点锁定主体跟随移动"),
+            ("升", "镜头自下而上缓缓升起"),
+            ("降", "镜头自上而下缓缓降落"),
+            ("环绕", "镜头围绕主体缓慢旋转"),
+            ("微距", "微距镜头极慢推进"),
+            ("POV", "POV主观视角"),
+            ("固定", "固定机位，画面构图稳定"),
+        ]
+        camera_move = ""
+        if yunjing:
+            for key, val in yunjing_map_cn:
+                if key in yunjing:
+                    camera_move = val
+                    break
+        if not camera_move:
+            if sn == best_opening:
+                camera_move = YUNJING_POOL["hook"][sn % len(YUNJING_POOL["hook"])]
+            elif jingbie in ("大特写", "微距"):
+                camera_move = YUNJING_POOL["macro"][sn % len(YUNJING_POOL["macro"])]
+            else:
+                camera_move = YUNJING_POOL["hero"][sn % len(YUNJING_POOL["hero"])]
+
+        # Lighting
+        light = LIGHT_POOL[sn % len(LIGHT_POOL)]
+
+        # Style
+        if jingbie in ("大特写", "微距"):
+            style = "微距摄影风格，超写实质感，每一处纹理都清晰可见"
+        elif sn == best_opening:
+            style = "电影感，浅景深虚化背景，慢动作，画面丝滑流畅"
+        else:
+            style = STYLE_POOL[sn % len(STYLE_POOL)]
+
+        # --- Assemble prompt ---
+        visual_cn = visual if visual else f"{product_name}产品特写"
+
+        # Build subject line: product + category-specific material cues
+        subject = f"{product_name}，{desc['material']}"
+
+        if sn == best_opening:
+            # Opening hook: dramatic, impossible visual
+            prompt = (
+                f"{jingbie_cn}，{camera_move}。"
+                f"{desc['scene']}。"
+                f"{desc['mood']}，{light}。"
+                f"{style}。"
+            )
+        elif jingbie in ("大特写", "微距"):
+            # Macro/detail: texture focus
+            prompt = (
+                f"{jingbie_cn}，{camera_move}。"
+                f"画面聚焦{subject}。"
+                f"{light}。"
+                f"{style}，浅景深，背景完全虚化。"
+            )
+        else:
+            # Product hero: cinematic showcase
+            prompt = (
+                f"{jingbie_cn}，{camera_move}。"
+                f"画面主体为{subject}，{visual_cn[:50]}。"
+                f"{light}。"
+                f"{style}。"
+            )
+
+        shot["ai_hook_prompt"] = prompt
+
+    s_count = len(selected_indices)
+    logger.info(
+        f"AI视频提示词 (Seedance中文): {s_count}/{total} 镜 "
+        f"(开场钩子+产品展示+可选特殊镜)"
+    )
+
+
 def _diversify_camera_moves(shots: list[dict]):
     """Force camera movement diversity: 固定≤40%, ensure variety."""
     n = len(shots)
@@ -428,16 +713,11 @@ def _split_long_vo_shots(shots: list[dict]) -> list[dict]:
             new_shots.append(shot)
             continue
 
-        # Merge very short sentences (≤6 chars) with the next one
+        # Merge very short sentences (≤6 chars) — append to previous sentence
         merged = []
-        skip_next = False
         for i, s in enumerate(sentences):
-            if skip_next:
-                skip_next = False
-                continue
-            if len(s) <= 6 and i + 1 < len(sentences):
-                merged.append(s + sentences[i + 1])
-                skip_next = True
+            if len(s) <= 6 and merged:
+                merged[-1] += s
             else:
                 merged.append(s)
 
@@ -451,11 +731,15 @@ def _split_long_vo_shots(shots: list[dict]) -> list[dict]:
                 # Update original shot with first sentence
                 shot["voiceover"] = sentence
                 shot["transition"] = shot.get("transition", "硬切")
-                # Assign duration based on VO length
+                # Assign duration based on VO length, with fallback for very long sentences
+                assigned = False
                 for d, limit in sorted(VO_LIMITS.items()):
                     if len(sentence) <= limit:
                         shot["duration"] = f"{d}s"
+                        assigned = True
                         break
+                if not assigned:
+                    shot["duration"] = "10s"  # fallback for sentences > 48 chars
                 new_shots.append(shot)
             else:
                 # Clone shot for subsequent sentences
@@ -465,10 +749,14 @@ def _split_long_vo_shots(shots: list[dict]) -> list[dict]:
                 new_shot["audio"] = ""
                 new_shot["transition"] = "声音先入"
                 new_shot["notes"] = ""
+                assigned2 = False
                 for d, limit in sorted(VO_LIMITS.items()):
                     if len(sentence) <= limit:
                         new_shot["duration"] = f"{d}s"
+                        assigned2 = True
                         break
+                if not assigned2:
+                    new_shot["duration"] = "10s"  # fallback for sentences > 48 chars
                 new_shots.append(new_shot)
 
     for i, s in enumerate(new_shots):
@@ -577,11 +865,14 @@ def storyboard_pipeline(docx_path: Path, product_name: str, persona: str = "折�
 
     # Auto-learn: log + compile wiki every 5 storyboard events
     from datetime import datetime
-    log_file = Path("wiki/log.md")
+    from rag_system.config import PROJECT_ROOT as _PRJ
+    log_file = _PRJ / "wiki" / "log.md"
     entry = f"- {datetime.now().strftime('%Y-%m-%d %H:%M')} | storyboard | {product_name} | {persona} | {shot_count}镜 {total_vo}字 | 运镜{len(set(s.get('yunjing','') for s in shots))}种\n"
     if log_file.exists():
         content = log_file.read_text(encoding="utf-8") + entry
-        log_file.write_text(content, encoding="utf-8")
+    else:
+        content = "# 操作日志\n\n" + entry
+    log_file.write_text(content, encoding="utf-8")
 
     return xlsx_path
 

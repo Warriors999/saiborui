@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>分镜表 · 实拍现场</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700;900&family=Noto+Sans+SC:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #F7F3EC;
+  --card: #FFFCF7;
+  --ink: #2C2620;
+  --ink-light: #6B5F55;
+  --muted: #A89888;
+  --terracotta: #C2704A;
+  --terracotta-light: #F2DFD2;
+  --terracotta-bg: #FDF5F0;
+  --gold: #B8942E;
+  --gold-light: #F5EDD6;
+  --sage: #7A9A8A;
+  --done-bg: #F0EDE8;
+  --done-text: #B0A898;
+  --shadow: 0 1px 3px rgba(44,38,32,0.06);
+  --shadow-md: 0 4px 16px rgba(44,38,32,0.08);
+  --radius: 6px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Sans SC', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* ── Top Bar ── */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(247,243,236,0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  padding: 14px 24px;
+}
+
+.topbar-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.product-name {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-right: auto;
+}
+
+/* ── Progress ── */
+.progress-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.progress-bar-wrap {
+  width: 140px;
+  height: 6px;
+  background: #E0D8CD;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--terracotta);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.progress-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--ink-light);
+  white-space: nowrap;
+}
+
+/* ── Filter Buttons ── */
+.filter-group {
+  display: flex;
+  gap: 2px;
+  background: #E8E0D5;
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.filter-btn {
+  padding: 6px 14px;
+  border: none;
+  background: transparent;
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-light);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.filter-btn:hover { color: var(--ink); }
+
+.filter-btn.active {
+  background: #FFFCF7;
+  color: var(--terracotta);
+  font-weight: 700;
+  box-shadow: var(--shadow);
+}
+
+/* ── Keyboard Hint ── */
+.kbd-hint {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.kbd-key {
+  display: inline-block;
+  padding: 2px 7px;
+  background: #E8E0D5;
+  border-radius: 3px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-light);
+  border-bottom: 2px solid #D0C8BA;
+}
+
+/* ── Main Content ── */
+.main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px 24px 80px;
+}
+
+/* ── Shot Card ── */
+.shot-card {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  background: var(--card);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  box-shadow: var(--shadow);
+  transition: all 0.25s ease;
+  border-left: 3px solid transparent;
+  position: relative;
+}
+
+.shot-card.selected {
+  border-left-color: var(--terracotta);
+  box-shadow: var(--shadow-md);
+}
+
+.shot-card.done {
+  opacity: 0.45;
+  background: var(--done-bg);
+}
+
+.shot-card.done .shot-visual,
+.shot-card.done .shot-framing,
+.shot-card.done .shot-duration { color: var(--done-text); }
+
+.shot-card.done .shot-vo {
+  color: var(--done-text);
+  text-decoration: line-through;
+}
+
+.shot-card.hidden-by-filter { display: none; }
+
+/* ── Check Circle ── */
+.check-col {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 14px;
+}
+
+.check-circle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid #D0C8BA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  font-size: 14px;
+  color: transparent;
+  background: transparent;
+}
+
+.check-circle:hover {
+  border-color: var(--terracotta);
+  background: var(--terracotta-light);
+}
+
+.shot-card.selected .check-circle { border-color: var(--terracotta); }
+
+.shot-card.done .check-circle {
+  background: var(--terracotta);
+  border-color: var(--terracotta);
+  color: white;
+}
+
+/* ── Content ── */
+.content-col {
+  padding: 12px 16px 12px 0;
+  min-width: 0;
+}
+
+.shot-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.shot-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.shot-framing {
+  font-size: 13px;
+  color: var(--ink-light);
+  font-weight: 500;
+}
+
+.shot-duration {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  background: #F0EBE0;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  background: var(--gold-light);
+  color: var(--gold);
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.ai-badge:hover { background: #EDE0C0; }
+
+.shot-visual {
+  font-size: 14px;
+  color: var(--ink);
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+
+.shot-vo {
+  font-size: 14px;
+  color: var(--ink-light);
+  line-height: 1.5;
+  font-style: italic;
+}
+
+/* ── AI Preview Popover ── */
+.ai-popover {
+  display: none;
+  background: #FFFCF7;
+  border: 1px solid var(--gold-light);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin-top: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-light);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.ai-popover.show { display: block; }
+
+/* ── Detail Toggle ── */
+.detail-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+  margin-top: 4px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.detail-toggle:hover { color: var(--ink-light); }
+
+.detail-toggle .arrow {
+  display: inline-block;
+  transition: transform 0.2s;
+  font-size: 9px;
+}
+
+.detail-toggle.open .arrow { transform: rotate(90deg); }
+
+.detail-panel {
+  display: none;
+  margin-top: 8px;
+  padding: 10px 14px;
+  background: #FBF7F0;
+  border-radius: var(--radius);
+  font-size: 12px;
+  color: var(--ink-light);
+  line-height: 1.7;
+}
+
+.detail-panel.show { display: block; }
+
+.detail-row {
+  display: flex;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.detail-label {
+  color: var(--muted);
+  flex-shrink: 0;
+  font-weight: 500;
+  min-width: 45px;
+}
+
+/* ── Empty State ── */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+}
+
+.empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+
+/* ── Footer ── */
+.footer {
+  text-align: center;
+  padding: 40px 20px;
+  border-top: 1px solid #E0D8CD;
+}
+
+.footer a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 11px;
+}
+
+.footer a:hover { color: var(--terracotta); }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .topbar { padding: 10px 14px; }
+  .topbar-inner { gap: 10px; }
+  .product-name { font-size: 14px; width: 100%; }
+  .progress-bar-wrap { width: 90px; }
+  .filter-btn { padding: 4px 10px; font-size: 11px; }
+  .kbd-hint { display: none; }
+  .main { padding: 12px 10px 60px; }
+  .shot-card { grid-template-columns: 40px 1fr; }
+  .check-circle { width: 26px; height: 26px; }
+  .shot-visual, .shot-vo { font-size: 13px; }
+}
+
+@media print {
+  .topbar { position: static; }
+  .check-circle { border: 1px solid #ccc; }
+  .filter-group, .kbd-hint, .detail-toggle, .ai-badge { display: none; }
+  .detail-panel { display: block !important; }
+  .shot-card { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+  body { background: white; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="product-name" id="productName">分镜表</div>
+    <div class="progress-group">
+      <div class="progress-bar-wrap"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <span class="progress-text" id="progressText">0/0</span>
+    </div>
+    <div class="filter-group" id="filterGroup">
+      <button class="filter-btn active" data-filter="all">全部</button>
+      <button class="filter-btn" data-filter="unshot">未拍</button>
+      <button class="filter-btn" data-filter="shot">已拍</button>
+    </div>
+    <div class="kbd-hint">
+      <span class="kbd-key">↑↓</span>选择
+      <span class="kbd-key">Space</span>勾选
+    </div>
+  </div>
+</div>
+
+<div class="main" id="shotList"></div>
+
+<div class="footer">
+  <a href="https://deerflow.tech" target="_blank">Deerflow</a>
+  <span style="color:var(--muted);font-size:11px;margin-left:8px;">· 分镜表 v2.0</span>
+</div>
+
+<script>
+// ═══════ SAMPLE DATA ═══════
+const SAMPLE_DATA = {
+  product: "微星 X68K 磁轴键盘",
+  persona: "硬核数码",
+  shots: [
+    { shot_number:1, act:"hook", jingbie:"全景", yunjing:"推", visual:"三把键盘并排俯拍，从左到右: 8元薄膜 → 399元机械 → X68K磁轴", voiceover:"兄弟们，今天这把键盘是我测过最离谱的——磁轴键盘卖399。", duration:"5s", transition:"开场", ai_hook_prompt:"floating keycaps assembling mid-air, dark minimalist desk setup, moody atmosphere, brushed aluminum, RGB glow, PBT keycap texture, cinematic depth of field, dramatic lighting, epic product reveal, 8K photorealistic, 16:9, unreal engine 5 quality render --ar 16:9 --style raw", huazi:"8元 | 399元 | X68K", audio:"", lighting:"主灯:右前45°+柔光箱 | 辅灯:左侧补光 | 色温:5600K", notes:"俯拍机位，三把键盘间距相等" },
+    { shot_number:2, act:"hook", jingbie:"特写", yunjing:"推", visual:"镜头推到X68K键盘轴体特写，轴心在灯光下微微反光", voiceover:"磁轴到底是什么？简单说就是靠磁场感应触发，没有物理接触。", duration:"4s", transition:"硬切", ai_hook_prompt:"particle wave revealing keyboard, extreme macro close-up of magnetic switch mechanism, dark minimalist desk, scientific precision feel, 8K photorealistic, 16:9, --ar 16:9", huazi:"磁场感应 | 无物理接触", audio:"金属敲击声", lighting:"", notes:"轴体微距镜头" },
+    { shot_number:3, act:"reveal", jingbie:"中景", yunjing:"环绕", visual:"产品360°环绕展示，RGB灯效全开", voiceover:"X68K磁轴键盘，先看外观。铝合金上盖，PBT双色键帽。", duration:"6s", transition:"动作匹配", ai_hook_prompt:"keyboard rotating on platform, RGB light beams sweeping, brushed aluminum reflecting, product cinematography, dramatic reveal, 8K, 16:9, --ar 16:9", huazi:"", audio:"", lighting:"主灯:右前45° | 辅灯:左侧 | 轮廓灯:后方上侧 | 色温:5600K", notes:"转盘匀速旋转，15秒一圈" },
+    { shot_number:4, act:"deep_dive", jingbie:"微距", yunjing:"微距", visual:"PBT键帽表面纹理特写，手指轻轻划过表面", voiceover:"PBT双色注塑键帽，磨砂手感，不打油。", duration:"3s", transition:"硬切", ai_hook_prompt:"extreme macro close-up of PBT keycap texture, finger touching surface, matte finish detail, shallow depth of field, f/1.4, 100mm macro lens, 8K photorealistic, product photography, 16:9", huazi:"PBT双色注塑 | 不打油", audio:"手指摩擦声", lighting:"主灯:顶光+微距环闪", notes:"食指从左到右轻划键帽表面" },
+    { shot_number:5, act:"proof", jingbie:"特写", yunjing:"固定", visual:"键盘侧面，手指按压轴体展示触发距离", voiceover:"触发距离1.2毫米，比传统机械轴快40%。", duration:"4s", transition:"硬切", ai_hook_prompt:"", huazi:"触发1.2mm | 快40%", audio:"确认音效", lighting:"", notes:"" },
+  ]
+};
+
+// ═══════ STATE ═══════
+const STORAGE_KEY = 'sb_storyboard_state';
+let data = SAMPLE_DATA;
+let checkedShots = new Set();
+let currentFilter = 'all';
+let selectedIndex = 0;
+let expandedDetails = new Set();
+
+function loadState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (saved && saved.checked) checkedShots = new Set(saved.checked);
+    if (saved && saved.filter) currentFilter = saved.filter;
+  } catch(e) {}
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    checked: [...checkedShots],
+    filter: currentFilter
+  }));
+}
+
+// ═══════ RENDER ═══════
+function render() {
+  const container = document.getElementById('shotList');
+  const shots = data.shots;
+  const total = shots.length;
+  const done = checkedShots.size;
+
+  // Update top bar
+  document.getElementById('productName').textContent = data.product + ' · ' + data.persona;
+  document.getElementById('progressFill').style.width = total ? (done/total*100) + '%' : '0%';
+  document.getElementById('progressText').textContent = `已完成 ${done}/${total} 镜`;
+
+  // Filter
+  let filtered = shots.map((s, i) => ({...s, _idx: i}));
+  if (currentFilter === 'shot') filtered = filtered.filter(s => checkedShots.has(s.shot_number));
+  if (currentFilter === 'unshot') filtered = filtered.filter(s => !checkedShots.has(s.shot_number));
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="empty-state">
+      <div class="icon">${currentFilter === 'shot' ? '🎬' : '✅'}</div>
+      <p>${currentFilter === 'shot' ? '还没有拍完任何一镜' : '全部镜头已拍完！'}</p>
+    </div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(s => {
+    const isDone = checkedShots.has(s.shot_number);
+    const isSelected = s._idx === selectedIndex;
+    const hasDetails = s.huazi || s.audio || s.lighting || s.notes;
+    const detailId = 'detail-' + s.shot_number;
+    const aiId = 'ai-' + s.shot_number;
+    const expanded = expandedDetails.has(s.shot_number);
+
+    return `
+    <div class="shot-card${isDone ? ' done' : ''}${isSelected ? ' selected' : ''}"
+         data-shot="${s.shot_number}" data-idx="${s._idx}"
+         id="card-${s.shot_number}">
+      <div class="check-col">
+        <div class="check-circle" data-shot="${s.shot_number}" onclick="toggleShot(${s.shot_number})">
+          ${isDone ? '✓' : ''}
+        </div>
+      </div>
+      <div class="content-col">
+        <div class="shot-header">
+          <span class="shot-num">#${String(s.shot_number).padStart(2,'0')}</span>
+          <span class="shot-framing">${s.jingbie || ''}${s.yunjing ? ' · ' + s.yunjing : ''}</span>
+          <span class="shot-duration">${s.duration || '-'}</span>
+          ${s.ai_hook_prompt ? `<span class="ai-badge" onclick="event.stopPropagation();toggleAI('${aiId}')">🏷 AI</span>` : ''}
+        </div>
+        ${s.visual ? `<div class="shot-visual">${s.visual}</div>` : ''}
+        ${s.voiceover ? `<div class="shot-vo">${s.voiceover}</div>` : ''}
+        ${s.ai_hook_prompt ? `<div class="ai-popover" id="${aiId}">${s.ai_hook_prompt}</div>` : ''}
+        ${hasDetails ? `
+          <div class="detail-toggle${expanded ? ' open' : ''}" onclick="event.stopPropagation();toggleDetail(${s.shot_number})">
+            <span class="arrow">▶</span> 详情
+          </div>
+          <div class="detail-panel${expanded ? ' show' : ''}" id="${detailId}">
+            ${s.huazi ? `<div class="detail-row"><span class="detail-label">花字</span><span>${s.huazi}</span></div>` : ''}
+            ${s.audio ? `<div class="detail-row"><span class="detail-label">音效</span><span>${s.audio}</span></div>` : ''}
+            ${s.lighting ? `<div class="detail-row"><span class="detail-label">灯光</span><span>${s.lighting}</span></div>` : ''}
+            ${s.notes ? `<div class="detail-row"><span class="detail-label">备注</span><span>${s.notes}</span></div>` : ''}
+          </div>
+        ` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Scroll selected into view
+  const selectedCard = document.querySelector('.shot-card.selected');
+  if (selectedCard) {
+    selectedCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+// ═══════ ACTIONS ═══════
+function toggleShot(num) {
+  if (checkedShots.has(num)) {
+    checkedShots.delete(num);
+  } else {
+    checkedShots.add(num);
+  }
+  saveState();
+  render();
+}
+
+function toggleDetail(num) {
+  if (expandedDetails.has(num)) {
+    expandedDetails.delete(num);
+  } else {
+    expandedDetails.add(num);
+  }
+  render();
+}
+
+function toggleAI(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('show');
+}
+
+function setFilter(filter) {
+  currentFilter = filter;
+  saveState();
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === filter);
+  });
+  render();
+}
+
+// ═══════ KEYBOARD ═══════
+document.addEventListener('keydown', e => {
+  const shots = data.shots;
+  if (!shots.length) return;
+
+  // Get filtered shot indices
+  let filtered = shots.map((s, i) => ({...s, _idx: i}));
+  if (currentFilter === 'shot') filtered = filtered.filter(s => checkedShots.has(s.shot_number));
+  if (currentFilter === 'unshot') filtered = filtered.filter(s => !checkedShots.has(s.shot_number));
+
+  if (e.key === 'ArrowDown' || e.key === 'j') {
+    e.preventDefault();
+    const currentFilteredIdx = filtered.findIndex(s => s._idx === selectedIndex);
+    const next = Math.min(currentFilteredIdx + 1, filtered.length - 1);
+    if (next >= 0 && next < filtered.length) selectedIndex = filtered[next]._idx;
+    render();
+  }
+  if (e.key === 'ArrowUp' || e.key === 'k') {
+    e.preventDefault();
+    const currentFilteredIdx = filtered.findIndex(s => s._idx === selectedIndex);
+    const prev = Math.max(currentFilteredIdx - 1, 0);
+    if (prev >= 0 && prev < filtered.length) selectedIndex = filtered[prev]._idx;
+    render();
+  }
+  if (e.key === ' ') {
+    e.preventDefault();
+    if (filtered.length > 0) {
+      const currentShot = shots[selectedIndex];
+      if (currentShot) toggleShot(currentShot.shot_number);
+    }
+  }
+});
+
+// ═══════ FILTER BUTTONS ═══════
+document.getElementById('filterGroup').addEventListener('click', e => {
+  if (e.target.classList.contains('filter-btn')) {
+    setFilter(e.target.dataset.filter);
+  }
+});
+
+// ═══════ INIT ═══════
+loadState();
+// Restore filter button state
+document.querySelectorAll('.filter-btn').forEach(b => {
+  b.classList.toggle('active', b.dataset.filter === currentFilter);
+});
+render();
+</script>
+</body>
+</html>

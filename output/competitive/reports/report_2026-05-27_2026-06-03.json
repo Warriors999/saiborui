@@ -1,0 +1,68 @@
+{
+  "period": "2026-05-27 ~ 2026-06-03",
+  "videos_analyzed": 24,
+  "top_creators": [
+    "先看评测",
+    "歪设长",
+    "大白外设推荐官",
+    "肚子饱饱丶",
+    "喵喵折-好物清单"
+  ],
+  "trending_hook_types": {
+    "情绪爆发": 23,
+    "热梗共鸣": 1
+  },
+  "category_insights": {
+    "keyboard": {
+      "count": 3,
+      "avg_spoken_density": 0.0,
+      "dominant_hook": "情绪爆发"
+    },
+    "mouse": {
+      "count": 3,
+      "avg_spoken_density": 0.0,
+      "dominant_hook": "情绪爆发"
+    },
+    "monitor": {
+      "count": 3,
+      "avg_spoken_density": 0.14,
+      "dominant_hook": "情绪爆发"
+    },
+    "laptop": {
+      "count": 3,
+      "avg_spoken_density": 0.0,
+      "dominant_hook": "情绪爆发"
+    },
+    "phone": {
+      "count": 3,
+      "avg_spoken_density": 0.0,
+      "dominant_hook": "情绪爆发"
+    },
+    "gpu": {
+      "count": 3,
+      "avg_spoken_density": 0.0,
+      "dominant_hook": "情绪爆发"
+    },
+    "headphone": {
+      "count": 3,
+      "avg_spoken_density": 0.0,
+      "dominant_hook": "情绪爆发"
+    },
+    "desk_chair": {
+      "count": 3,
+      "avg_spoken_density": 0.0,
+      "dominant_hook": "情绪爆发"
+    }
+  },
+  "new_patterns": [
+    "LLM四维度深度解读已完成",
+    "keyboard专业术语: 轴体",
+    "mouse专业术语: 握持, 传感器",
+    "mouse专业术语: 模具, 传感器",
+    "monitor专业术语: 刷新率, 色域, HDR"
+  ],
+  "recommendations": [
+    "本周最热门钩子类型是「情绪爆发」，建议下期脚本优先尝试该开篇方式",
+    "值得关注的创作者: 先看评测, 歪设长, 大白外设推荐官"
+  ]
+}

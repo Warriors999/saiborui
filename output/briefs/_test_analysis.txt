@@ -1,0 +1,7 @@
+Product: 红魔11SPro
+Selling points: 3
+  [9] 微星X68K 数字键盘 (35%) deep=True keys=[]
+  [9] 微星X7M 轻量化鼠标 (35%) deep=True keys=['极致轻量化设计']
+  [4] 视频需求: (16%) deep=False keys=[]
+Cover: ''
+Must-mentions: []

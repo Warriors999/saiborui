@@ -95,8 +95,9 @@ def check_environment() -> dict:
         if DEEPSEEK_API_KEY and DEEPSEEK_API_KEY.startswith("sk-"):
             result["api_configured"] = True
             result["api_key_masked"] = _mask_key(DEEPSEEK_API_KEY)
-    except Exception:
-        pass
+    except Exception as e:
+        import logging
+        logging.getLogger("rag_system").warning("API key check failed (non-fatal): %s", e)
 
     # 4. Knowledge base
     try:
@@ -104,8 +105,9 @@ def check_environment() -> dict:
         store = VectorStore()
         result["kb_chunks"] = store.count()
         result["kb_ok"] = True
-    except Exception:
-        pass
+    except Exception as e:
+        import logging
+        logging.getLogger("rag_system").warning("KB count check failed (non-fatal): %s", e)
 
     # 5. All clear?
     result["all_ok"] = (
