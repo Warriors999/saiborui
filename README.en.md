@@ -32,7 +32,7 @@ Saiborui is an evolving project, not a substitute for editorial judgment. Output
 
 You need Python 3.12+, Git, and a DeepSeek API key for model-powered features. Other integrations may require their own credentials and dependencies.
 
-On Windows, installing `chroma-hnswlib` may require Microsoft C++ Build Tools with the C++ desktop development workload. A clean Windows installation test stopped at this dependency when those tools were unavailable.
+On Windows, installing `chroma-hnswlib` may require Microsoft C++ Build Tools with the C++ desktop development workload. In an isolated Python 3.12 environment, dependency installation and 59 tests passed after installing the tools. External API workflows were not tested.
 
 ```bash
 git clone https://github.com/Warriors999/saiborui.git

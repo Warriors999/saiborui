@@ -57,7 +57,7 @@
 - Python 3.12+
 - Git
 - DeepSeek API Key ([申请地址](https://platform.deepseek.com))
-- Windows 用户：若依赖安装提示编译 `chroma-hnswlib` 失败，可能需要安装 Microsoft C++ Build Tools（包含 C++ 桌面开发工具）。全新 Windows 环境测试曾在缺少该工具时中断。
+- Windows 用户：若依赖安装提示编译 `chroma-hnswlib` 失败，可能需要安装 Microsoft C++ Build Tools（包含 C++ 桌面开发工具）。在 Python 3.12 的隔离环境中，安装该工具后依赖安装和 59 项测试通过；外部 API 流程未在此测试中验证。
 
 ### 安装
 
