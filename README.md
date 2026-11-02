@@ -20,7 +20,7 @@
 
 短视频创作者的AI全栈工具箱。从客户Brief到成片分镜，全链路自动化。
 
-**v1.0.0** | 71次提交 | 60模块 · 16,485行Python | 568知识库chunks · 10品类 | 12条铁律 · 4人设 | 5种评测格式
+**v1.0.0** | 4种创作人设 | 5种脚本格式 | 选题、文案、审核、分镜与竞品研究
 
 ---
 ## 能做什么
@@ -33,9 +33,9 @@
                                               AI点映团(audit --audience)
 ```
 
-**文案引擎**：模仿D先生写作风格，支持4人设(折腾到吐/好设牛啊/朋克/超机懂)、10品类、12条铁律。5种格式：评测体(review)/榜单体(tierlist)/对比体(comparison)/HKRR(hkrr)/HAM-D(hamd)。支持`--brief`(Brief解析)、`--perspective`(观点注入)、`--format-ref`(甲方参考格式)，输出真正docx。
+**文案引擎**：参考 D 先生的写作风格，支持 4 种人设与 5 种格式：评测、榜单、对比、HKRR 和 HAM-D。支持通过 `--brief` 解析文本文件、通过 `--perspective` 注入观点，并可输出 docx。
 
-**分镜引擎**：北电教材标准，10列专业xlsx(AI视觉钩子)，运镜强制分配(固定≤40%)，灯位SVG俯视图。支持`--columns`(口头描述列)、`--preview`(秒级预览)。
+**分镜引擎**：生成 xlsx 分镜表和灯位示意图；`--columns` 可指定列名，`--preview` 可预览列映射，`--format-ref` 可参考现有表格格式。
 
 **审核引擎**：12项自动检查(口语化、电商味、流水账、禁用词、态度密度、节奏等)，不合格自动修复(`auto-fix`循环)。`--audience`模式启动AI点映团(模拟目标观众反馈)。
 
@@ -45,7 +45,7 @@
 
 **管线分析**(`analytics`)：全链路数据追踪+交叉矩阵，透视文案/分镜/审核各环节质量。
 
-**封面设计**(`cover`)：AI生成短视频封面图，支持多风格多尺寸。
+**封面设计**(`cover`)：生成封面设计提示词，支持多种风格。
 
 **引导向导**(`init`)：交互式项目初始化，自动配置知识库和工作环境。
 
@@ -85,8 +85,8 @@ python -m rag_system generate \
   --persona "折腾到吐" \
   --key-points "卖点1,卖点2,卖点3" \
   --duration 2.5 \
-  --format review \
-  --brief "客户Brief路径或文字"
+  --format review
+# 可选：--brief 接收本地 .txt 文件路径
 # 输出: output/scripts/产品名-人设.docx
 ```
 
@@ -102,9 +102,9 @@ python -m rag_system generate-storyboard \
 # 直接出分镜(跳过文案):
 python -m rag_system storyboard \
   --product "产品名" \
+  --category keyboard \
   --persona "折腾到吐" \
-  --key-points "卖点1,卖点2" \
-  --columns  # 生成口头描述列
+  --key-points "卖点1,卖点2"
 ```
 
 ### 审核
@@ -117,7 +117,7 @@ python -m rag_system audit "output/scripts/你的脚本.docx" --audience  # AI�
 ### 竞品学习
 
 ```bash
-python -m rag_system competitive search --category keyboard --top 3
+python -m rag_system competitive search --category keyboard --top-n 3
 python -m rag_system competitive report  # 生成周报
 ```
 
@@ -138,7 +138,7 @@ python -m rag_system outputs              # 输出文件管理
 ```
 赛博瑞/
 ├── rag_system/           # 核心引擎(60模块, ~16,485行)
-│   ├── generation/       # 文案+分镜+审核+封面
+│   ├── generation/       # 文案+分镜+审核+封面提示词
 │   ├── competitive/      # 竞品学习管线
 │   ├── topics/           # 选题规则、日报与周计划
 │   ├── retrieval/        # RAG语义检索
@@ -168,14 +168,14 @@ python -m rag_system outputs              # 输出文件管理
 |------|------|
 | `rag_system init` | 引导向导(交互式初始化) |
 | `rag_system generate` | 生成文案(Brief→docx) |
-| `rag_system generate-storyboard` | 定稿→分镜(9列xlsx) |
+| `rag_system generate-storyboard` | 定稿→分镜表(xlsx) |
 | `rag_system storyboard` | RAG分镜(从Brief直出) |
 | `rag_system audit` | 审核脚本/分镜(含AI点映团) |
 | `rag_system search` | 语义搜索知识库 |
 | `rag_system stats` | 知识库统计 |
 | `rag_system competitive` | 竞品搜索/分析/周报 |
 | `rag_system analytics` | 管线分析+交叉矩阵 |
-| `rag_system cover` | 封面设计 |
+| `rag_system cover` | 封面设计提示词 |
 | `rag_system dashboard` | 启动Web控制台 |
 | `rag_system topic-daily` | 选题日报 |
 | `rag_system topics` | 选题规则学习、生成与反馈 |
@@ -185,7 +185,7 @@ python -m rag_system outputs              # 输出文件管理
 
 ## 仓库整理与上传
 
-核心程序位于 `rag_system/`，测试位于 `tests/`，知识资料位于 `wiki/`，生成成果位于 `output/`。`data/`、`inputs/`、新增的 `output/` 成果以及 `.env` 配置默认保留在本地；已有的受 Git 跟踪文件不受忽略规则影响。
+核心程序位于 `rag_system/`，测试位于 `tests/`，知识资料位于 `wiki/`，生成成果位于 `output/`。`data/`、`inputs/`、新增的 `output/` 成果以及 `.env` 配置默认保留在本地；已有的受 Git 跟踪文件不受忽略规则影响。[知识库与公开范围](docs/knowledge-base.md)
 
 提交前应逐项检查变更：本机工具配置、客户资料、生成成果和知识库可能包含不适合共享的内容。`.gitignore` 只影响尚未跟踪的文件，已经跟踪的文件仍需单独处理。不要用批量添加直接上传整个工作区。
 

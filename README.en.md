@@ -69,6 +69,8 @@ Review a text or Word script with `python -m rag_system audit path/to/script.doc
 
 Run the local tests with `python tests/run_all.py`. This checks selected components, not every external service or end-to-end workflow.
 
+Read the [knowledge-base publication notes](docs/knowledge-base.en.md) before reusing or adding reference material.
+
 ## Contributing
 
 Issues and focused pull requests are welcome. Describe the use case, steps to reproduce, and the environment when reporting a problem. Please do not include API keys, private briefs, or client materials.
