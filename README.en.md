@@ -77,4 +77,4 @@ Read the [knowledge-base publication notes](docs/knowledge-base.en.md) before re
 
 Issues and focused pull requests are welcome. Describe the use case, steps to reproduce, and the environment when reporting a problem. Please do not include API keys, private briefs, or client materials.
 
-The existing project metadata identifies the license as MIT. Check the repository's license terms before reuse and independently verify rights to any third-party material.
+Project code is available under the [MIT License](LICENSE). Rights to third-party content and assets must be verified separately; see the [knowledge-base publication notes](docs/knowledge-base.en.md).

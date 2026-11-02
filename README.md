@@ -204,4 +204,4 @@ python -m rag_system outputs              # 输出文件管理
 
 ## License
 
-MIT
+项目代码采用 [MIT 许可证](LICENSE)。第三方资料和素材的权利须另行确认，详见[知识库与公开范围](docs/knowledge-base.md)。
