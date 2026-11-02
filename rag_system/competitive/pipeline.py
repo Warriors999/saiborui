@@ -215,6 +215,30 @@ def _process_one_video(video: VideoProfile, category: str, idx: int, total: int,
         (session_dir / "deep_analysis.txt").write_text(deep["deep_analysis"], encoding="utf-8")
         logger.info(f"  Deep analysis: {len(deep['deep_analysis'])} chars")
 
+    # ── Step 7.5: Paid traffic detection (non-blocking) ──
+    try:
+        from rag_system.competitive.paid_traffic_detector import (
+            detect_paid_traffic, fetch_bilibili_comments,
+        )
+        comments = fetch_bilibili_comments(vid, max_comments=30)
+        if comments and len(comments) >= 5:
+            paid_result = detect_paid_traffic(
+                video_content=transcript,
+                comments=comments,
+                video_title=video.title,
+            )
+            if paid_result:
+                result._paid_traffic_check = paid_result
+                if paid_result.is_suspected_paid:
+                    logger.warning(
+                        f"  ⚠ 疑似投流: {paid_result.related_comment_pct:.0%} 评论相关, "
+                        f"{paid_result.rationale[:80]}"
+                    )
+        else:
+            logger.debug(f"  Skipping paid check: insufficient comments")
+    except Exception as e:
+        logger.debug(f"  Paid traffic check skipped (error): {e}")
+
     # ── Step 8: Store + Index ──
     save_analysis(result)
     _index_to_knowledge_base(result, video)
@@ -233,18 +257,87 @@ def _process_one_video(video: VideoProfile, category: str, idx: int, total: int,
 
 # ── Pipeline entry ──
 
-def run_pipeline(category: str, top_n: int = 3, resume: bool = True) -> list[dict]:
-    """Full cloud competitive pipeline. Zero local model inference."""
+def run_pipeline(category: str, top_n: int = 2, resume: bool = True) -> list[dict]:
+    """Full cloud competitive pipeline. Zero local model inference.
+
+    Flow: Search(recency-filtered) → Quality gate → Paid-traffic pre-filter → Full analysis.
+    Only analyzes genuinely hot, organic videos from the past 2 weeks.
+    """
+    from rag_system.competitive.quality_gate import pre_filter_paid_traffic
+    from rag_system.competitive.paid_traffic_detector import fetch_bilibili_comments
+
     logger.info(f"=== 全云端竞品管线: {category} (Top {top_n}) ===")
 
     progress = _load_progress() if resume else {"completed_videos": [], "completed_categories": []}
 
-    logger.info(f"搜索B站 {category} 品类...")
-    videos = search_by_category(category, top_n=top_n)
-    logger.info(f"找到 {len(videos)} 个视频")
+    # ── Search with recency filter ──
+    logger.info(f"搜索B站 {category} 品类（近14天热门）...")
+    videos = search_by_category(category, top_n=top_n * 3, max_age_days=14)
+    logger.info(f"搜索到 {len(videos)} 个近期视频")
 
     if not videos:
+        _mark_category_done(progress, category)
         return []
+
+    # ── Quality gate: engagement thresholds ──
+    from rag_system.competitive.quality_gate import check_quality
+    qualified = []
+    skipped = []
+    for v in videos:
+        meta = {
+            "views": v.views, "likes": v.likes,
+            "comments": v.comments, "shares": v.shares,
+            "publish_date": v.publish_date,
+        }
+        passed, reason = check_quality(meta, "bilibili")
+        if passed:
+            qualified.append(v)
+        else:
+            skipped.append(f"{v.title[:30]} ({reason})")
+    if skipped:
+        logger.info(f"  B站质量过滤: 跳过 {len(skipped)} 个低质视频")
+        for s in skipped[:5]:
+            logger.info(f"     x {s}")
+    videos = qualified
+
+    if not videos:
+        logger.warning(f"B站 {category}: 无视频通过质量门檻")
+        _mark_category_done(progress, category)
+        return []
+
+    # ── Paid traffic pre-filter on top candidates ──
+    # Convert VideoProfile to dicts for the pre-filter
+    candidates = []
+    for v in videos:
+        candidates.append({
+            "video_id": v.video_id,
+            "title": v.title,
+            "desc": v.description,
+            "views": v.views,
+            "likes": v.likes,
+            "comments": v.comments,
+            "publish_date": v.publish_date,
+            "creator_name": v.creator_name,
+        })
+
+    CANDIDATE_POOL = min(5, len(candidates))
+    clean = pre_filter_paid_traffic(
+        candidates=candidates,
+        fetch_comments_fn=lambda meta: fetch_bilibili_comments(str(meta.get("video_id", "")), max_comments=30),
+        source="bilibili",
+        max_candidates=CANDIDATE_POOL,
+    )
+
+    # Map back to VideoProfile objects that survived the filter
+    clean_ids = {str(c.get("video_id", "")) for c in clean}
+    videos = [v for v in videos if v.video_id in clean_ids][:top_n]
+
+    if not videos:
+        logger.warning(f"B站 {category}: 所有候选视频均疑似投流或被过滤，跳过此品类")
+        _mark_category_done(progress, category)
+        return []
+
+    logger.info(f"最终选取 {len(videos)} 个B站视频分析 {category}")
 
     results = []
     failures = []
@@ -292,8 +385,8 @@ def run_pipeline_light(category: str, top_n: int = 3, resume: bool = True) -> li
 
     progress = _load_progress() if resume else {"completed_videos": [], "completed_categories": []}
 
-    logger.info(f"搜索B站 {category} 品类...")
-    videos = search_by_category(category, top_n=top_n)
+    logger.info(f"搜索B站 {category} 品类（近14天热门）...")
+    videos = search_by_category(category, top_n=top_n, max_age_days=14)
     logger.info(f"找到 {len(videos)} 个视频")
 
     if not videos:

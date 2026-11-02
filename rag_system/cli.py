@@ -1320,55 +1320,27 @@ def stats():
 # daily-topics — Fetch trending tech topics for content pipeline
 # ============================================================
 
-@cli.command("daily-topics")
+@cli.command("daily-topics", deprecated=True)
 @click.option("--json", "output_json", is_flag=True, help="JSON output format")
 @click.option("--top", "-t", default=15, type=int, help="Show top N topics (default: 15)")
 def daily_topics_cmd(output_json, top):
-    """Fetch trending tech topics from Chinese social platforms.
+    """[DEPRECATED] Use 'topic-daily' instead.
 
-    Pulls real-time hot searches from Weibo, Zhihu, Baidu, and Douyin,
-    filters for digital/tech relevance, scores by content potential,
-    and generates a structured report + updates the topic seed file.
-
-    The seed file is used by the meme engine for script opening hooks.
-
-    Examples:
-        python -m rag_system daily-topics
-        python -m rag_system daily-topics --json
-        python -m rag_system daily-topics --top 20
+    This command will be removed in a future version.
+    Delegates to topic-daily with equivalent parameters.
     """
-    from rag_system.generation.daily_topics import run_daily_pipeline
-
-    click.echo("Fetching trending topics from 5 platforms...")
-    result = run_daily_pipeline()
-
-    if output_json:
-        import json
-        topics_out = []
-        for t in result["topics"][:top]:
-            topics_out.append({
-                "title": t.get("title", ""),
-                "platform": t.get("_platform", ""),
-                "rank": t.get("rank", 0),
-                "score": t.get("_score", 0),
-                "format": _suggest_format(t.get("title", "")),
-            })
-        click.echo(json.dumps({"count": result["count"], "topics": topics_out}, ensure_ascii=False, indent=2))
-    else:
-        click.echo(f"\n{'='*50}")
-        click.echo(f"  数码圈每日热点选题 — {datetime.now().strftime('%Y-%m-%d')}")
-        click.echo(f"  {result['count']} 条数码相关话题")
-        click.echo(f"{'='*50}")
-        from datetime import datetime; from rag_system.generation.daily_topics import _suggest_format
-        for i, t in enumerate(result["topics"][:top], 1):
-            score = t.get("_score", 0)
-            title = t.get("title", "")[:50]
-            platform = t.get("_platform", "")
-            fmt = _suggest_format(title)
-            click.echo(f"  {i:2}. [{score:.0f}分] [{platform}] {title}")
-            click.echo(f"      → {fmt}")
-        click.echo(f"\n  报告: {result['report_path']}")
-        click.echo(f"  种子: {result['seed_path']}")
+    import warnings
+    warnings.warn("'daily-topics' is deprecated, use 'topic-daily'", DeprecationWarning)
+    click.echo(click.style(
+        "⚠ 'daily-topics' 已废弃，请使用 'topic-daily' 代替。\n"
+        "  python -m rag_system topic-daily --top-n " + str(top),
+        fg="yellow",
+    ))
+    # Delegate directly to topic-daily implementation
+    from rag_system.topics.topic_daily import run_topic_daily
+    click.echo(f"Generating daily topic brief... (focus=tech)")
+    text = run_topic_daily(persona="折腾到吐", category_focus="tech", top_n=top)
+    click.echo(text)
 
 
 # ============================================================
@@ -1902,11 +1874,10 @@ def topic_daily(persona, focus, top_n, output):
         python -m rag_system topic-daily
         python -m rag_system topic-daily --persona "朋克" --focus ai -n 10
     """
-    from rag_system.generation.topic_daily import run_topic_daily, generate_daily_brief
+    from rag_system.topics.topic_daily import run_topic_daily
 
     click.echo(f"Generating daily topic brief... (persona={persona}, focus={focus})")
-    brief = generate_daily_brief(persona=persona, category_focus=focus, top_n=top_n)
-    text = run_topic_daily(persona=persona, category_focus=focus, top_n=top_n, output=output)
+    text, brief = run_topic_daily(persona=persona, category_focus=focus, top_n=top_n, output=output)
     click.echo(text)
 
     # Quality gate: score card for top topics

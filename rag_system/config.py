@@ -19,6 +19,10 @@ DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 
+# ---- Bing Web Search (free tier: 1000 req/month) ----
+BING_SEARCH_API_KEY = os.getenv("BING_SEARCH_API_KEY", "")
+BING_SEARCH_MKT = os.getenv("BING_SEARCH_MKT", "zh-CN")
+
 # ---- Image Generation (PinAI / gpt-image-2) ----
 IMAGE_GEN_API_KEY = os.getenv("IMAGE_GEN_API_KEY", "")
 IMAGE_GEN_BASE_URL = os.getenv("IMAGE_GEN_BASE_URL", "https://us.pinai-cn.com/v1")

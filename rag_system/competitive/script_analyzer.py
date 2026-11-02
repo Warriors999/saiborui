@@ -123,12 +123,16 @@ def _find_patterns(transcript: str, category: str) -> list[str]:
 
 def deep_analyze(transcript: str, category: str, video_title: str, hook_type: str,
                  visual: dict = None, visual_frames_analysis: str = "",
-                 audio: dict = None) -> dict:
+                 audio: dict = None, platform: str = "bilibili") -> dict:
     """Four-dimension deep analysis: script + visual composition + editing + VFX.
 
     Accepts data from all pipeline stages and produces an integrated learning report
     covering what a content creator needs: copywriting, cinematography, editing, and
     post-production techniques.
+
+    Args:
+        platform: "bilibili" → 结构·论证·知识框架 focus
+                  "douyin" → 钩子·节奏·转化技巧 focus
     """
     if not DEEPSEEK_API_KEY:
         return {"error": "DeepSeek API key not configured"}
@@ -172,10 +176,19 @@ def deep_analyze(transcript: str, category: str, video_title: str, hook_type: st
 - 平均音量: {audio.get('avg_volume_db', 'N/A')}dB
 """
 
-    prompt = f"""你是顶级短视频战略分析师，专门从"爆款归因"角度拆解竞品。你的核心任务不是描述"这个视频做了什么"，而是回答"它为什么能爆？解决了用户什么需求？我选题时能学到什么？"
+    # Platform-specific role and focus
+    if platform == "douyin":
+        platform_role = "你是抖音短视频战略分析师，专精短视频流量转化。抖音不同于B站长视频——用户注意力极短（<3秒流失），口播必须更快、钩子必须更锋利、情绪节奏必须更密集。你的核心任务是拆解这个视频为什么能在3秒内留住人、在30秒内完成转化——分析重点：前3秒钩子设计/情绪曲线布局/转化话术时机/互动埋点/完播率策略。"
+        platform_label = "抖音"
+    else:
+        platform_role = "你是顶级短视频战略分析师，专门从爆款归因角度拆解竞品。你的核心任务不是描述这个视频做了什么，而是回答它为什么能爆？解决了用户什么需求？我选题时能学到什么？"
+        platform_label = "B站"
+
+    prompt = f"""{platform_role}
 
 视频: {video_title}
 品类: {category}
+平台: {platform_label}
 钩子类型: {hook_type}
 
 【口播脚本】

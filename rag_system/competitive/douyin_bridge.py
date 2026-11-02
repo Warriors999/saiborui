@@ -114,6 +114,7 @@ def analyze_douyin_video(video: dict, category: str) -> dict | None:
         transcript=transcript, category=category,
         video_title=title, hook_type="抖音短视频",
         visual=visual, visual_frames_analysis=frame_analysis,
+        platform="douyin",
     )
     if deep.get("deep_analysis"):
         (session_dir / "deep_analysis.txt").write_text(deep["deep_analysis"], encoding="utf-8")

@@ -1,5 +1,13 @@
 # 赛博瑞 · 数据驱动内容工厂
 
+**中文** | [English](README.en.md)
+
+赛博瑞（Saiborui）是面向短视频创作者的 AI 内容工作流：从产品 Brief 和选题研究出发，结合历史内容检索，辅助完成评测文案、质量审核与拍摄分镜。项目主要面向中文科技数码内容，也可作为研究 RAG、内容生产自动化与创作者工具的实践参考。
+
+**关键词：** AI 内容创作、短视频脚本生成、科技评测、分镜脚本、竞品分析、选题研究、检索增强生成（RAG）、DeepSeek、Python。
+
+> 项目仍在迭代。生成质量取决于输入资料、知识库和模型；事实、版权及最终内容需要创作者审核。部分能力需要额外 API、依赖或联网。
+
 > 取其精华，去其糟粕。每一步都基于数据做决策，不是凭感觉。
 
 短视频创作者的AI全栈工具箱。从客户Brief到成片分镜，全链路自动化。
@@ -57,7 +65,6 @@ pip install -r requirements.txt
 ```bash
 # 将你的历史脚本(docx/xlsx)放入 2025text/ 目录
 python -m rag_system init     # 引导向导(推荐首次使用)
-python -m rag_system ingest   # 若已有数据可跳过init直接接入
 python -m rag_system stats    # 查看索引状态
 ```
 
@@ -96,7 +103,7 @@ python -m rag_system storyboard \
 
 ```bash
 python -m rag_system audit "output/scripts/你的脚本.docx"
-python -m rag_system audit "output/storyboards/分镜.xlsx" --audience  # AI点映团
+python -m rag_system audit "output/scripts/你的脚本.docx" --audience  # AI点映团
 ```
 
 ### 竞品学习
@@ -125,11 +132,13 @@ python -m rag_system outputs              # 输出文件管理
 ├── rag_system/           # 核心引擎(60模块, ~16,485行)
 │   ├── generation/       # 文案+分镜+审核+封面
 │   ├── competitive/      # 竞品学习管线
+│   ├── topics/           # 选题规则、日报与周计划
 │   ├── retrieval/        # RAG语义检索
 │   ├── embedding/        # BGE向量嵌入
 │   ├── storage/          # ChromaDB向量库
 │   ├── chunking/         # 文档分块
 │   └── ingest/           # 文档解析
+├── scripts/              # 辅助脚本与历史脚本归档
 ├── tests/                # 自动化测试(5文件, 59项冒烟测试)
 ├── wiki/                 # Karpathy Wiki知识页(568 chunks, 10品类)
 ├── output/               # 输出目录
@@ -161,7 +170,16 @@ python -m rag_system outputs              # 输出文件管理
 | `rag_system cover` | 封面设计 |
 | `rag_system dashboard` | 启动Web控制台 |
 | `rag_system topic-daily` | 选题日报 |
+| `rag_system topics` | 选题规则学习、生成与反馈 |
 | `rag_system outputs` | 输出文件管理 |
+
+实际使用时请以 `python -m rag_system --help` 和各子命令的 `--help` 为准。
+
+## 仓库整理与上传
+
+核心程序位于 `rag_system/`，测试位于 `tests/`，知识资料位于 `wiki/`，生成成果位于 `output/`。`data/`、`inputs/`、新增的 `output/` 成果以及 `.env` 配置默认保留在本地；已有的受 Git 跟踪文件不受忽略规则影响。
+
+提交前应逐项检查变更：本机工具配置、客户资料、生成成果和知识库可能包含不适合共享的内容。`.gitignore` 只影响尚未跟踪的文件，已经跟踪的文件仍需单独处理。不要用批量添加直接上传整个工作区。
 
 ---
 

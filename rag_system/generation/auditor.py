@@ -14,81 +14,17 @@ import re
 from dataclasses import dataclass, field
 from collections import Counter
 
-
-# ============================================================
-# Constants
-# ============================================================
-
-FORBIDDEN_WORDS = [
-    "非常", "出色", "为用户带来", "值得拥有", "不容错过",
-    "极致体验", "尽享", "尊享", "非凡", "无与伦比",
-    "改变生活", "颠覆性", "前所未有的体验",
-]
-
-# 拉踩 / competitor bashing phrases (Douyin prohibited)
-LACAI_PATTERNS = [
-    r"(?:被|让|给).{0,6}(?:吊着打|吊打|碾压|完爆|秒杀|按在地上)",
-    r"(?:卡成|卡成狗|卡出|卡到).{0,4}(?:PPT|幻灯片|翔)",
-    r"(?:垃圾|废物|辣鸡|乐色)",
-    r"(?:就是个?|简直是?|纯属).{0,6}(?:弟弟|废物|笑话|智商税)",
-    r"(?:不如|比不上|打不过|干不过).{0,6}(?:一根毛|零头|脚趾)",
-    r"(?:送|给).{0,4}(?:都不要|都没人要)",
-    r"(?:谁买谁|买就).{0,4}(?:后悔|傻|亏|上当)",
-]
-
-# 参数流水账检测——电商详情页句式
-SPEC_PARADE_PATTERNS = [
-    r"它采用了.{1,20}(?:处理器|显卡|屏幕|电池|传感器|轴体)",
-    r"它配备了.{1,20}(?:处理器|显卡|屏幕|电池|传感器|轴体)",
-    r"它拥有.{1,20}(?:毫安|英寸|赫兹|核心|线程)",
-    r"搭载了.{1,20}(?:处理器|显卡|屏幕|传感器|轴体)",
-    r"它用的是.{1,20}(?:处理器|显卡|屏幕|传感器|轴体)",
-    r"(?:CPU|GPU|处理器|显卡)(?:是|为).{1,30}(?:，|。)",  # Bare spec listing
-]
-
-# E-commerce / press-release smell words
-ECOMMERCE_SMELL = [
-    "全新升级", "震撼上市", "重磅来袭", "匠心打造", "精心设计",
-    "专为...而生", "重新定义", "颠覆想象", "超越期待", "引领",
-    "赋能", "极致", "沉浸式", "全方位", "一站式",
-]
-
-# Positive spoken markers: genuine conversational Chinese, not fillers
-SPOKEN_MARKERS = [
-    "说白了", "简单来说", "这么说吧",
-    "你别说", "我跟你说",
-    "血赚", "香疯了", "顶", "到位", "靠谱",
-]
-
-# Negative markers: fake-casual filler that signals LOW quality
-# These are the "表演式口语" that the competitive wiki marks as 应避免的低级套路
-FAKE_CASUAL_MARKERS = [
-    "有一说一", "不吹不黑", "说实话", "懂的都懂",
-    "兄弟们", "彦祖们", "大伙儿",
-    "你品", "你细品", "这就很离谱", "啧啧",
-    "闭眼入", "掀桌", "简直了", "包不后悔",
-    "我滴妈", "好家伙", "你敢信", "没看错吧",
-    "真就绝了", "没谁了", "你自己品",
-    "稳得一批", "真的顶", "很顶", "太顶了",
-]
-
-# Sentence-final spoken particles
-SENTENCE_PARTICLES = ["啊", "吧", "呢", "嘛", "哦", "哈", "咯", "呗", "喽"]
-
-ATTITUDE_PATTERNS = {
-    "价格判断": [r"这价位", r"这价格", r"性价比", r"值不值", r"亏不亏",
-              r"\d+块(?:钱)?(?:就|才|能)", r"(?:便宜|贵)了", r"(?:划算|不划算)"],
-    "对比判断": [r"比.{1,8}(?:强|弱|好|差|香|坑|贵|便宜|顶|拉胯)",
-              r"(?:不如|完爆|吊打|碾压|秒杀).{1,8}",
-              r"同(?:价|级|档|规格).{1,6}(?:比|更|最)"],
-    "推荐判断": [r"闭眼入", r"(?:赶紧|快点|马上|现在).{1,4}(?:冲|买|入)",
-              r"别(?:碰|买|入|考虑)", r"避坑", r"(?:推荐|建议).{1,4}(?:买|入|冲)"],
-    "体验判断": [r"(?:我个人|我实测|我用了|我用过|坐上去|一上手)",
-              r"(?:没毛病|有问题|不赖|拉胯|顶|到位|靠谱|离谱)",
-              r"(?:好(?:在|用|使|拿|按|听|看)|差(?:在|劲))"],
-    "确定性表达": [r"这就很", r"没谁了", r"真就", r"简直了", r"说白了就一句话"],
-    "分级判断": [r"T\d", r"毕业", r"退烧", r"一步到位", r"天花板", r"标杆"],
-}
+# ── Word lists — single source of truth in glossary.py ──
+from rag_system.generation.glossary import (
+    FORBIDDEN_WORDS,
+    ECOMMERCE_SMELL,
+    FAKE_CASUAL_MARKERS,
+    SPOKEN_MARKERS,
+    SENTENCE_PARTICLES,
+    LACAI_PATTERNS,
+    SPEC_PARADE_PATTERNS,
+    ATTITUDE_PATTERNS,
+)
 
 # Douyin short video speaking rate: ~290 chars/min ≈ 4.83 chars/sec
 # (Faster than general Chinese speech — Douyin pace is 280-300 chars/min)

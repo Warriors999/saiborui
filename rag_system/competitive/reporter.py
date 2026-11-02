@@ -13,7 +13,9 @@ from docx.oxml import parse_xml
 from docx.oxml.ns import nsdecls, qn
 
 from rag_system.competitive.models import WeeklyReport
-from rag_system.competitive.store import get_analyzed_videos, save_report
+from rag_system.competitive.store import (
+    get_analyzed_videos, get_analyzed_douyin_videos, save_report,
+)
 
 REPORTS_DOCX_DIR = Path("output/competitive/reports")
 
@@ -32,14 +34,27 @@ TABLE_HEADER_BG = "1E40AF"
 TABLE_ROW_ALT = "F8FAFC"
 
 
-def generate_docx_report(videos: list[dict] = None, period: str = "weekly") -> Path:
-    """Generate a professionally formatted .docx competitive analysis report."""
+def generate_docx_report(videos: list[dict] = None, period: str = "weekly",
+                         source: str = "bilibili") -> Path:
+    """Generate a professionally formatted .docx competitive analysis report.
+
+    Args:
+        videos: List of analyzed video dicts. If None, loads from store.
+        period: "weekly" or "monthly"
+        source: "bilibili" → 结构·论证·知识框架 report
+                "douyin"  → 钩子·节奏·转化技巧 report
+    """
     from docx import Document
     from docx.shared import Pt, Inches, Cm, RGBColor, Emu
     from docx.enum.text import WD_ALIGN_PARAGRAPH
     from docx.enum.table import WD_TABLE_ALIGNMENT
+
+    is_douyin = source == "douyin"
+    platform_label = "抖音" if is_douyin else "B站"
+    platform_subtitle = "钩子·节奏·转化技巧" if is_douyin else "结构·论证·知识框架"
+
     if videos is None:
-        videos = get_analyzed_videos()
+        videos = get_analyzed_douyin_videos() if is_douyin else get_analyzed_videos()
 
     doc = Document()
 
@@ -146,7 +161,7 @@ def generate_docx_report(videos: list[dict] = None, period: str = "weekly") -> P
 
     title = doc.add_paragraph()
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = title.add_run('竞品学习报告')
+    run = title.add_run(f'竞品学习报告 · {platform_label}')
     run.font.size = Pt(28)
     run.font.bold = True
     run.font.color.rgb = RGBColor(30, 64, 175)
@@ -154,7 +169,7 @@ def generate_docx_report(videos: list[dict] = None, period: str = "weekly") -> P
 
     subtitle = doc.add_paragraph()
     subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = subtitle.add_run(f'Competitive Learning Report · {period.upper()}')
+    run = subtitle.add_run(f'{platform_subtitle} · {period.upper()}')
     run.font.size = Pt(11)
     run.font.color.rgb = RGBColor(100, 116, 139)
 
@@ -171,7 +186,7 @@ def generate_docx_report(videos: list[dict] = None, period: str = "weekly") -> P
     # OVERVIEW
     # ═══════════════════════════════════════════
     doc.add_heading('概览', level=1)
-    doc.add_paragraph(f'本报告分析了 {len(videos)} 个竞品视频，覆盖文案脚本、视觉节奏、剪辑手法。')
+    doc.add_paragraph(f'本报告分析了 {len(videos)} 个{platform_label}竞品视频，覆盖文案脚本、视觉节奏、剪辑手法。')
 
     # Video list table
     if videos:
@@ -253,11 +268,39 @@ def generate_docx_report(videos: list[dict] = None, period: str = "weekly") -> P
     # RECOMMENDATIONS
     # ═══════════════════════════════════════════
     doc.add_heading('总结与建议', level=1)
-    report = generate_weekly_report()
+    report = generate_weekly_report(source=source)
     for rec in report.recommendations:
         p = doc.add_paragraph()
         run = p.add_run(f'▸ {rec}')
         run.font.size = Pt(10)
+
+    # ═══════════════════════════════════════════
+    # PAID TRAFFIC DETECTION
+    # ═══════════════════════════════════════════
+    paid_videos = [v for v in videos if (
+        v.get("paid_traffic_check", {}) or {}
+    ).get("is_suspected_paid")]
+
+    if paid_videos:
+        doc.add_heading('投流检测结果', level=1)
+        doc.add_paragraph(
+            f'以下 {len(paid_videos)} 个视频评论与内容关联度低，疑似付费推广。'
+            f'其选题真实吸引力存疑，建议降低参考权重。'
+        )
+        for pv in paid_videos:
+            check = pv.get("paid_traffic_check", {})
+            p = doc.add_paragraph()
+            run = p.add_run(
+                f'⚠ {pv.get("title", "")[:60]}\n'
+                f'   相关评论: {check.get("related_comment_pct", 0):.0%} | '
+                f'评分: {check.get("similarity_score", 0):.2f} | '
+                f'{check.get("rationale", "")}'
+            )
+            run.font.size = Pt(9)
+            run.font.color.rgb = RGBColor(180, 83, 9)
+    else:
+        doc.add_heading('投流检测结果', level=1)
+        doc.add_paragraph('本周所有视频评论-内容一致性正常，未发现疑似投流数据。')
 
     # ═══════════════════════════════════════════
     # FOOTER
@@ -272,7 +315,8 @@ def generate_docx_report(videos: list[dict] = None, period: str = "weekly") -> P
     # Save
     REPORTS_DOCX_DIR.mkdir(parents=True, exist_ok=True)
     date_str = datetime.now().strftime("%Y%m%d")
-    path = REPORTS_DOCX_DIR / f"竞品学习报告_{period}_{date_str}.docx"
+    filename = f"{date_str}_竞品_{platform_label}.docx"
+    path = REPORTS_DOCX_DIR / filename
     doc.save(str(path))
     return path
 
@@ -322,11 +366,15 @@ def _parse_deep_sections(deep_text: str) -> list[tuple[str, str]]:
     return sections if sections else [("完整分析", deep_text)]
 
 
-def generate_weekly_report() -> WeeklyReport:
-    """Generate a weekly summary report."""
+def generate_weekly_report(source: str = "bilibili") -> WeeklyReport:
+    """Generate a weekly summary report.
+
+    Args:
+        source: "bilibili" or "douyin" — which data set to aggregate from.
+    """
     now = datetime.now()
     week_ago = (now - timedelta(days=7)).isoformat()
-    all_videos = get_analyzed_videos()
+    all_videos = get_analyzed_douyin_videos() if source == "douyin" else get_analyzed_videos()
     recent = [v for v in all_videos if v.get("analyzed_at", "") >= week_ago]
 
     report = WeeklyReport(

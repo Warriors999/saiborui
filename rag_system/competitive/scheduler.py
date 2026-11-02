@@ -1,11 +1,14 @@
 """Sequential scheduler for multi-category competitive analysis.
 
 Runs 8 categories one-by-one with progress tracking and resume support.
-Generates a weekly competitive report (.docx) when all categories complete.
+Generates weekly competitive reports (.docx) for B站 and Douyin independently.
 
 Usage:
-    python -m rag_system.competitive.scheduler          # run all categories
-    python -m rag_system.competitive.scheduler --report  # just generate report
+    python -m rag_system.competitive.scheduler                     # run B站 (default)
+    python -m rag_system.competitive.scheduler --source bilibili   # B站 only
+    python -m rag_system.competitive.scheduler --source douyin     # Douyin only
+    python -m rag_system.competitive.scheduler --source both       # both platforms
+    python -m rag_system.competitive.scheduler --report            # just generate report
 """
 
 import sys
@@ -16,14 +19,15 @@ from pathlib import Path
 from rag_system.competitive.pipeline import (
     run_pipeline, _load_progress, _save_progress, SESSIONS_DIR,
 )
-from rag_system.utils import logger
+from rag_system.competitive.quality_gate import QUALITY_GATES, check_quality as check_quality_fn
+from rag_system.utils import logger, setup_logging
 
 ALL_CATEGORIES = [
     "keyboard", "mouse", "monitor", "laptop",
     "phone", "gpu", "headphone", "desk_chair",
 ]
 
-TOP_N = 3  # videos per category
+TOP_N = 2  # videos per category (reduced from 3: quality > quantity)
 
 
 def run_all_categories(resume: bool = True, generate_report: bool = True) -> dict:
@@ -117,31 +121,111 @@ def run_all_categories(resume: bool = True, generate_report: bool = True) -> dic
     }
 
 
-def _generate_report() -> Path | None:
+def _generate_report(source: str = "bilibili") -> Path | None:
     """Generate a weekly competitive learning report in .docx format."""
     from rag_system.competitive.reporter import generate_docx_report
 
-    logger.info("生成竞品学习周报...")
-    path = generate_docx_report(period="weekly")
-    logger.info(f"周报已保存: {path}")
+    label = "抖音" if source == "douyin" else "B站"
+    logger.info(f"生成{label}竞品学习周报...")
+    path = generate_docx_report(period="weekly", source=source)
+    logger.info(f"{label}周报已保存: {path}")
     return path
+
+
+def run_douyin_all_categories(resume: bool = True, generate_report: bool = True) -> dict:
+    """Run Douyin pipeline for all 8 categories. Mirrors run_all_categories()."""
+    from rag_system.competitive.douyin_search_pipeline import (
+        run_douyin_pipeline, run_douyin_all_categories as _douyin_all,
+    )
+    return _douyin_all(resume=resume, generate_report=generate_report)
+
+
+def run_weekly_competitive_analysis() -> dict:
+    """Run both B站 and Douyin pipelines, produce two independent reports.
+
+    Designed to be called by the weekly cron job.
+    """
+    results = {"bilibili": None, "douyin": None}
+
+    # ── B站 pipeline ──
+    logger.info("\n" + "█" * 60)
+    logger.info("  WEEKLY COMPETITIVE ANALYSIS — B站 phase")
+    logger.info("█" * 60)
+    try:
+        results["bilibili"] = run_all_categories(resume=True, generate_report=True)
+    except Exception as e:
+        logger.error(f"B站 pipeline failed: {e}")
+        results["bilibili"] = {"error": str(e)}
+
+    # ── Douyin pipeline ──
+    logger.info("\n" + "█" * 60)
+    logger.info("  WEEKLY COMPETITIVE ANALYSIS — Douyin phase")
+    logger.info("█" * 60)
+    try:
+        results["douyin"] = run_douyin_all_categories(resume=True, generate_report=True)
+    except Exception as e:
+        logger.error(f"Douyin pipeline failed: {e}")
+        results["douyin"] = {"error": str(e)}
+
+    # ── Combined summary ──
+    b = results["bilibili"] or {}
+    d = results["douyin"] or {}
+    logger.info("\n" + "=" * 60)
+    logger.info("  WEEKLY COMPETITIVE ANALYSIS COMPLETE")
+    logger.info(f"  B站:  {b.get('total_videos_success', 0)} videos | {b.get('report_path', 'N/A')}")
+    logger.info(f"  抖音: {d.get('total_videos_success', 0)} videos | {d.get('report_path', 'N/A')}")
+    logger.info("=" * 60)
+
+    return results
 
 
 # ── CLI entry ──
 
 if __name__ == "__main__":
+    setup_logging()
     resume = "--no-resume" not in sys.argv
     report_only = "--report" in sys.argv
 
-    if report_only:
-        path = _generate_report()
-        if path:
-            print(f"Report: {path}")
-    else:
-        summary = run_all_categories(resume=resume, generate_report=True)
+    # Parse --source flag
+    source = "bilibili"
+    for i, arg in enumerate(sys.argv):
+        if arg == "--source" and i + 1 < len(sys.argv):
+            source = sys.argv[i + 1]
+            break
 
+    if report_only:
+        if source == "both":
+            path_b = _generate_report("bilibili")
+            path_d = _generate_report("douyin")
+            print(f"B站 Report: {path_b}")
+            print(f"抖音 Report: {path_d}")
+        else:
+            path = _generate_report(source)
+            print(f"Report: {path}")
+    elif source == "both":
+        summary = run_weekly_competitive_analysis()
+        b = summary["bilibili"] or {}
+        d = summary["douyin"] or {}
         print("\n" + "=" * 60)
-        print("  管线完成")
+        print("  双管线完成")
+        print(f"  B站:  {b.get('total_videos_success', 0)} videos")
+        print(f"  抖音: {d.get('total_videos_success', 0)} videos")
+        print("=" * 60)
+    elif source == "douyin":
+        summary = run_douyin_all_categories(resume=resume, generate_report=True)
+        print("\n" + "=" * 60)
+        print("  抖音竞品管线完成")
+        print(f"  成功: {summary['total_videos_success']}")
+        print(f"  耗时: {summary['duration_minutes']} 分钟")
+        if summary["report_path"]:
+            print(f"  周报: {summary['report_path']}")
+        if summary["failed_categories"]:
+            print(f"  失败品类: {', '.join(summary['failed_categories'])}")
+        print("=" * 60)
+    else:  # bilibili (default)
+        summary = run_all_categories(resume=resume, generate_report=True)
+        print("\n" + "=" * 60)
+        print("  B站竞品管线完成")
         print(f"  成功: {summary['total_videos_success']}/{summary['total_videos_attempted']}")
         print(f"  耗时: {summary['duration_minutes']} 分钟")
         if summary["report_path"]:

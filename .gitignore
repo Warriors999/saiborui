@@ -1,5 +1,7 @@
 # Environment
 .env
+.env.*
+!.env.example
 
 # Data directories (ChromaDB + cache = large, regeneratable)
 data/
@@ -12,6 +14,8 @@ dist/
 build/
 
 # Output archives and temp
+# New generated outputs remain local unless deliberately added.
+output/
 output/temp/
 output/archive/
 output/*/archive/
@@ -56,6 +60,13 @@ node_modules/
 # Claude Code local settings
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
+
+# Local assistant and workspace state
+.agents/
+.claude/skills/
+.obsidian/
+.planning/
+GitHub上传准备清单.md
 
 # OS
 .DS_Store

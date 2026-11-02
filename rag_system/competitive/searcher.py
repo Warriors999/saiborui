@@ -122,7 +122,7 @@ def search_bilibili(query: str, top_n: int = 10) -> list[VideoProfile]:
     if not buvid3 or (time.time() - _buvid3_cache.get("fetched_at", 0)) > 43200:
         buvid3 = _get_buvid3()
 
-    params = {"keyword": query, "search_type": "video", "order": "click"}
+    params = {"keyword": query, "search_type": "video", "order": "pubdate"}
     params = _wbi_sign(params, buvid3)
 
     url = f"{WBI_SEARCH_URL}?{urllib.parse.urlencode(params, quote_via=urllib.parse.quote)}"
@@ -157,7 +157,11 @@ def search_bilibili(query: str, top_n: int = 10) -> list[VideoProfile]:
                 creator_id=str(item.get("mid", "")),
                 duration_sec=_parse_duration(item.get("duration", "0:00")),
                 views=item.get("play", 0),
+                # NOTE: B站 search API does NOT return like count directly.
+                # `favorites` (收藏) is the closest engagement proxy available in search results.
                 likes=item.get("favorites", 0),
+                # NOTE: `video_review` is danmaku (弹幕) count, NOT comment count.
+                # Comment count requires a separate API call per video.
                 comments=item.get("video_review", 0),
                 publish_date=_format_date(item.get("pubdate", 0)),
                 description=_clean_html(item.get("description", "")),
@@ -171,8 +175,16 @@ def search_bilibili(query: str, top_n: int = 10) -> list[VideoProfile]:
     return results
 
 
-def search_by_category(category: str, top_n: int = 5, source: str = "bilibili") -> list[VideoProfile]:
-    """Search top videos for a product category."""
+def search_by_category(category: str, top_n: int = 5, source: str = "bilibili",
+                      max_age_days: int = 14) -> list[VideoProfile]:
+    """Search top videos for a product category. Filters to recent uploads only.
+
+    Args:
+        category: Product category key
+        top_n: Number of videos to return
+        source: Platform to search
+        max_age_days: Only return videos published within this many days (0=no filter)
+    """
     queries = CATEGORY_SEARCH_QUERIES.get(category, [f"{category} 评测"])
     all_results = []
     seen_ids = set()
@@ -180,13 +192,37 @@ def search_by_category(category: str, top_n: int = 5, source: str = "bilibili") 
     for query in queries[:2]:
         if source != "bilibili":
             continue
-        results = search_bilibili(query, top_n=top_n * 2)
+        # Fetch enough for quality gate to filter (newest-first, need buffer for gate rejects)
+        fetch_n = top_n * 3
+        results = search_bilibili(query, top_n=fetch_n)
         for r in results:
             if r.video_id not in seen_ids:
                 r.category = category
                 all_results.append(r)
                 seen_ids.add(r.video_id)
         time.sleep(1)
+
+    # ── Recency filter: only keep videos from recent days ──
+    if max_age_days > 0 and all_results:
+        from datetime import datetime, timedelta
+        cutoff = datetime.now() - timedelta(days=max_age_days)
+        recent = []
+        old_count = 0
+        for r in all_results:
+            if not r.publish_date:
+                recent.append(r)  # Unknown date, let it through
+            else:
+                try:
+                    pub_date = datetime.strptime(r.publish_date, "%Y-%m-%d")
+                    if pub_date >= cutoff:
+                        recent.append(r)
+                    else:
+                        old_count += 1
+                except ValueError:
+                    recent.append(r)  # Can't parse, let through
+        if old_count > 0:
+            logger.info(f"  B站搜索: 过滤掉 {old_count} 个超过{max_age_days}天的旧视频")
+        all_results = recent
 
     all_results.sort(key=lambda x: -x.views)
     return all_results[:top_n]
