@@ -6,6 +6,12 @@ Saiborui is a Python toolkit for creators making short-form technology and produ
 
 **AI content creation · video script generator · storyboarding · creator tools · competitive research · RAG · DeepSeek · Python**
 
+## Architecture and showcase
+
+![Saiborui pipeline architecture](docs/architecture/pipeline-v3.svg)
+
+This Chinese-language diagram is a **June 10, 2026 historical architecture snapshot**. Counts, timings, schedules and specific features shown in it may have changed; they are not live performance metrics. See the [capability map](docs/architecture/capability-map.svg) and [English pipeline guide and sample outputs](docs/showcase.en.md).
+
 ## What it does
 
 - **Plan:** explore topics and learn from editorial feedback.
